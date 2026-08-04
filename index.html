@@ -940,10 +940,9 @@ let sb=null, USER=null, PART=null, DOCLIST={}, qrShown=false;
 const memURL={};
 try{
   sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
-    auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:window.localStorage,
-      // storageKey unik supaya sesi login app ini tidak bentrok dengan app lain yang juga
-      // di-hosting di origin github.io yang sama (localStorage dibagi per-origin, bukan per-repo).
-      storageKey:'sb-juara-auth' }
+    // Sesi hanya berada di memori halaman. Tidak ada token yang disimpan di
+    // localStorage/sessionStorage, sehingga tiap refresh memerlukan login ulang.
+    auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}
   });
 }catch(e){ console.error('Gagal inisialisasi Supabase:',e); }
 
@@ -1069,18 +1068,14 @@ async function loginGoogle(){
   if(signOutError){console.warn('Gagal membersihkan sesi lokal sebelum login:',signOutError.message);}
   USER=null; PART=null; DOCLIST={}; qrShown=false;
   setAuthUI(false); setState('#stGuest');
-  // Tandai eksplisit bahwa user BARU SAJA menekan tombol login. Ini dibaca sekali oleh onAuth()
-  // setelah redirect OAuth kembali, supaya cuma login yang benar-benar baru yang dipaksa ke
-  // tab #portal — bukan event SIGNED_IN/INITIAL_SESSION lain yang juga bisa terpicu Supabase
-  // saat tab kembali fokus atau sinkron sesi antar-tab (bukan aksi login user).
-  sessionStorage.setItem('juara_fresh_login','1');
+  // Penanda login baru diteruskan lewat URL redirect, tanpa memakai penyimpanan browser.
   // Jangan otomatis memakai akun Google terakhir di browser. Dengan prompt ini,
   // pengguna dapat memilih akun lain setiap kali menekan tombol login/daftar.
   const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{
-    redirectTo:location.origin+location.pathname,
+    redirectTo:location.origin+location.pathname+'?fresh_login=1',
     queryParams:{prompt:'select_account'}
   }});
-  if(error){toast('Gagal: '+error.message,'err'); sessionStorage.removeItem('juara_fresh_login');} }
+  if(error){toast('Gagal: '+error.message,'err');} }
 async function logout(){ await sb.auth.signOut(); USER=null;PART=null;DOCLIST={};qrShown=false;
   setAuthUI(false); setState('#stGuest'); toast('Sampai jumpa! Kamu telah keluar. 👋'); }
 
@@ -1106,14 +1101,13 @@ sb.auth.onAuthStateChange((ev,ses)=>{
   // event ini saat tab kembali fokus atau sesi disinkronkan dari tab lain, padahal user tidak
   // sedang login. Kalau itu terjadi ketika user sedang membuka tab #destinasi/#alur/dst, halaman
   // akan "dilempar balik" ke #portal terus-menerus. Penanda fresh-login yang akurat hanya
-  // sessionStorage 'juara_fresh_login' yang di-set di loginGoogle() persis sebelum redirect.
+  // Parameter redirect hanya dibuat ketika pengguna benar-benar memulai login baru.
   if(ses&&ses.user)onAuth(ses.user);
 });
 function onAuth(u){ USER=u; setAuthUI(true);
-  const isFreshLogin=sessionStorage.getItem('juara_fresh_login')==='1';
-  if(isFreshLogin)sessionStorage.removeItem('juara_fresh_login');
+  const isFreshLogin=new URLSearchParams(location.search).get('fresh_login')==='1';
   const curTab=location.hash.replace('#','').split('&')[0];
-  if(location.hash.includes('access_token')){
+  if(isFreshLogin||location.hash.includes('access_token')){
     history.replaceState(null,'',location.pathname+(isFreshLogin?'#portal':(TAB_IDS.includes(curTab)?location.hash:'#home')));
   }
   if(isFreshLogin||!TAB_IDS.includes(curTab)){ showTab('portal'); }
@@ -1140,7 +1134,7 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
   const resetBtn=()=>{btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>';};
   try{
     // Re-validasi sesi ke server tepat sebelum insert. Jangan pakai USER.id yang di-cache dari
-    // login sebelumnya — kalau ada tab lain / refresh token yang mengganti sesi di localStorage,
+    // login sebelumnya — kalau sesi aktif berubah sebelum insert,
     // USER.id lama bisa berbeda dari auth.uid() yang dicek RLS, dan insert akan selalu ditolak.
     const {data:{user:freshUser},error:userErr}=await sb.auth.getUser();
     if(userErr||!freshUser){
