@@ -681,12 +681,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <form class="frm" id="frmOnb">
           <div class="fld full"><label>Nama Lengkap (sesuai KTP)</label><input id="fNama" required placeholder="cth: Siti Rahmawati"></div>
           <div class="fld"><label>NIK (16 digit)</label><input id="fNik" required inputmode="numeric" maxlength="16" placeholder="3271xxxxxxxxxx"></div>
-          <div class="fld"><label>No. WhatsApp Aktif</label><input id="fWa" required inputmode="tel" placeholder="08xxxxxxxxxx"></div>
-          <div class="fld"><label>Negara Tujuan</label><select id="fNegara" required></select></div>
-          <div class="fld"><label>Posisi yang Diminati</label><select id="fPosisi" required>
-            <option value="">— pilih —</option><option>Caregiver / Perawat</option><option>Manufaktur / Pabrik</option>
-            <option>Hospitality / Hotel</option><option>Konstruksi / Elektrik</option><option>Pertanian / Perikanan</option><option>Lainnya</option>
-          </select></div>
+          <div class="fld full"><label>No. WhatsApp Aktif</label><input id="fWa" required inputmode="tel" placeholder="08xxxxxxxxxx"></div>
           <div class="full" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
             <button class="btn b-pri" type="submit" id="btnDaftar">Buat Kode Peserta <span class="pl">✈</span></button>
             <button class="btn b-ghost" type="button" onclick="logout()">Batalkan</button>
@@ -1058,7 +1053,7 @@ function renderDest(){
   requestAnimationFrame(()=>$$('#destGrid .qbar i').forEach(i=>i.style.width=i.style.getPropertyValue('--w')));
 }
 function apply(n){ if(!USER){toast('Masuk dulu untuk melamar program '+n,' ');showTab('portal');return;}
-  if($('#fNegara'))$('#fNegara').value=n; toast('Negara tujuan diset ke <b>'+n+'</b> ✈','ok'); showTab('portal'); }
+  toast('Tertarik dengan program <b>'+n+'</b> — lengkapi data di portal ✈','ok'); showTab('portal'); }
 
 /* ================= FAQ ================= */
 $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector('.faq-a'),o=f.classList.contains('open');
@@ -1097,7 +1092,7 @@ async function loadParticipant(uid){ const {data}=await sb.from('participants').
   PART=data; if(PART){await Promise.all([loadDocs(),loadStage()]);renderDash();} else {$('#obNama').textContent=(USER.user_metadata?.full_name||'Calon Peserta').split(' ')[0];setState('#stForm');} }
 
 $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
-  const nama=$('#fNama').value.trim(),nik=$('#fNik').value.trim(),wa=$('#fWa').value.trim(),negara=$('#fNegara').value,posisi=$('#fPosisi').value;
+  const nama=$('#fNama').value.trim(),nik=$('#fNik').value.trim(),wa=$('#fWa').value.trim(),negara='',posisi='';
   if(!/^\d{16}$/.test(nik))return toast('NIK harus 16 digit angka','err');
   const kode='GK-'+new Date().getFullYear()+'-'+rand4(); const btn=$('#btnDaftar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Memproses…';
   if(DEMO){ PART={id:'demo-'+Date.now(),nama,nik,wa,negara,posisi,kode}; const d=demoGet();d.participant=PART;demoSet(d);
@@ -1325,7 +1320,6 @@ function testiUpdateArrows(){
 })();
 
 /* ================= INIT ================= */
-$('#fNegara').innerHTML='<option value="">— pilih negara —</option>'+DEST.map(d=>`<option>${d.n}</option>`).join('');
 renderDest();
 if(DEMO){ $('#demoBadge').classList.add('on'); $('#gateNote').style.display='block';
   const d=demoGet(); if(d.user){ USER=d.user; PART=d.participant||null; DOCLIST=d.docs||{};
