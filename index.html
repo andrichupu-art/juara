@@ -685,6 +685,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
       <div class="onb rv in">
         <div class="tag">LANGKAH 1 DARI 2 · PROFIL PESERTA</div>
         <h3 style="font:800 1.6rem var(--disp);color:var(--navy);margin-top:14px">Halo <span id="obNama" style="color:var(--orange)"></span>! Lengkapi data dirimu ✈️</h3>
+        <p class="meta" id="obAccount" style="margin-top:8px"></p>
         <form class="frm" id="frmOnb">
           <div class="fld full"><label>Nama Lengkap (sesuai KTP)</label><input id="fNama" required placeholder="cth: Siti Rahmawati"></div>
           <div class="fld"><label>NIK (16 digit)</label><input id="fNik" required inputmode="numeric" maxlength="16" placeholder="3271xxxxxxxxxx"></div>
@@ -701,7 +702,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <div class="pstate" id="stDash" style="margin-top:44px">
       <div class="dash-top rv in">
         <div class="ava" id="dAva">G</div>
-        <div><h3 id="dNama">—</h3><div class="meta" id="dMeta">—</div></div>
+        <div><h3 id="dNama">—</h3><div class="meta" id="dMeta">—</div><div class="meta" id="dAccount">—</div></div>
         <div class="kode"><span>KODE PESERTA</span><b id="dKode">—</b></div>
         <button class="btn b-wht sm" onclick="logout()">Keluar ⏻</button>
       </div>
@@ -937,6 +938,7 @@ const DEST=[
 
 /* ================= STATE ================= */
 let sb=null, USER=null, PART=null, DOCLIST={}, qrShown=false;
+let authEpoch=0, loadingUserId=null, loginInProgress=false;
 const memURL={};
 try{
   sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
@@ -1061,13 +1063,18 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
 /* ================= AUTH ================= */
 function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');}
 function authBtnClick(){ if(USER){showTab('portal');} else {loginGoogle();} }
+function clearAuthState(){
+  authEpoch++; loadingUserId=null; USER=null; PART=null; DOCLIST={}; qrShown=false;
+  setAuthUI(false); setState('#stGuest');
+}
 async function loginGoogle(){
-  // Bersihkan sesi Supabase di browser lebih dulu. Ini mencegah profil peserta
-  // dari akun sebelumnya muncul lagi ketika pengguna memilih akun Google lain.
+  if(loginInProgress)return;
+  loginInProgress=true;
+  // Tidak gunakan sesi lama saat memulai OAuth. Semua state peserta dibersihkan
+  // sebelum Google mengembalikan akun yang dipilih.
   const {error:signOutError}=await sb.auth.signOut({scope:'local'});
   if(signOutError){console.warn('Gagal membersihkan sesi lokal sebelum login:',signOutError.message);}
-  USER=null; PART=null; DOCLIST={}; qrShown=false;
-  setAuthUI(false); setState('#stGuest');
+  clearAuthState();
   // Penanda login baru diteruskan lewat URL redirect, tanpa memakai penyimpanan browser.
   // Jangan otomatis memakai akun Google terakhir di browser. Dengan prompt ini,
   // pengguna dapat memilih akun lain setiap kali menekan tombol login/daftar.
@@ -1075,9 +1082,12 @@ async function loginGoogle(){
     redirectTo:location.origin+location.pathname+'?fresh_login=1',
     queryParams:{prompt:'select_account'}
   }});
-  if(error){toast('Gagal: '+error.message,'err');} }
-async function logout(){ await sb.auth.signOut(); USER=null;PART=null;DOCLIST={};qrShown=false;
-  setAuthUI(false); setState('#stGuest'); toast('Sampai jumpa! Kamu telah keluar. 👋'); }
+  if(error){loginInProgress=false;toast('Gagal: '+error.message,'err');} }
+async function logout(){
+  await sb.auth.signOut({scope:'local'});
+  clearAuthState();
+  toast('Sampai jumpa! Kamu telah keluar. 👋');
+}
 
 function setAuthUI(loggedIn){
   $('#authBtn').style.display=loggedIn?'inline-flex':'none';
@@ -1087,31 +1097,34 @@ function setAuthUI(loggedIn){
   $$('.auth-only').forEach(a=>a.style.display=loggedIn?'inline-block':'none');
 }
 
-sb.auth.getSession().then(({data})=>{ if(data.session)onAuth(data.session.user); });
 sb.auth.onAuthStateChange((ev,ses)=>{
-  if(ev==='SIGNED_OUT'){USER=null;PART=null;DOCLIST={};qrShown=false;setAuthUI(false);return;}
-  // TOKEN_REFRESHED terjadi otomatis tiap sekitar 1 jam (atau saat tab kembali fokus) untuk
-  // user yang SAMA. Kalau event ini memicu reload penuh (loadParticipant -> loadDocs -> render)
-  // dan itu kebetulan bertepatan dengan proses upload dokumen yang sedang berjalan, dua proses
-  // fetch+render akan race: hasil query yang telat/kurang-lengkap bisa "menang" dan membuat
-  // kartu dokumen yang sudah terverifikasi tampil balik jadi "Belum diunggah" walau data di
-  // database tetap utuh. Karena user-nya tidak berubah, cukup update USER, jangan fetch ulang.
-  if(ev==='TOKEN_REFRESHED'){ if(ses&&ses.user)USER=ses.user; return; }
-  // JANGAN pakai ev==='SIGNED_IN' sebagai penanda "baru login" — Supabase juga bisa mengirim
-  // event ini saat tab kembali fokus atau sesi disinkronkan dari tab lain, padahal user tidak
-  // sedang login. Kalau itu terjadi ketika user sedang membuka tab #destinasi/#alur/dst, halaman
-  // akan "dilempar balik" ke #portal terus-menerus. Penanda fresh-login yang akurat hanya
-  // Parameter redirect hanya dibuat ketika pengguna benar-benar memulai login baru.
-  if(ses&&ses.user)onAuth(ses.user);
+  if(ev==='SIGNED_OUT'||!ses?.user){loginInProgress=false;clearAuthState();return;}
+  if(ev==='TOKEN_REFRESHED'&&USER?.id===ses.user.id)return;
+  activateSession(ses.user);
 });
-function onAuth(u){ USER=u; setAuthUI(true);
+async function activateSession(u){
+  // Abaikan event ganda dari Supabase untuk akun yang sudah sedang dimuat.
+  if(USER?.id===u.id&&loadingUserId===u.id)return;
+  const request=++authEpoch;
+  loginInProgress=false; USER=u; PART=null; DOCLIST={}; qrShown=false; loadingUserId=u.id;
+  setAuthUI(true);
   const isFreshLogin=new URLSearchParams(location.search).get('fresh_login')==='1';
   const curTab=location.hash.replace('#','').split('&')[0];
   if(isFreshLogin||location.hash.includes('access_token')){
     history.replaceState(null,'',location.pathname+(isFreshLogin?'#portal':(TAB_IDS.includes(curTab)?location.hash:'#home')));
   }
   if(isFreshLogin||!TAB_IDS.includes(curTab)){ showTab('portal'); }
-  loadParticipant(u.id); }
+  const {data:{user:verifiedUser},error}=await sb.auth.getUser();
+  if(request!==authEpoch)return;
+  if(error||!verifiedUser||verifiedUser.id!==u.id){
+    console.error('Validasi sesi gagal:',error);
+    clearAuthState(); toast('Sesi tidak valid. Silakan login kembali.','err'); return;
+  }
+  USER=verifiedUser;
+  const email=USER.email||USER.user_metadata?.email||'akun Google aktif';
+  $('#obAccount').textContent='Login sebagai: '+email;
+  await loadParticipant(USER.id,request);
+}
 
 /* ================= ONBOARDING ================= */
 function withTimeout(promise,ms=15000,label='permintaan'){
@@ -1120,12 +1133,25 @@ function withTimeout(promise,ms=15000,label='permintaan'){
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('Waktu '+label+' habis (>'+(ms/1000)+'d). Cek koneksi internet atau status project Supabase (kemungkinan project sedang paused).')),ms))
   ]);
 }
-async function loadParticipant(uid){
+async function loadParticipant(uid,request){
   let data,error;
   try{ ({data,error}=await withTimeout(sb.from('participants').select('*').eq('user_id',uid).maybeSingle(),15000,'muat data peserta')); }
-  catch(err){ console.error('loadParticipant timeout/gagal:',err); toast(err.message,'err'); setState('#stForm'); return; }
-  if(error){ console.error('loadParticipant gagal:',error); toast('Gagal memuat data peserta: '+error.message,'err'); }
-  PART=data; if(PART){await Promise.all([loadDocs(),loadStage()]);renderDash();} else {$('#obNama').textContent=(USER.user_metadata?.full_name||'Calon Peserta').split(' ')[0];setState('#stForm');} }
+  catch(err){
+    if(request===authEpoch){loadingUserId=null;console.error('loadParticipant timeout/gagal:',err);toast(err.message,'err');}
+    return;
+  }
+  if(request!==authEpoch||USER?.id!==uid)return;
+  if(error){loadingUserId=null;console.error('loadParticipant gagal:',error);toast('Gagal memuat data peserta: '+error.message,'err');return;}
+  PART=data;
+  if(PART){
+    await Promise.all([loadDocs(PART.id,request),loadStage(PART.id,request)]);
+    if(request===authEpoch&&USER?.id===uid)renderDash();
+  }else{
+    $('#obNama').textContent=(USER.user_metadata?.full_name||'Calon Peserta').split(' ')[0];
+    setState('#stForm');
+  }
+  if(request===authEpoch)loadingUserId=null;
+}
 
 $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
   const nama=$('#fNama').value.trim(),nik=$('#fNik').value.trim(),wa=$('#fWa').value.trim(),negara='',posisi='';
@@ -1161,6 +1187,7 @@ function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.
   const nama=PART.nama||'-', kode=PART.kode_peserta||PART.kode, negara=PART.negara||'-';
   $('#dAva').textContent=nama[0].toUpperCase(); $('#dNama').textContent=nama;
   $('#dMeta').textContent=`${PART.posisi||'Posisi —'} · Tujuan: ${negara} · WA ${PART.telepon||PART.wa||'-'}`;
+  $('#dAccount').textContent='Akun aktif: '+(USER?.email||USER?.user_metadata?.email||'—');
   $('#dKode').textContent=kode;
   renderDocs(); renderTL(getStage()); renderQR(); }
 
@@ -1225,22 +1252,28 @@ async function viewDoc(k){ const d=DOCLIST[k]; if(!d)return;
   toast('Pratinjau tidak tersedia pada mode ini',''); }
 
 let _docsReqSeq=0;
-async function loadDocs(){
-  if(!PART)return false;
+async function loadDocs(participantId=PART?.id,request=authEpoch){
+  if(!participantId)return false;
   const mySeq=++_docsReqSeq; // penanda urutan, supaya respons yang telat tidak menimpa yang lebih baru
-  const {data,error}=await sb.from('documents').select('*').eq('participant_id',PART.id);
+  const {data,error}=await sb.from('documents').select('*').eq('participant_id',participantId);
   // Jangan kosongkan kartu yang sudah tampil jika jaringan atau RLS sementara gagal.
   if(error){console.error('loadDocs gagal:',error);return false;}
   // Kalau ada panggilan loadDocs() lain yang dimulai setelah ini (mis. karena reload participant
   // bersamaan dengan proses upload), abaikan hasil basi ini agar tidak menimpa state yang lebih baru.
-  if(mySeq!==_docsReqSeq)return false;
+  if(mySeq!==_docsReqSeq||request!==authEpoch||PART?.id!==participantId)return false;
   const next={};
   (data||[]).forEach(r=>next[r.jenis]={file_name:r.file_name,size:0,uploaded_at:r.uploaded_at,storage_path:r.storage_path,status:r.status});
   // Pertahankan upload yang baru saja masuk di UI bila respons baca terlambat/parsial.
   DOCLIST={...DOCLIST,...next};
   return true;
 }
-async function loadStage(){ const {data}=await sb.from('progress').select('tahap').eq('participant_id',PART.id).maybeSingle(); window._stage=data?.tahap??0; }
+async function loadStage(participantId=PART?.id,request=authEpoch){
+  if(!participantId)return false;
+  const {data,error}=await sb.from('progress').select('tahap').eq('participant_id',participantId).maybeSingle();
+  if(error||request!==authEpoch||PART?.id!==participantId)return false;
+  window._stage=data?.tahap??0;
+  return true;
+}
 
 /* ================= TIMELINE ================= */
 function tlHTML(t){ return '<ul class="tl">'+STAGES.map((s,i)=>{
