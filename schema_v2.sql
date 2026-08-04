@@ -73,7 +73,7 @@ alter table public.progress_v2 enable row level security;
 create policy "v2 peserta baca profil sendiri" on public.participants_v2 for select
   using (public.can_access_participant_v2(id));
 create policy "v2 google membuat profil sendiri" on public.participants_v2 for insert to authenticated
-  with check (google_user_id = auth.uid());
+  with check (google_user_id = auth.uid() and coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) = false);
 create policy "v2 peserta ubah profil sendiri" on public.participants_v2 for update
   using (public.can_access_participant_v2(id)) with check (public.can_access_participant_v2(id));
 
@@ -98,4 +98,3 @@ create policy "v2 peserta baca file sendiri" on storage.objects for select
   using (bucket_id = 'juara-v2-documents' and public.can_access_participant_v2((storage.foldername(name))[1]::uuid));
 create policy "v2 peserta ganti file sendiri" on storage.objects for update
   using (bucket_id = 'juara-v2-documents' and public.can_access_participant_v2((storage.foldername(name))[1]::uuid));
-
