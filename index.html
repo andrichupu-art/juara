@@ -1063,6 +1063,13 @@ function setAuthUI(loggedIn){
 sb.auth.getSession().then(({data})=>{ if(data.session)onAuth(data.session.user); });
 sb.auth.onAuthStateChange((ev,ses)=>{
   if(ev==='SIGNED_OUT'){USER=null;PART=null;DOCLIST={};qrShown=false;setAuthUI(false);return;}
+  // TOKEN_REFRESHED terjadi otomatis tiap sekitar 1 jam (atau saat tab kembali fokus) untuk
+  // user yang SAMA. Kalau event ini memicu reload penuh (loadParticipant -> loadDocs -> render)
+  // dan itu kebetulan bertepatan dengan proses upload dokumen yang sedang berjalan, dua proses
+  // fetch+render akan race: hasil query yang telat/kurang-lengkap bisa "menang" dan membuat
+  // kartu dokumen yang sudah terverifikasi tampil balik jadi "Belum diunggah" walau data di
+  // database tetap utuh. Karena user-nya tidak berubah, cukup update USER, jangan fetch ulang.
+  if(ev==='TOKEN_REFRESHED'){ if(ses&&ses.user)USER=ses.user; return; }
   if(ses&&ses.user)onAuth(ses.user);
 });
 function onAuth(u){ USER=u; setAuthUI(true);
@@ -1183,10 +1190,16 @@ async function viewDoc(k){ const d=DOCLIST[k]; if(!d)return;
   if(d.storage_path&&sb){ const {data}=await sb.storage.from('dokumen').createSignedUrl(d.storage_path,300); if(data)return window.open(data.signedUrl,'_blank'); }
   toast('Pratinjau tidak tersedia pada mode ini',''); }
 
+let _docsReqSeq=0;
 async function loadDocs(){
+  if(!PART)return false;
+  const mySeq=++_docsReqSeq; // penanda urutan, supaya respons yang telat tidak menimpa yang lebih baru
   const {data,error}=await sb.from('documents').select('*').eq('participant_id',PART.id);
   // Jangan kosongkan kartu yang sudah tampil jika jaringan atau RLS sementara gagal.
   if(error){console.error('loadDocs gagal:',error);return false;}
+  // Kalau ada panggilan loadDocs() lain yang dimulai setelah ini (mis. karena reload participant
+  // bersamaan dengan proses upload), abaikan hasil basi ini agar tidak menimpa state yang lebih baru.
+  if(mySeq!==_docsReqSeq)return false;
   const next={};
   (data||[]).forEach(r=>next[r.jenis]={file_name:r.file_name,size:0,uploaded_at:r.uploaded_at,storage_path:r.storage_path,status:r.status});
   // Pertahankan upload yang baru saja masuk di UI bila respons baca terlambat/parsial.
