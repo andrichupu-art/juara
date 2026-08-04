@@ -1093,7 +1093,16 @@ function onAuth(u){ USER=u; setAuthUI(true);
   if(DEMO){const d=demoGet();PART=d.participant||null;DOCLIST=d.docs||{};renderDash();} else loadParticipant(u.id); }
 
 /* ================= ONBOARDING ================= */
-async function loadParticipant(uid){ const {data,error}=await sb.from('participants').select('*').eq('user_id',uid).maybeSingle();
+function withTimeout(promise,ms=15000,label='permintaan'){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Waktu '+label+' habis (>'+(ms/1000)+'d). Cek koneksi internet atau status project Supabase (kemungkinan project sedang paused).')),ms))
+  ]);
+}
+async function loadParticipant(uid){
+  let data,error;
+  try{ ({data,error}=await withTimeout(sb.from('participants').select('*').eq('user_id',uid).maybeSingle(),15000,'muat data peserta')); }
+  catch(err){ console.error('loadParticipant timeout/gagal:',err); toast(err.message,'err'); setState('#stForm'); return; }
   if(error){ console.error('loadParticipant gagal:',error); toast('Gagal memuat data peserta: '+error.message,'err'); }
   PART=data; if(PART){await Promise.all([loadDocs(),loadStage()]);renderDash();} else {$('#obNama').textContent=(USER.user_metadata?.full_name||'Calon Peserta').split(' ')[0];setState('#stForm');} }
 
@@ -1101,16 +1110,17 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
   const nama=$('#fNama').value.trim(),nik=$('#fNik').value.trim(),wa=$('#fWa').value.trim(),negara='',posisi='';
   if(!/^\d{16}$/.test(nik))return toast('NIK harus 16 digit angka','err');
   const kode='GK-'+new Date().getFullYear()+'-'+rand4(); const btn=$('#btnDaftar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Memproses…';
+  const resetBtn=()=>{btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>';};
   try{
     if(DEMO){ PART={id:'demo-'+Date.now(),nama,nik,wa,negara,posisi,kode}; const d=demoGet();d.participant=PART;demoSet(d);
       toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); renderDash(); }
-    else{ const {data:pdata,error}=await sb.from('participants').insert({user_id:USER.id,nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}).select('id').single();
-      if(error){toast('Gagal menyimpan: '+error.message,'err');btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>';return;}
-      const {error:err2}=await sb.from('progress').insert({participant_id:pdata.id,tahap:0});
+    else{ const {data:pdata,error}=await withTimeout(sb.from('participants').insert({user_id:USER.id,nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}).select('id').single(),15000,'simpan data');
+      if(error){console.error('insert participants gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
+      const {error:err2}=await withTimeout(sb.from('progress').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
       if(err2)console.warn('progress insert gagal:',err2.message);
       PART={nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}; await loadParticipant(USER.id); toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); }
     confetti();
-  }catch(err){ console.error(err); toast('Terjadi kesalahan: '+err.message,'err'); btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>'; }
+  }catch(err){ console.error(err); toast(err.message||'Terjadi kesalahan tak dikenal','err'); resetBtn(); }
 });
 
 /* ================= DASHBOARD RENDER ================= */
