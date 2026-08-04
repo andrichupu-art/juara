@@ -1102,7 +1102,12 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
     if(error){console.error('insert participants gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
     const {error:err2}=await withTimeout(sb.from('progress').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
     if(err2)console.warn('progress insert gagal:',err2.message);
-    PART={nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}; await loadParticipant(USER.id); toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); resetBtn();
+    // Insert sudah sukses. Tampilkan dashboard langsung memakai id yang dikembalikan
+    // server; jangan bergantung pada query ulang yang bisa tertunda atau diblokir RLS.
+    PART={id:pdata.id,nama,nik,telepon:wa,negara,posisi,kode_peserta:kode};
+    await Promise.all([loadDocs(),loadStage()]);
+    renderDash();
+    toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); resetBtn();
     confetti();
   }catch(err){ console.error(err); toast(err.message||'Terjadi kesalahan tak dikenal','err'); resetBtn(); }
 });
