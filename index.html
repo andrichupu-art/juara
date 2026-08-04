@@ -1063,6 +1063,12 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
 function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');}
 function authBtnClick(){ if(USER){showTab('portal');} else {loginGoogle();} }
 async function loginGoogle(){
+  // Bersihkan sesi Supabase di browser lebih dulu. Ini mencegah profil peserta
+  // dari akun sebelumnya muncul lagi ketika pengguna memilih akun Google lain.
+  const {error:signOutError}=await sb.auth.signOut({scope:'local'});
+  if(signOutError){console.warn('Gagal membersihkan sesi lokal sebelum login:',signOutError.message);}
+  USER=null; PART=null; DOCLIST={}; qrShown=false;
+  setAuthUI(false); setState('#stGuest');
   // Tandai eksplisit bahwa user BARU SAJA menekan tombol login. Ini dibaca sekali oleh onAuth()
   // setelah redirect OAuth kembali, supaya cuma login yang benar-benar baru yang dipaksa ke
   // tab #portal — bukan event SIGNED_IN/INITIAL_SESSION lain yang juga bisa terpicu Supabase
