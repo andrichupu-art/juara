@@ -1128,12 +1128,15 @@ function getStage(){ return window._stage??0; }
 function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
   let upReq=0,totReq=0;
   DOCS.forEach(d=>{ const up=DOCLIST[d.k]; if(d.req){totReq++; if(up)upReq++;}
+    const docStatus=up?.status||'menunggu';
+    const statusText=docStatus==='terverifikasi'?'✓ Terverifikasi':docStatus==='ditolak'?'Perlu diperbaiki':'Menunggu verifikasi';
+    const statusClass=docStatus==='terverifikasi'?'ok':docStatus==='ditolak'?'wait':'wait';
     const el=document.createElement('div'); el.className='doc drop rv in'+(up?' ok':'');
     el.innerHTML=`<div class="ic">${d.ic}</div>
       <div><h5>${d.t} <span class="${d.req?'req':'opt'}">${d.req?'WAJIB':'OPSIONAL'}</span></h5>
         <div class="sub">${d.d}</div>${up?`<div class="fname">✓ ${up.file_name} · ${fmtSz(up.size||0)} · ${fmtT(up.uploaded_at||Date.now())}</div>`:''}</div>
       <div class="act">${up
-        ?`<span class="pill ok">✓ Terverifikasi Sistem</span><div style="display:flex;gap:6px"><button class="mini" data-view="${d.k}">Lihat</button><button class="mini or" data-re="${d.k}">Ganti</button></div>`
+        ?`<span class="pill ${statusClass}">${statusText}</span><div style="display:flex;gap:6px"><button class="mini" data-view="${d.k}">Lihat</button><button class="mini or" data-re="${d.k}">Ganti</button></div>`
         :`<span class="pill wait">Belum diunggah</span><button class="mini or" data-up="${d.k}">⬆ Unggah</button>`}</div>
       <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" id="fi-${d.k}">`;
     grid.appendChild(el);
@@ -1186,7 +1189,8 @@ async function loadDocs(){
   if(error){console.error('loadDocs gagal:',error);return false;}
   const next={};
   (data||[]).forEach(r=>next[r.jenis]={file_name:r.file_name,size:0,uploaded_at:r.uploaded_at,storage_path:r.storage_path,status:r.status});
-  DOCLIST=next;
+  // Pertahankan upload yang baru saja masuk di UI bila respons baca terlambat/parsial.
+  DOCLIST={...DOCLIST,...next};
   return true;
 }
 async function loadStage(){ const {data}=await sb.from('progress').select('tahap').eq('participant_id',PART.id).maybeSingle(); window._stage=data?.tahap??0; }
