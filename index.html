@@ -1024,7 +1024,7 @@ const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.tar
 $$('.rv,.stat,.board').forEach(el=>obs.observe(el));
 
 (function initTab(){
-  const h=location.hash.replace('#','');
+  const h=location.hash.replace('#','').split('&')[0];
   showTab(TAB_IDS.includes(h)?h:'home');
 })();
 function runCount(el){const t=+el.dataset.count,s=performance.now();(function f(n){const p=Math.min(1,(n-s)/1600),e=1-Math.pow(1-p,3);el.textContent=Math.round(t*e).toLocaleString('id-ID');if(p<1)requestAnimationFrame(f);})(s);}
@@ -1084,10 +1084,12 @@ function setAuthUI(loggedIn){
 if(!DEMO){
   sb.auth.getSession().then(({data})=>{ if(data.session)onAuth(data.session.user); });
   sb.auth.onAuthStateChange((ev,ses)=>{ if(ses&&ses.user)onAuth(ses.user); });
-  if(location.hash.includes('access_token'))history.replaceState(null,'',location.pathname+'#portal');
 }
 function onAuth(u){ USER=u; setAuthUI(true);
-  if(location.hash.includes('access_token')||location.hash==='#portal')showTab('portal');
+  if(location.hash.includes('access_token')||location.hash.startsWith('#portal')){
+    history.replaceState(null,'',location.pathname+'#portal');
+  }
+  showTab('portal');
   if(DEMO){const d=demoGet();PART=d.participant||null;DOCLIST=d.docs||{};renderDash();} else loadParticipant(u.id); }
 
 /* ================= ONBOARDING ================= */
