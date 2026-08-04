@@ -545,6 +545,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
       <a href="#portal" id="daftarWrap"><button class="btn b-pri sm">Daftar Sekarang <span class="pl">✈</span></button></a>
       <button class="btn b-ghost sm" id="loginBtn" onclick="authBtnClick()" style="border-color:#fff;color:#fff">Login</button>
       <button class="btn b-pri sm" id="authBtn" onclick="authBtnClick()" style="display:none">👤 Portal Saya</button>
+      <button class="btn b-ghost sm" id="logoutBtn" onclick="logout()" style="display:none;border-color:#fff;color:#fff">Keluar ⏻</button>
       <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -1076,6 +1077,7 @@ async function logout(){ if(!DEMO)await sb.auth.signOut(); localStorage.removeIt
 
 function setAuthUI(loggedIn){
   $('#authBtn').style.display=loggedIn?'inline-flex':'none';
+  $('#logoutBtn').style.display=loggedIn?'inline-flex':'none';
   $('#daftarWrap').style.display=loggedIn?'none':'';
   $('#loginBtn').style.display=loggedIn?'none':'';
   $$('.auth-only').forEach(a=>a.style.display=loggedIn?'':'none');
@@ -1113,12 +1115,12 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
   const resetBtn=()=>{btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>';};
   try{
     if(DEMO){ PART={id:'demo-'+Date.now(),nama,nik,wa,negara,posisi,kode}; const d=demoGet();d.participant=PART;demoSet(d);
-      toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); renderDash(); }
+      toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); renderDash(); resetBtn(); }
     else{ const {data:pdata,error}=await withTimeout(sb.from('participants').insert({user_id:USER.id,nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}).select('id').single(),15000,'simpan data');
       if(error){console.error('insert participants gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
       const {error:err2}=await withTimeout(sb.from('progress').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
       if(err2)console.warn('progress insert gagal:',err2.message);
-      PART={nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}; await loadParticipant(USER.id); toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); }
+      PART={nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}; await loadParticipant(USER.id); toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); resetBtn(); }
     confetti();
   }catch(err){ console.error(err); toast(err.message||'Terjadi kesalahan tak dikenal','err'); resetBtn(); }
 });
