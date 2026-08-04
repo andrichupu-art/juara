@@ -690,6 +690,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           <div class="fld full"><label>Nama Lengkap (sesuai KTP)</label><input id="fNama" required placeholder="cth: Siti Rahmawati"></div>
           <div class="fld"><label>NIK (16 digit)</label><input id="fNik" required inputmode="numeric" maxlength="16" placeholder="3271xxxxxxxxxx"></div>
           <div class="fld full"><label>No. WhatsApp Aktif</label><input id="fWa" required inputmode="tel" placeholder="08xxxxxxxxxx"></div>
+          <div class="fld full"><label>Kota Domisili</label><input id="fKota" required placeholder="cth: Bandung"></div>
           <div class="full" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
             <button class="btn b-pri" type="submit" id="btnDaftar">Buat Kode Peserta <span class="pl">✈</span></button>
             <button class="btn b-ghost" type="button" onclick="logout()">Batalkan</button>
@@ -939,6 +940,7 @@ const DEST=[
 /* ================= STATE ================= */
 let sb=null, USER=null, PART=null, DOCLIST={}, qrShown=false;
 let authEpoch=0, loadingUserId=null, loginInProgress=false;
+const QR_LOGIN_TOKEN=(()=>{const q=(location.hash.split('?')[1]||'');return new URLSearchParams(q).get('qr');})();
 const memURL={};
 try{
   sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
@@ -1099,6 +1101,7 @@ function setAuthUI(loggedIn){
 
 sb.auth.onAuthStateChange((ev,ses)=>{
   if(ev==='SIGNED_OUT'||!ses?.user){loginInProgress=false;clearAuthState();return;}
+  if(QR_LOGIN_TOKEN&&ses.user.is_anonymous){activateQrSession(ses.user,QR_LOGIN_TOKEN);return;}
   if(ev==='TOKEN_REFRESHED'&&USER?.id===ses.user.id)return;
   activateSession(ses.user);
 });
@@ -1135,7 +1138,7 @@ function withTimeout(promise,ms=15000,label='permintaan'){
 }
 async function loadParticipant(uid,request){
   let data,error;
-  try{ ({data,error}=await withTimeout(sb.from('participants').select('*').eq('user_id',uid).maybeSingle(),15000,'muat data peserta')); }
+  try{ ({data,error}=await withTimeout(sb.from('participants_v2').select('*').eq('google_user_id',uid).maybeSingle(),15000,'muat data peserta')); }
   catch(err){
     if(request===authEpoch){loadingUserId=null;console.error('loadParticipant timeout/gagal:',err);toast(err.message,'err');}
     return;
@@ -1152,9 +1155,35 @@ async function loadParticipant(uid,request){
   }
   if(request===authEpoch)loadingUserId=null;
 }
+async function activateQrSession(anonymousUser,token){
+  if(loadingUserId===anonymousUser.id)return;
+  const request=++authEpoch;
+  USER=anonymousUser; PART=null; DOCLIST={}; qrShown=false; loadingUserId=anonymousUser.id;
+  setAuthUI(true); showTab('portal');
+  const {data,error}=await sb.rpc('login_with_qr_v2',{p_qr_token:token});
+  if(request!==authEpoch)return;
+  const participant=Array.isArray(data)?data[0]:data;
+  if(error||!participant){
+    loadingUserId=null; clearAuthState();
+    toast(error?.message||'QR tidak valid atau sudah tidak berlaku','err'); return;
+  }
+  PART=participant;
+  await Promise.all([loadDocs(PART.id,request),loadStage(PART.id,request)]);
+  if(request===authEpoch)renderDash();
+  if(request===authEpoch)loadingUserId=null;
+}
+async function beginQrLogin(){
+  if(!QR_LOGIN_TOKEN)return;
+  const {data:{session}}=await sb.auth.getSession();
+  if(session?.user?.is_anonymous)return activateQrSession(session.user,QR_LOGIN_TOKEN);
+  await sb.auth.signOut({scope:'local'});
+  const {error}=await sb.auth.signInAnonymously();
+  if(error)toast('Login QR gagal: '+error.message,'err');
+}
+beginQrLogin();
 
 $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
-  const nama=$('#fNama').value.trim(),nik=$('#fNik').value.trim(),wa=$('#fWa').value.trim(),negara='',posisi='';
+  const nama=$('#fNama').value.trim(),nik=$('#fNik').value.trim(),wa=$('#fWa').value.trim(),kota=$('#fKota').value.trim();
   if(!/^\d{16}$/.test(nik))return toast('NIK harus 16 digit angka','err');
   const kode='GK-'+new Date().getFullYear()+'-'+rand4(); const btn=$('#btnDaftar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Memproses…';
   const resetBtn=()=>{btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>';};
@@ -1167,27 +1196,29 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
       toast('Sesi login bermasalah, silakan logout lalu login ulang','err'); resetBtn(); return;
     }
     USER=freshUser;
-    const {data:pdata,error}=await withTimeout(sb.from('participants').insert({user_id:USER.id,nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}).select('id').single(),15000,'simpan data');
+    if(freshUser.is_anonymous){toast('Pendaftaran baru harus menggunakan Google','err');resetBtn();return;}
+    const {data:pdata,error}=await withTimeout(sb.from('participants_v2').insert({google_user_id:USER.id,nama,nik,telepon:wa,kota}).select('id,qr_token').single(),15000,'simpan data');
     if(error){console.error('insert participants gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
-    const {error:err2}=await withTimeout(sb.from('progress').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
+    const {error:err2}=await withTimeout(sb.from('progress_v2').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
     if(err2)console.warn('progress insert gagal:',err2.message);
     // Insert sudah sukses. Tampilkan dashboard langsung memakai id yang dikembalikan
     // server; jangan bergantung pada query ulang yang bisa tertunda atau diblokir RLS.
-    PART={id:pdata.id,nama,nik,telepon:wa,negara,posisi,kode_peserta:kode};
+    PART={id:pdata.id,nama,nik,telepon:wa,kota,qr_token:pdata.qr_token};
     await Promise.all([loadDocs(),loadStage()]);
     renderDash();
-    toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); resetBtn();
+    toast('QR peserta berhasil dibuat. Simpan kartu QR kamu baik-baik. 🎉','ok'); resetBtn();
     confetti();
   }catch(err){ console.error(err); toast(err.message||'Terjadi kesalahan tak dikenal','err'); resetBtn(); }
 });
 
 /* ================= DASHBOARD RENDER ================= */
+function participantCode(){return PART?.id?'JR-'+PART.id.slice(0,8).toUpperCase():'—';}
 function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.full_name||'Calon Peserta').split(' ')[0];setState('#stForm');return;}
   setState('#stDash');
-  const nama=PART.nama||'-', kode=PART.kode_peserta||PART.kode, negara=PART.negara||'-';
+  const nama=PART.nama||'-', kode=participantCode();
   $('#dAva').textContent=nama[0].toUpperCase(); $('#dNama').textContent=nama;
-  $('#dMeta').textContent=`${PART.posisi||'Posisi —'} · Tujuan: ${negara} · WA ${PART.telepon||PART.wa||'-'}`;
-  $('#dAccount').textContent='Akun aktif: '+(USER?.email||USER?.user_metadata?.email||'—');
+  $('#dMeta').textContent=`Kota: ${PART.kota||'-'} · WA ${PART.telepon||'-'}`;
+  $('#dAccount').textContent=USER?.is_anonymous?'Akses melalui QR peserta':'Akun aktif: '+(USER?.email||USER?.user_metadata?.email||'—');
   $('#dKode').textContent=kode;
   renderDocs(); renderTL(getStage()); renderQR(); }
 
@@ -1229,11 +1260,11 @@ async function uploadDoc(k,file,card){
   const def=DOCS.find(x=>x.k===k);
   try{
     const pid=PART.id, ext=file.name.split('.').pop();
-    const path=`peserta/${pid}/${k}_${Date.now()}.${ext}`;
-    const {error:er1}=await sb.storage.from('dokumen').upload(path,file,{upsert:true,contentType:file.type});
+    const path=`${pid}/${k}_${Date.now()}.${ext}`;
+    const {error:er1}=await sb.storage.from('juara-v2-documents').upload(path,file,{upsert:true,contentType:file.type});
     if(er1){toast('Upload gagal: '+er1.message,'err');resetUpBtn();return;}
     const uploadedAt=new Date().toISOString();
-    const {error:er2}=await sb.from('documents').upsert({participant_id:pid,jenis:k,file_name:file.name,storage_path:path,status:'menunggu',uploaded_at:uploadedAt},{onConflict:'participant_id,jenis'});
+    const {error:er2}=await sb.from('documents_v2').upsert({participant_id:pid,jenis:k,file_name:file.name,size:file.size,storage_path:path,status:'menunggu',uploaded_at:uploadedAt},{onConflict:'participant_id,jenis'});
     if(er2){toast('Gagal mencatat berkas: '+er2.message,'err');resetUpBtn();return;}
     // Perbarui langsung, lalu sinkronkan semua jenis berkas dari server. Ini mencegah
     // kartu berkas sebelumnya kembali "Belum diunggah" setelah upload berikutnya.
@@ -1248,28 +1279,28 @@ async function uploadDoc(k,file,card){
 
 async function viewDoc(k){ const d=DOCLIST[k]; if(!d)return;
   if(d.data||memURL[k])return window.open(d.data||memURL[k],'_blank');
-  if(d.storage_path&&sb){ const {data}=await sb.storage.from('dokumen').createSignedUrl(d.storage_path,300); if(data)return window.open(data.signedUrl,'_blank'); }
+  if(d.storage_path&&sb){ const {data}=await sb.storage.from('juara-v2-documents').createSignedUrl(d.storage_path,300); if(data)return window.open(data.signedUrl,'_blank'); }
   toast('Pratinjau tidak tersedia pada mode ini',''); }
 
 let _docsReqSeq=0;
 async function loadDocs(participantId=PART?.id,request=authEpoch){
   if(!participantId)return false;
   const mySeq=++_docsReqSeq; // penanda urutan, supaya respons yang telat tidak menimpa yang lebih baru
-  const {data,error}=await sb.from('documents').select('*').eq('participant_id',participantId);
+  const {data,error}=await sb.from('documents_v2').select('*').eq('participant_id',participantId);
   // Jangan kosongkan kartu yang sudah tampil jika jaringan atau RLS sementara gagal.
   if(error){console.error('loadDocs gagal:',error);return false;}
   // Kalau ada panggilan loadDocs() lain yang dimulai setelah ini (mis. karena reload participant
   // bersamaan dengan proses upload), abaikan hasil basi ini agar tidak menimpa state yang lebih baru.
   if(mySeq!==_docsReqSeq||request!==authEpoch||PART?.id!==participantId)return false;
   const next={};
-  (data||[]).forEach(r=>next[r.jenis]={file_name:r.file_name,size:0,uploaded_at:r.uploaded_at,storage_path:r.storage_path,status:r.status});
+  (data||[]).forEach(r=>next[r.jenis]={file_name:r.file_name,size:r.size||0,uploaded_at:r.uploaded_at,storage_path:r.storage_path,status:r.status});
   // Pertahankan upload yang baru saja masuk di UI bila respons baca terlambat/parsial.
   DOCLIST={...DOCLIST,...next};
   return true;
 }
 async function loadStage(participantId=PART?.id,request=authEpoch){
   if(!participantId)return false;
-  const {data,error}=await sb.from('progress').select('tahap').eq('participant_id',participantId).maybeSingle();
+  const {data,error}=await sb.from('progress_v2').select('tahap').eq('participant_id',participantId).maybeSingle();
   if(error||request!==authEpoch||PART?.id!==participantId)return false;
   window._stage=data?.tahap??0;
   return true;
@@ -1282,17 +1313,16 @@ function tlHTML(t){ return '<ul class="tl">'+STAGES.map((s,i)=>{
 function renderTL(t){ $('#tlWrap').innerHTML=tlHTML(t); $('#stageLbl').textContent=`Tahap ${Math.min(t+1,6)}/6 — ${STAGES[Math.min(t,5)]}`; }
 
 /* ================= QR TICKET ================= */
-function renderQR(){ if(!PART)return; const kode=PART.kode_peserta||PART.kode;
+function renderQR(){ if(!PART)return; const kode=participantCode();
   const {pct,upReq,totReq}=renderDocs();
   $('#tkDate').textContent=new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric'}).format(new Date());
   $('#qrNama').textContent=PART.nama||'-'; $('#qrKode').textContent=kode;
-  $('#qrNegara').textContent=(PART.negara||'-').toUpperCase();
+  $('#qrNegara').textContent=(PART.kota||'-').toUpperCase();
   $('#qrStatus').textContent=upReq===totReq?'LENGKAP ✔':`${upReq}/${totReq} WAJIB`;
-  const lock=$('#qrLock');
-  if(upReq===totReq){ lock.style.display='none'; }
-  else{ lock.style.display='flex'; $('#qrLockTxt').innerHTML=`🔒 Lengkapi <b>${totReq-upReq}</b> dokumen wajib lagi<br>untuk mengaktifkan QR`; }
-  const payload=`${APP_DEEP_LINK}?kode=${encodeURIComponent(kode)}&src=web`;
-  drawQR(payload,upReq===totReq); }
+  $('#qrLock').style.display='none';
+  // QR adalah tautan login peserta. Token acak hanya dibuat oleh database v2.
+  const payload=location.origin+location.pathname+'#portal?qr='+encodeURIComponent(PART.qr_token);
+  drawQR(payload,true); }
 
 function roundRectPath(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
@@ -1391,8 +1421,8 @@ function wrapCenteredText(ctx,text,cx,y,maxW,lh){
 async function buildIDCardBlob(){
   if(!PART) return null;
   try{ await document.fonts.load('800 46px Sora'); await document.fonts.load('700 26px "Plus Jakarta Sans"'); await document.fonts.ready; }catch(e){}
-  const kode=PART.kode_peserta||PART.kode||'PESERTA';
-  const nama=PART.nama||'-', negara=(PART.negara||'-').toUpperCase();
+  const kode=participantCode();
+  const nama=PART.nama||'-', negara=(PART.kota||'-').toUpperCase();
   const totReqEl=$('#qrStatus'); const status=totReqEl?totReqEl.textContent:'—';
   const active=$('#qrLock') ? $('#qrLock').style.display==='none' : true;
   const tanggal=new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric'}).format(new Date());
@@ -1473,7 +1503,7 @@ async function buildIDCardBlob(){
 
   return new Promise(res=>cv.toBlob(b=>res(b),'image/png'));
 }
-function img_payload_for_card(kode){ return `${APP_DEEP_LINK}?kode=${encodeURIComponent(kode)}&src=web`; }
+function img_payload_for_card(){ return location.origin+location.pathname+'#portal?qr='+encodeURIComponent(PART.qr_token); }
 
 /* Unduh kartu ID lengkap (bukan sekadar QR polos): berisi logo PT. JUARA,
    nama & kode peserta, negara tujuan, status berkas, dan QR bingkai emas.
@@ -1484,7 +1514,7 @@ async function downloadQR(){
   if(!PART){ toast('QR belum siap','err'); return; }
   const btn=$('#btnQRDown'); const orig=btn?btn.innerHTML:null;
   if(btn){ btn.innerHTML='⏳ Menyiapkan kartu…'; btn.disabled=true; }
-  const kode=PART.kode_peserta||PART.kode||'PESERTA';
+  const kode=participantCode();
   const filename='Kartu-Peserta-'+kode+'.png';
   const ua=navigator.userAgent||''; const isIOS=/iPad|iPhone|iPod/.test(ua) && !window.MSStream;
 
@@ -1506,10 +1536,12 @@ async function downloadQR(){
   document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),4000);
   toast('Kartu peserta terunduh — simpan atau tunjukkan ke petugas 📥','ok');
 }
-function openApp(){ if(!$('#qrLock').style.display||$('#qrLock').style.display!=='none'){toast('Lengkapi dokumen wajib dulu ya ✈','');return;}
-  const kode=PART.kode_peserta||PART.kode;
-  toast('Membuka aplikasi mobile… (deep-link: <b>'+APP_DEEP_LINK+'</b>)','ok');
-  setTimeout(()=>window.open(`${APP_DEEP_LINK}?kode=${encodeURIComponent(kode)}`,'_blank'),600); }
+function openApp(){
+  if(!PART?.qr_token)return toast('QR belum siap','err');
+  const url=location.origin+location.pathname+'#portal?qr='+encodeURIComponent(PART.qr_token);
+  toast('Tautan login QR dibuka','ok');
+  window.open(url,'_blank');
+}
 
 /* ================= CEK STATUS PUBLIK ================= */
 $('#cekForm').addEventListener('submit',async e=>{e.preventDefault();
