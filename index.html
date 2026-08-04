@@ -1161,9 +1161,13 @@ async function uploadDoc(k,file,card){
     const path=`peserta/${pid}/${k}_${Date.now()}.${ext}`;
     const {error:er1}=await sb.storage.from('dokumen').upload(path,file,{upsert:true,contentType:file.type});
     if(er1){toast('Upload gagal: '+er1.message,'err');resetUpBtn();return;}
-    const {error:er2}=await sb.from('documents').upsert({participant_id:pid,jenis:k,file_name:file.name,storage_path:path,status:'menunggu',uploaded_at:new Date().toISOString()},{onConflict:'participant_id,jenis'});
+    const uploadedAt=new Date().toISOString();
+    const {error:er2}=await sb.from('documents').upsert({participant_id:pid,jenis:k,file_name:file.name,storage_path:path,status:'menunggu',uploaded_at:uploadedAt},{onConflict:'participant_id,jenis'});
     if(er2){toast('Gagal mencatat berkas: '+er2.message,'err');resetUpBtn();return;}
-    DOCLIST[k]={file_name:file.name,size:file.size,uploaded_at:new Date().toISOString(),storage_path:path};
+    // Perbarui langsung, lalu sinkronkan semua jenis berkas dari server. Ini mencegah
+    // kartu berkas sebelumnya kembali "Belum diunggah" setelah upload berikutnya.
+    DOCLIST[k]={file_name:file.name,size:file.size,uploaded_at:uploadedAt,storage_path:path};
+    await loadDocs();
     toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
     const {pct,upReq,totReq}=renderDocs(); renderQR();
     if(upReq===totReq&&!qrShown){qrShown=true;confetti();const tk=$('#qrTicket');tk.classList.add('glow');tk.scrollIntoView({behavior:'smooth',block:'center'});
@@ -1176,8 +1180,15 @@ async function viewDoc(k){ const d=DOCLIST[k]; if(!d)return;
   if(d.storage_path&&sb){ const {data}=await sb.storage.from('dokumen').createSignedUrl(d.storage_path,300); if(data)return window.open(data.signedUrl,'_blank'); }
   toast('Pratinjau tidak tersedia pada mode ini',''); }
 
-async function loadDocs(){ const {data}=await sb.from('documents').select('*').eq('participant_id',PART.id);
-  DOCLIST={}; (data||[]).forEach(r=>DOCLIST[r.jenis]={file_name:r.file_name,size:0,uploaded_at:r.uploaded_at,storage_path:r.storage_path,status:r.status}); }
+async function loadDocs(){
+  const {data,error}=await sb.from('documents').select('*').eq('participant_id',PART.id);
+  // Jangan kosongkan kartu yang sudah tampil jika jaringan atau RLS sementara gagal.
+  if(error){console.error('loadDocs gagal:',error);return false;}
+  const next={};
+  (data||[]).forEach(r=>next[r.jenis]={file_name:r.file_name,size:0,uploaded_at:r.uploaded_at,storage_path:r.storage_path,status:r.status});
+  DOCLIST=next;
+  return true;
+}
 async function loadStage(){ const {data}=await sb.from('progress').select('tahap').eq('participant_id',PART.id).maybeSingle(); window._stage=data?.tahap??0; }
 
 /* ================= TIMELINE ================= */
