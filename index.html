@@ -1285,27 +1285,175 @@ function drawQR(text,active){
 
 let QR_BLOB=null, QR_BLOB_URL=null;
 
-/* Unduh QR yang andal di mobile: pakai Blob asli hasil canvas bila ada (jalur normal),
-   atau fetch->blob bila QR dari sumber fallback. iOS Safari/WebView tidak mendukung
-   atribut download untuk sumber non-lokal, jadi disediakan fallback buka tab + instruksi. */
-function downloadQR(){
-  const img=$('#qrImg'); if(!img.src){ toast('QR belum siap','err'); return; }
-  const kode=(PART&&(PART.kode_peserta||PART.kode))||'PESERTA';
-  const filename='QR-Peserta-'+kode+'.png';
+/* ===== Kartu ID/boarding-pass PT. JUARA untuk diunduh =====
+   Digambar terpisah dari preview QR kecil di layar (yang tetap 196x196px),
+   supaya hasil unduhan berupa kartu vertikal lengkap: header navy + logo,
+   nama & kode peserta, QR besar dengan bingkai emas, dan status berkas. */
+function drawCardHeader(ctx,CW,headerH){
+  const g=ctx.createLinearGradient(0,0,CW,headerH);
+  g.addColorStop(0,'#081527'); g.addColorStop(1,'#1B3A66');
+  ctx.fillStyle=g; ctx.fillRect(0,0,CW,headerH);
+  /* logo di backdrop putih supaya kontras di atas navy */
+  const lcx=64+56, lcy=headerH/2-6, lsize=100;
+  roundRectPath(ctx,lcx-64,lcy-64,128,128,26); ctx.fillStyle='#fff'; ctx.fill();
+  drawJuaraMark(ctx,lcx,lcy,lsize);
+  /* wordmark */
+  ctx.textBaseline='alphabetic'; ctx.textAlign='left'; ctx.fillStyle='#fff';
+  ctx.font='800 46px Sora, sans-serif';
+  ctx.fillText('PT. JUARA',lcx+96,lcy-2);
+  ctx.fillStyle='#E8C078'; ctx.font='700 20px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('M O B I L E   P A S S   ·   K A R T U   P E S E R T A',lcx+96,lcy+30);
+  /* pill resmi kanan-atas */
+  ctx.font='700 18px "Plus Jakarta Sans", sans-serif';
+  const pillTxt='✔ RESMI', ptw=ctx.measureText(pillTxt).width, pw=ptw+40, ph=40;
+  const px=CW-64-pw, py=54;
+  roundRectPath(ctx,px,py,pw,ph,ph/2); ctx.strokeStyle='#E8C078'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#E8C078'; ctx.textAlign='center'; ctx.fillText(pillTxt,px+pw/2,py+ph/2+6);
+  ctx.textAlign='left';
+}
+function drawPerforation(ctx,CW,y){
+  ctx.save();
+  ctx.strokeStyle='#D9E3EF'; ctx.lineWidth=3; ctx.setLineDash([10,10]);
+  ctx.beginPath(); ctx.moveTo(30,y); ctx.lineTo(CW-30,y); ctx.stroke();
+  ctx.restore();
+  ctx.save(); ctx.globalCompositeOperation='destination-out';
+  ctx.beginPath(); ctx.arc(0,y,26,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(CW,y,26,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawInfoCell(ctx,x,y,w,h,label,value){
+  roundRectPath(ctx,x,y,w,h,14); ctx.fillStyle='#F4EEDF'; ctx.fill();
+  ctx.fillStyle='#5A6B82'; ctx.font='800 17px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(label,x+22,y+34);
+  ctx.fillStyle='#1B3A66'; ctx.font='700 26px ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace';
+  let v=value; while(ctx.measureText(v).width>w-44 && v.length>3){ v=v.slice(0,-2); }
+  if(v!==value) v=v.slice(0,-1)+'…';
+  ctx.fillText(v,x+22,y+70);
+}
+function wrapCenteredText(ctx,text,cx,y,maxW,lh){
+  const words=text.split(' '); let line='', lines=[];
+  for(const w of words){ const t=line?line+' '+w:w; if(ctx.measureText(t).width>maxW && line){ lines.push(line); line=w; } else line=t; }
+  if(line) lines.push(line);
+  lines.forEach((ln,i)=>ctx.fillText(ln,cx,y+i*lh));
+  return y+lines.length*lh;
+}
+async function buildIDCardBlob(){
+  if(!PART) return null;
+  try{ await document.fonts.load('800 46px Sora'); await document.fonts.load('700 26px "Plus Jakarta Sans"'); await document.fonts.ready; }catch(e){}
+  const kode=PART.kode_peserta||PART.kode||'PESERTA';
+  const nama=PART.nama||'-', negara=(PART.negara||'-').toUpperCase();
+  const totReqEl=$('#qrStatus'); const status=totReqEl?totReqEl.textContent:'—';
+  const active=$('#qrLock') ? $('#qrLock').style.display==='none' : true;
+  const tanggal=new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric'}).format(new Date());
+
+  const CW=1000, headerH=340;
+  const cv=document.createElement('canvas'); cv.width=CW;
+  /* hitung tinggi konten dulu berdasarkan layout tetap di bawah */
+  const CH=1780; cv.height=CH;
+  const ctx=cv.getContext('2d');
+  ctx.save(); roundRectPath(ctx,0,0,CW,CH,44); ctx.clip();
+  ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,CW,CH);
+
+  drawCardHeader(ctx,CW,headerH);
+  drawPerforation(ctx,CW,headerH);
+
+  let y=headerH+70;
+  ctx.fillStyle='#13314D'; ctx.font='800 18px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('B O A R D I N G   P A S S   P E S E R T A',64,y);
+  y+=54;
+  ctx.fillStyle='#101B2C'; ctx.font='800 50px Sora, sans-serif';
+  let namaShow=nama; while(ctx.measureText(namaShow).width>CW-128 && namaShow.length>3) namaShow=namaShow.slice(0,-2);
+  if(namaShow!==nama) namaShow=namaShow.slice(0,-1)+'…';
+  ctx.fillText(namaShow,64,y);
+  y+=36;
+  ctx.fillStyle='#5A6B82'; ctx.font='600 22px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('Program Penempatan Pekerja ke Luar Negeri',64,y);
+  y+=46;
+
+  const gap=24, cellW=(CW-128-gap)/2, cellH=110;
+  drawInfoCell(ctx,64,y,cellW,cellH,'KODE PESERTA',kode);
+  drawInfoCell(ctx,64+cellW+gap,y,cellW,cellH,'NEGARA TUJUAN',negara);
+  y+=cellH+gap;
+  drawInfoCell(ctx,64,y,cellW,cellH,'TANGGAL CETAK',tanggal);
+  drawInfoCell(ctx,64+cellW+gap,y,cellW,cellH,'STATUS BERKAS',status.replace('✔','').trim());
+  y+=cellH+56;
+
+  /* kotak QR besar dengan bingkai emas */
+  const qrBox=440, qrX=(CW-qrBox)/2;
+  roundRectPath(ctx,qrX,y,qrBox,qrBox,22); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.strokeStyle='rgba(19,49,77,.08)'; ctx.lineWidth=1; ctx.stroke();
+  try{
+    const qr=qrcode(0,'M'); qr.addData(img_payload_for_card(kode)); qr.make();
+    const n=qr.getModuleCount(), pad=2, inner=qrBox-48, sc=inner/(n+pad*2), off=(qrBox-(n+pad*2)*sc)/2;
+    ctx.fillStyle='#0B1F3A';
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++) if(qr.isDark(r,c)) ctx.fillRect(qrX+off+(c+pad)*sc,y+off+(r+pad)*sc,sc+0.6,sc+0.6);
+    const mid=qrX+qrBox/2, midY=y+qrBox/2, bs=sc*3.9*2.1;
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mid,midY,bs/2+9,0,Math.PI*2); ctx.fill();
+    drawJuaraMark(ctx,mid,midY,bs);
+  }catch(e){}
+  /* bingkai sudut emas */
+  ctx.strokeStyle='#BE8146'; ctx.lineWidth=5; ctx.lineCap='round';
+  const cl=34, inset=-10;
+  const corners=[[qrX+inset,y+inset,1,1],[qrX+qrBox-inset,y+inset,-1,1],[qrX+inset,y+qrBox-inset,1,-1],[qrX+qrBox-inset,y+qrBox-inset,-1,-1]];
+  corners.forEach(([cx,cy,dx,dy])=>{ ctx.beginPath(); ctx.moveTo(cx,cy+cl*dy); ctx.lineTo(cx,cy); ctx.lineTo(cx+cl*dx,cy); ctx.stroke(); });
+  if(!active){
+    ctx.fillStyle='rgba(255,255,255,.72)'; roundRectPath(ctx,qrX,y,qrBox,qrBox,22); ctx.fill();
+    ctx.fillStyle='#1B3A66'; ctx.font='800 20px "Plus Jakarta Sans", sans-serif'; ctx.textAlign='center';
+    wrapCenteredText(ctx,'🔒 Lengkapi dokumen wajib untuk mengaktifkan QR',qrX+qrBox/2,y+qrBox/2,qrBox-80,30);
+    ctx.textAlign='left';
+  }
+  y+=qrBox+38;
+  ctx.textAlign='center'; ctx.fillStyle='#BE8146'; ctx.font='800 17px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('— · PT. JUARA · RESMI · —',CW/2,y);
+  y+=50;
+
+  ctx.strokeStyle='#D9E3EF'; ctx.lineWidth=2; ctx.setLineDash([8,8]);
+  ctx.beginPath(); ctx.moveTo(64,y); ctx.lineTo(CW-64,y); ctx.stroke(); ctx.setLineDash([]);
+  y+=44;
+  ctx.fillStyle='#5A6B82'; ctx.font='500 22px "Plus Jakarta Sans", sans-serif';
+  y=wrapCenteredText(ctx,'Buka aplikasi Juara Mobile → menu "Scan QR Peserta" → arahkan kamera ke kode ini untuk melihat progres, jadwal, dan tiket keberangkatan.',CW/2,y,CW-160,34);
+  y+=46;
+  ctx.fillStyle='#9AA7B8'; ctx.font='500 18px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('Kartu dibuat otomatis via portal resmi PT. Juara — cocokkan kode sebelum digunakan.',CW/2,y);
+  ctx.textAlign='left';
+
+  ctx.restore();
+  ctx.strokeStyle='#1B3A66'; ctx.lineWidth=2; roundRectPath(ctx,1,1,CW-2,CH-2,44); ctx.stroke();
+
+  return new Promise(res=>cv.toBlob(b=>res(b),'image/png'));
+}
+function img_payload_for_card(kode){ return `${APP_DEEP_LINK}?kode=${encodeURIComponent(kode)}&src=web`; }
+
+/* Unduh kartu ID lengkap (bukan sekadar QR polos): berisi logo PT. JUARA,
+   nama & kode peserta, negara tujuan, status berkas, dan QR bingkai emas.
+   Andal di mobile: pakai Blob asli hasil canvas. iOS Safari/WebView tidak
+   mendukung atribut download untuk sumber non-lokal, jadi disediakan
+   fallback buka tab + instruksi simpan gambar. */
+async function downloadQR(){
+  if(!PART){ toast('QR belum siap','err'); return; }
+  const btn=$('#btnQRDown'); const orig=btn?btn.innerHTML:null;
+  if(btn){ btn.innerHTML='⏳ Menyiapkan kartu…'; btn.disabled=true; }
+  const kode=PART.kode_peserta||PART.kode||'PESERTA';
+  const filename='Kartu-Peserta-'+kode+'.png';
   const ua=navigator.userAgent||''; const isIOS=/iPad|iPhone|iPod/.test(ua) && !window.MSStream;
 
-  const triggerBlob=(blob)=>{
-    const url=URL.createObjectURL(blob); const a=document.createElement('a');
-    a.href=url; a.download=filename; document.body.appendChild(a); a.click();
-    document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),4000);
-    toast('QR terunduh — simpan atau tunjukkan ke petugas 📥','ok');
-  };
-  const openFallback=()=>{ window.open(img.src,'_blank');
-    toast('Tekan &amp; tahan gambar QR yang terbuka, lalu pilih "Simpan Gambar" 📥','ok'); };
+  let blob=null;
+  try{ blob=await buildIDCardBlob(); }catch(e){ console.error('buildIDCardBlob error:',e); }
 
-  if(isIOS){ openFallback(); return; }
-  if(QR_BLOB){ triggerBlob(QR_BLOB); return; }
-  fetch(img.src).then(r=>r.blob()).then(triggerBlob).catch(openFallback);
+  if(btn){ btn.innerHTML=orig; btn.disabled=false; }
+  if(!blob){ toast('Gagal membuat kartu, coba lagi','err'); return; }
+
+  if(isIOS){
+    const url=URL.createObjectURL(blob);
+    window.open(url,'_blank');
+    setTimeout(()=>URL.revokeObjectURL(url),15000);
+    toast('Tekan &amp; tahan kartu yang terbuka, lalu pilih "Simpan Gambar" 📥','ok');
+    return;
+  }
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=filename; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),4000);
+  toast('Kartu peserta terunduh — simpan atau tunjukkan ke petugas 📥','ok');
 }
 function openApp(){ if(!$('#qrLock').style.display||$('#qrLock').style.display!=='none'){toast('Lengkapi dokumen wajib dulu ya ✈','');return;}
   const kode=PART.kode_peserta||PART.kode;
