@@ -922,7 +922,10 @@ let sb=null, USER=null, PART=null, DOCLIST={}, qrShown=false;
 const memURL={};
 try{
   sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
-    auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:window.localStorage }
+    auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:window.localStorage,
+      // storageKey unik supaya sesi login app ini tidak bentrok dengan app lain yang juga
+      // di-hosting di origin github.io yang sama (localStorage dibagi per-origin, bukan per-repo).
+      storageKey:'sb-juara-auth' }
   });
 }catch(e){ console.error('Gagal inisialisasi Supabase:',e); }
 
@@ -1056,7 +1059,10 @@ function setAuthUI(loggedIn){
 }
 
 sb.auth.getSession().then(({data})=>{ if(data.session)onAuth(data.session.user); });
-sb.auth.onAuthStateChange((ev,ses)=>{ if(ses&&ses.user)onAuth(ses.user); });
+sb.auth.onAuthStateChange((ev,ses)=>{
+  if(ev==='SIGNED_OUT'){USER=null;PART=null;DOCLIST={};qrShown=false;setAuthUI(false);return;}
+  if(ses&&ses.user)onAuth(ses.user);
+});
 function onAuth(u){ USER=u; setAuthUI(true);
   if(location.hash.includes('access_token')||location.hash.startsWith('#portal')){
     history.replaceState(null,'',location.pathname+'#portal');
@@ -1084,6 +1090,14 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
   const kode='GK-'+new Date().getFullYear()+'-'+rand4(); const btn=$('#btnDaftar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Memproses…';
   const resetBtn=()=>{btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>';};
   try{
+    // Re-validasi sesi ke server tepat sebelum insert. Jangan pakai USER.id yang di-cache dari
+    // login sebelumnya — kalau ada tab lain / refresh token yang mengganti sesi di localStorage,
+    // USER.id lama bisa berbeda dari auth.uid() yang dicek RLS, dan insert akan selalu ditolak.
+    const {data:{user:freshUser},error:userErr}=await sb.auth.getUser();
+    if(userErr||!freshUser){
+      toast('Sesi login bermasalah, silakan logout lalu login ulang','err'); resetBtn(); return;
+    }
+    USER=freshUser;
     const {data:pdata,error}=await withTimeout(sb.from('participants').insert({user_id:USER.id,nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}).select('id').single(),15000,'simpan data');
     if(error){console.error('insert participants gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
     const {error:err2}=await withTimeout(sb.from('progress').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
