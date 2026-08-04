@@ -944,7 +944,12 @@ const DEST=[
 /* ================= STATE ================= */
 let sb=null, DEMO=true, USER=null, PART=null, DOCLIST={}, qrShown=false;
 const DK='juara_demo_v1', memURL={};
-try{ if(SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('GANTI-')){ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); DEMO=false; } }catch(e){ console.warn(e); }
+try{ if(SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('GANTI-')){
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+      auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:window.localStorage }
+    });
+    DEMO=false;
+  } }catch(e){ console.warn(e); }
 const demoGet=()=>{ try{return JSON.parse(localStorage.getItem(DK))||{}}catch(e){return{}} };
 const demoSet=o=>localStorage.setItem(DK,JSON.stringify(o));
 
@@ -1064,7 +1069,7 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
 function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');}
 function authBtnClick(){ if(USER){showTab('portal');} else {DEMO?openModal():loginGoogle();} }
 async function loginGoogle(){ if(DEMO){toast('Isi SUPABASE_URL & KEY terlebih dahulu untuk Google OAuth','err');openModal();return;}
-  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+'#portal'}});
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});
   if(error)toast('Gagal: '+error.message,'err'); }
 async function logout(){ if(!DEMO)await sb.auth.signOut(); localStorage.removeItem(DK); USER=null;PART=null;DOCLIST={};qrShown=false;
   setAuthUI(false); setState('#stGuest'); toast('Sampai jumpa! Kamu telah keluar. 👋'); }
@@ -1330,7 +1335,7 @@ if(DEMO){ $('#demoBadge').classList.add('on'); $('#gateNote').style.display='blo
   const d=demoGet(); if(d.user){ USER=d.user; PART=d.participant||null; DOCLIST=d.docs||{};
     setAuthUI(true); if(PART)renderDash(); else setState('#stGuest'); }
   else setState('#stGuest');
-} else { sb.auth.getSession().then(({data})=>{ if(!data.session)setState('#stGuest'); }); }
+} else { setState('#stGuest'); }
 
 function openModal(){$('#modal').classList.add('on');setTimeout(()=>$('#dNamaIn').focus(),100);}
 function closeModal(){$('#modal').classList.remove('on');}
