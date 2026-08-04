@@ -1088,7 +1088,8 @@ function onAuth(u){ USER=u; setAuthUI(true);
   if(DEMO){const d=demoGet();PART=d.participant||null;DOCLIST=d.docs||{};renderDash();} else loadParticipant(u.id); }
 
 /* ================= ONBOARDING ================= */
-async function loadParticipant(uid){ const {data}=await sb.from('participants').select('*').eq('user_id',uid).maybeSingle();
+async function loadParticipant(uid){ const {data,error}=await sb.from('participants').select('*').eq('user_id',uid).maybeSingle();
+  if(error){ console.error('loadParticipant gagal:',error); toast('Gagal memuat data peserta: '+error.message,'err'); }
   PART=data; if(PART){await Promise.all([loadDocs(),loadStage()]);renderDash();} else {$('#obNama').textContent=(USER.user_metadata?.full_name||'Calon Peserta').split(' ')[0];setState('#stForm');} }
 
 $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
