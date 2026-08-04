@@ -1063,8 +1063,13 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
 function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');}
 function authBtnClick(){ if(USER){showTab('portal');} else {loginGoogle();} }
 async function loginGoogle(){
+  // Tandai eksplisit bahwa user BARU SAJA menekan tombol login. Ini dibaca sekali oleh onAuth()
+  // setelah redirect OAuth kembali, supaya cuma login yang benar-benar baru yang dipaksa ke
+  // tab #portal — bukan event SIGNED_IN/INITIAL_SESSION lain yang juga bisa terpicu Supabase
+  // saat tab kembali fokus atau sinkron sesi antar-tab (bukan aksi login user).
+  sessionStorage.setItem('juara_fresh_login','1');
   const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});
-  if(error)toast('Gagal: '+error.message,'err'); }
+  if(error){toast('Gagal: '+error.message,'err'); sessionStorage.removeItem('juara_fresh_login');} }
 async function logout(){ await sb.auth.signOut(); USER=null;PART=null;DOCLIST={};qrShown=false;
   setAuthUI(false); setState('#stGuest'); toast('Sampai jumpa! Kamu telah keluar. 👋'); }
 
@@ -1073,10 +1078,10 @@ function setAuthUI(loggedIn){
   $('#logoutBtn').style.display=loggedIn?'inline-flex':'none';
   $('#daftarWrap').style.display=loggedIn?'none':'';
   $('#loginBtn').style.display=loggedIn?'none':'';
-  $$('.auth-only').forEach(a=>a.style.display=loggedIn?'':'none');
+  $$('.auth-only').forEach(a=>a.style.display=loggedIn?'inline-block':'none');
 }
 
-sb.auth.getSession().then(({data})=>{ if(data.session)onAuth(data.session.user,false); });
+sb.auth.getSession().then(({data})=>{ if(data.session)onAuth(data.session.user); });
 sb.auth.onAuthStateChange((ev,ses)=>{
   if(ev==='SIGNED_OUT'){USER=null;PART=null;DOCLIST={};qrShown=false;setAuthUI(false);return;}
   // TOKEN_REFRESHED terjadi otomatis tiap sekitar 1 jam (atau saat tab kembali fokus) untuk
@@ -1086,12 +1091,16 @@ sb.auth.onAuthStateChange((ev,ses)=>{
   // kartu dokumen yang sudah terverifikasi tampil balik jadi "Belum diunggah" walau data di
   // database tetap utuh. Karena user-nya tidak berubah, cukup update USER, jangan fetch ulang.
   if(ev==='TOKEN_REFRESHED'){ if(ses&&ses.user)USER=ses.user; return; }
-  // isFreshLogin true hanya untuk event SIGNED_IN, supaya restore sesi lewat getSession() di
-  // atas (dipanggil tiap kali halaman di-load ulang) tidak memaksa pindah ke tab #portal kalau
-  // user sebetulnya sedang membuka tab lain.
-  if(ses&&ses.user)onAuth(ses.user,ev==='SIGNED_IN');
+  // JANGAN pakai ev==='SIGNED_IN' sebagai penanda "baru login" — Supabase juga bisa mengirim
+  // event ini saat tab kembali fokus atau sesi disinkronkan dari tab lain, padahal user tidak
+  // sedang login. Kalau itu terjadi ketika user sedang membuka tab #destinasi/#alur/dst, halaman
+  // akan "dilempar balik" ke #portal terus-menerus. Penanda fresh-login yang akurat hanya
+  // sessionStorage 'juara_fresh_login' yang di-set di loginGoogle() persis sebelum redirect.
+  if(ses&&ses.user)onAuth(ses.user);
 });
-function onAuth(u,isFreshLogin){ USER=u; setAuthUI(true);
+function onAuth(u){ USER=u; setAuthUI(true);
+  const isFreshLogin=sessionStorage.getItem('juara_fresh_login')==='1';
+  if(isFreshLogin)sessionStorage.removeItem('juara_fresh_login');
   const curTab=location.hash.replace('#','').split('&')[0];
   if(location.hash.includes('access_token')){
     history.replaceState(null,'',location.pathname+(isFreshLogin?'#portal':(TAB_IDS.includes(curTab)?location.hash:'#home')));
