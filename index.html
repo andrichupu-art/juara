@@ -1167,21 +1167,25 @@ async function uploadDoc(k,file,card){
   if(file.size>8*1048576)return toast('File maksimal 8 MB','err');
   if(!/\.(pdf|jpe?g|png)$/i.test(file.name))return toast('Format harus PDF / JPG / PNG','err');
   const btn=card.querySelector('[data-up],[data-re]'); if(btn){btn.disabled=true;btn.innerHTML='<span class="spin" style="border-color:rgba(19,49,77,.3);border-top-color:var(--orange)"></span> Mengunggah…';}
+  const resetUpBtn=()=>{if(btn){btn.disabled=false;btn.textContent='⬆ Unggah';}};
   const def=DOCS.find(x=>x.k===k);
-  if(DEMO){ const entry={file_name:file.name,size:file.size,uploaded_at:new Date().toISOString(),status:'menunggu'};
-    if(file.size<600000&&/image/.test(file.type)){ entry.data=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file);}); }
-    DOCLIST[k]=entry; const d=demoGet();d.docs=DOCLIST;demoSet(d);
-  } else { const pid=PART.id, ext=file.name.split('.').pop();
-    const path=`peserta/${pid}/${k}_${Date.now()}.${ext}`;
-    const {error:er1}=await sb.storage.from('dokumen').upload(path,file,{upsert:true,contentType:file.type});
-    if(er1){toast('Upload gagal: '+er1.message,'err');if(btn){btn.disabled=false;btn.textContent='⬆ Unggah';}return;}
-    const {error:er2}=await sb.from('documents').upsert({participant_id:pid,jenis:k,file_name:file.name,storage_path:path,status:'menunggu',uploaded_at:new Date().toISOString()},{onConflict:'participant_id,jenis'});
-    if(er2){toast('Gagal mencatat berkas: '+er2.message,'err');return;}
-    DOCLIST[k]={file_name:file.name,size:file.size,uploaded_at:new Date().toISOString(),storage_path:path}; }
-  toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
-  const {pct,upReq,totReq}=renderDocs(); renderQR();
-  if(upReq===totReq&&!qrShown){qrShown=true;confetti();const tk=$('#qrTicket');tk.classList.add('glow');tk.scrollIntoView({behavior:'smooth',block:'center'});
-    toast('🎉 <b>Berkas lengkap!</b> QR boarding pass kamu telah aktif.','ok');} }
+  try{
+    if(DEMO){ const entry={file_name:file.name,size:file.size,uploaded_at:new Date().toISOString(),status:'menunggu'};
+      if(file.size<600000&&/image/.test(file.type)){ entry.data=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file);}); }
+      DOCLIST[k]=entry; const d=demoGet();d.docs=DOCLIST;demoSet(d);
+    } else { const pid=PART.id, ext=file.name.split('.').pop();
+      const path=`peserta/${pid}/${k}_${Date.now()}.${ext}`;
+      const {error:er1}=await sb.storage.from('dokumen').upload(path,file,{upsert:true,contentType:file.type});
+      if(er1){toast('Upload gagal: '+er1.message,'err');resetUpBtn();return;}
+      const {error:er2}=await sb.from('documents').upsert({participant_id:pid,jenis:k,file_name:file.name,storage_path:path,status:'menunggu',uploaded_at:new Date().toISOString()},{onConflict:'participant_id,jenis'});
+      if(er2){toast('Gagal mencatat berkas: '+er2.message,'err');resetUpBtn();return;}
+      DOCLIST[k]={file_name:file.name,size:file.size,uploaded_at:new Date().toISOString(),storage_path:path}; }
+    toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
+    const {pct,upReq,totReq}=renderDocs(); renderQR();
+    if(upReq===totReq&&!qrShown){qrShown=true;confetti();const tk=$('#qrTicket');tk.classList.add('glow');tk.scrollIntoView({behavior:'smooth',block:'center'});
+      toast('🎉 <b>Berkas lengkap!</b> QR boarding pass kamu telah aktif.','ok');}
+  }catch(err){ console.error('uploadDoc error:',err); toast('Ups, gagal mengunggah berkas. Coba lagi.','err'); resetUpBtn(); }
+}
 
 async function viewDoc(k){ const d=DOCLIST[k]; if(!d)return;
   if(d.data||memURL[k])return window.open(d.data||memURL[k],'_blank');
