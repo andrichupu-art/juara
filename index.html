@@ -347,10 +347,19 @@ header .btn.b-pri:hover{background:#fff;border-color:#fff}
 .tk-r{padding:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:repeating-linear-gradient(-45deg,#FBFCFE 0 12px,#F4F7FB 12px 24px);position:relative}
 .tk-r::before,.tk-r::after{content:"";position:absolute;left:-14px;width:26px;height:26px;border-radius:50%;background:var(--paper);border:1.5px solid var(--navy)}
 .tk-r::before{top:-14px;border-top:0}.tk-r::after{bottom:-14px;border-bottom:0}
-.qrbox{background:#fff;padding:12px;border-radius:14px;box-shadow:none;position:relative}
-.qrbox img{display:block;width:196px;height:196px;image-rendering:pixelated}
-.qrlock{position:absolute;inset:0;background:rgba(244,247,251,.88);backdrop-filter:blur(2px);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:800 .78rem var(--body);color:var(--navy);text-align:center;padding:14px}
+.qrframe{position:relative;padding:16px;border-radius:22px;background:linear-gradient(155deg,var(--navy) 0%,#0A2033 100%);box-shadow:0 14px 34px -14px rgba(11,31,58,.45)}
+.qrframe::before{content:"";position:absolute;inset:0;border-radius:22px;padding:1.5px;background:linear-gradient(155deg,var(--gold),transparent 40%,transparent 60%,var(--gold));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.qr-corner{position:absolute;width:20px;height:20px;border:2.5px solid var(--gold);pointer-events:none}
+.qr-corner.tl{top:6px;left:6px;border-right:0;border-bottom:0;border-top-left-radius:8px}
+.qr-corner.tr{top:6px;right:6px;border-left:0;border-bottom:0;border-top-right-radius:8px}
+.qr-corner.bl{bottom:6px;left:6px;border-right:0;border-top:0;border-bottom-left-radius:8px}
+.qr-corner.br{bottom:6px;right:6px;border-left:0;border-top:0;border-bottom-right-radius:8px}
+.qrbox{background:#fff;padding:12px;border-radius:14px;box-shadow:inset 0 0 0 1px rgba(19,49,77,.06);position:relative}
+.qrbox img{display:block;width:196px;height:196px;image-rendering:pixelated;border-radius:4px}
+.qrlock{position:absolute;inset:12px;background:rgba(244,247,251,.92);backdrop-filter:blur(2px);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:800 .78rem var(--body);color:var(--navy);text-align:center;padding:14px}
 .qrlock .lk{font-size:1.8rem}
+.qr-badge{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;font:800 .62rem var(--body);letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
+.qr-badge::before,.qr-badge::after{content:"";width:18px;height:1px;background:rgba(190,129,70,.5)}
 .tk-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 
 /* ============ ELIGIBILITAS ============ */
@@ -725,7 +734,11 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           <div class="tk-steps"><b>Cara melanjutkan:</b> ① Unduh aplikasi <b>Juara Mobile</b> di Play Store / App Store → ② Buka menu <b>“Scan QR Peserta”</b> → ③ Arahkan kamera ke QR di samping. Progres verifikasi, jadwal pelatihan, dan tiket akan muncul otomatis.</div>
         </div>
         <div class="tk-r">
-          <div class="qrbox"><img id="qrImg" alt="QR Peserta"><div class="qrlock" id="qrLock"><span class="lk">🔒</span><span id="qrLockTxt">Lengkapi dokumen wajib untuk mengaktifkan QR</span></div></div>
+          <div class="qrframe">
+            <span class="qr-corner tl"></span><span class="qr-corner tr"></span><span class="qr-corner bl"></span><span class="qr-corner br"></span>
+            <div class="qrbox"><img id="qrImg" alt="QR Peserta"><div class="qrlock" id="qrLock"><span class="lk">🔒</span><span id="qrLockTxt">Lengkapi dokumen wajib untuk mengaktifkan QR</span></div></div>
+            <div class="qr-badge">PT. Juara · Resmi</div>
+          </div>
           <div class="tk-btns">
             <button class="mini or" id="btnQRDown" onclick="downloadQR()">⬇ Unduh QR</button>
             <button class="mini" id="btnApp" onclick="openApp()">📲 Buka Aplikasi</button>
@@ -1227,23 +1240,70 @@ function renderQR(){ if(!PART)return; const kode=PART.kode_peserta||PART.kode;
   const payload=`${APP_DEEP_LINK}?kode=${encodeURIComponent(kode)}&src=web`;
   drawQR(payload,upReq===totReq); }
 
+function roundRectPath(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* Mark "U" khas PT. Juara, digambar vektor supaya tajam di segala ukuran (tanpa perlu file logo eksternal) */
+function drawJuaraMark(ctx,cx,cy,size){
+  const r=size*0.24;
+  roundRectPath(ctx,cx-size/2,cy-size/2,size,size,r);
+  ctx.fillStyle='#0E2740'; ctx.fill();
+  const grad=ctx.createLinearGradient(cx-size*0.32,cy-size*0.34,cx+size*0.32,cy+size*0.36);
+  grad.addColorStop(0,'#E8C078'); grad.addColorStop(1,'#BE8146');
+  ctx.strokeStyle=grad; ctx.lineCap='round'; ctx.lineJoin='round';
+  const cyU=cy+size*0.10, bands=3;
+  for(let i=0;i<bands;i++){
+    const rad=size*0.135+i*size*0.10;
+    ctx.lineWidth=size*0.075;
+    ctx.beginPath();
+    ctx.arc(cx,cyU,rad,Math.PI*1.02,Math.PI*1.98,false);
+    ctx.stroke();
+  }
+}
+
 function drawQR(text,active){
   try{ const qr=qrcode(0,'M'); qr.addText(text); const n=qr.getModuleCount(), sc=8, pad=2, size=(n+pad*2)*sc;
     const cv=document.createElement('canvas');cv.width=cv.height=size;const ctx=cv.getContext('2d');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);ctx.fillStyle='#0B1F3A';
     for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect((c+pad)*sc,(r+pad)*sc,sc,sc);
-    /* logo tengah */
-    const mid=size/2,bs=sc*3.4;ctx.fillStyle='#fff';ctx.fillRect(mid-bs/2-3,mid-bs/2-3,bs+6,bs+6);
-    ctx.fillStyle='#13314D';ctx.fillRect(mid-bs/2,mid-bs/2,bs,bs);
-    ctx.fillStyle='#fff';ctx.font=`800 ${bs*.42}px Sora`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('GK',mid,mid+1);
-    const img=$('#qrImg'); img.src=cv.toDataURL('image/png'); img.style.filter=active?'none':'grayscale(1) opacity(.55)';
+    /* logo tengah — mark PT. Juara */
+    const mid=size/2,bs=sc*3.9;
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(mid,mid,bs/2+5,0,Math.PI*2);ctx.fill();
+    drawJuaraMark(ctx,mid,mid,bs);
+    const img=$('#qrImg'); img.style.filter=active?'none':'grayscale(1) opacity(.55)';
     img.dataset.payload=text;
-  }catch(e){ $('#qrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(text);
+    cv.toBlob(blob=>{
+      if(!blob){ img.src=cv.toDataURL('image/png'); QR_BLOB=null; return; }
+      if(QR_BLOB_URL) URL.revokeObjectURL(QR_BLOB_URL);
+      QR_BLOB=blob; QR_BLOB_URL=URL.createObjectURL(blob); img.src=QR_BLOB_URL;
+    },'image/png');
+  }catch(e){ QR_BLOB=null;
+    $('#qrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(text);
     $('#qrImg').style.filter=active?'none':'grayscale(1) opacity(.55)'; } }
 
-function downloadQR(){ const img=$('#qrImg'); const a=document.createElement('a');
-  a.href=img.src; a.download='QR-Peserta-'+(PART.kode_peserta||PART.kode)+'.png'; a.click();
-  toast('QR terunduh — simpan atau tunjukkan ke petugas 📥','ok'); }
+let QR_BLOB=null, QR_BLOB_URL=null;
+
+/* Unduh QR yang andal di mobile: pakai Blob asli hasil canvas bila ada (jalur normal),
+   atau fetch->blob bila QR dari sumber fallback. iOS Safari/WebView tidak mendukung
+   atribut download untuk sumber non-lokal, jadi disediakan fallback buka tab + instruksi. */
+function downloadQR(){
+  const img=$('#qrImg'); if(!img.src){ toast('QR belum siap','err'); return; }
+  const kode=(PART&&(PART.kode_peserta||PART.kode))||'PESERTA';
+  const filename='QR-Peserta-'+kode+'.png';
+  const ua=navigator.userAgent||''; const isIOS=/iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+
+  const triggerBlob=(blob)=>{
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download=filename; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),4000);
+    toast('QR terunduh — simpan atau tunjukkan ke petugas 📥','ok');
+  };
+  const openFallback=()=>{ window.open(img.src,'_blank');
+    toast('Tekan &amp; tahan gambar QR yang terbuka, lalu pilih "Simpan Gambar" 📥','ok'); };
+
+  if(isIOS){ openFallback(); return; }
+  if(QR_BLOB){ triggerBlob(QR_BLOB); return; }
+  fetch(img.src).then(r=>r.blob()).then(triggerBlob).catch(openFallback);
+}
 function openApp(){ if(!$('#qrLock').style.display||$('#qrLock').style.display!=='none'){toast('Lengkapi dokumen wajib dulu ya ✈','');return;}
   const kode=PART.kode_peserta||PART.kode;
   toast('Membuka aplikasi mobile… (deep-link: <b>'+APP_DEEP_LINK+'</b>)','ok');
