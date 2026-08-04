@@ -279,8 +279,6 @@ header .btn.b-pri:hover{background:#fff;border-color:#fff}
 .gate-side::after{content:"🛂";position:absolute;font-size:9rem;right:-24px;bottom:-30px;opacity:.12;transform:rotate(-12deg)}
 .gate-side b{font:800 1.2rem var(--disp);color:var(--gold);display:block;margin-bottom:10px}
 .gate-side p{color:#b7c8de;font-size:.92rem}
-.demo-note{margin-top:16px;font:600 .76rem var(--body);color:var(--sky);background:rgba(46,155,214,.1);border:1px dashed var(--sky);padding:10px 14px;border-radius:10px}
-
 .onb{width:100%;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:44px;box-shadow:none}
 .frm{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
 .frm .full{grid-column:1/-1}
@@ -354,7 +352,6 @@ header .btn.b-pri:hover{background:#fff;border-color:#fff}
 .qrlock{position:absolute;inset:0;background:rgba(244,247,251,.88);backdrop-filter:blur(2px);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:800 .78rem var(--body);color:var(--navy);text-align:center;padding:14px}
 .qrlock .lk{font-size:1.8rem}
 .tk-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.demo-stage{margin-top:10px}
 
 /* ============ ELIGIBILITAS ============ */
 .elig{position:relative}
@@ -512,8 +509,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .modal .box{background:#fff;border-radius:20px;padding:38px;max-width:440px;width:100%;box-shadow:none;animation:fadeIn .3s ease}
 .modal h3{font:800 1.35rem var(--disp);color:var(--navy);margin-bottom:6px}
 .modal p{color:var(--mut);font-size:.9rem;margin-bottom:20px}
-.demo-badge{position:fixed;left:18px;bottom:18px;z-index:120;background:var(--sky);color:#fff;font:800 .7rem var(--body);letter-spacing:.12em;padding:9px 16px;border-radius:100px;box-shadow:none;display:none;align-items:center;gap:8px}
-.demo-badge.on{display:flex}
 @media(max-width:960px){
   .hero-g,.gate,.cek-grid,.dash-grid,.elig-box,.ticket{grid-template-columns:1fr}
   .stats .wrap{grid-template-columns:repeat(2,1fr)}
@@ -530,7 +525,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 
 <div id="cfx"></div>
 <div id="toast"></div>
-<div class="demo-badge" id="demoBadge">◉ MODE DEMO — SUPABASE BELUM DIKONFIGURASI</div>
 
 <!-- ===== NAV ===== -->
 <header id="hdr">
@@ -662,9 +656,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
               <svg class="gsvg" viewBox="0 0 24 24"><path fill="#fff" d="M21.35 11.1H12v2.9h5.35c-.25 1.4-1.6 4.1-5.35 4.1a6 6 0 1 1 0-12c1.85 0 3.1.8 3.8 1.45l2.6-2.5C16.7 4.5 14.55 3.5 12 3.5a8.5 8.5 0 1 0 0 17c4.9 0 8.15-3.45 8.15-8.3 0-.55-.05-.95-.15-1.1z" transform="translate(0 .5)"/><path fill="#fff" opacity=".01" d="M0 0h24v24H0z"/></svg>
               Lanjutkan dengan Google
             </button>
-            <button class="gbtn" onclick="openModal()">🧪 Coba Mode Demo (tanpa Google)</button>
           </div>
-          <div class="demo-note" id="gateNote" style="display:none">⚠️ Supabase belum dikonfigurasi — tombol Google berjalan setelah URL &amp; API key diisi di bagian atas file ini.</div>
         </div>
         <div class="gate-side">
           <b>“Sekali unggah, terpantau sampai terbang.”</b>
@@ -714,7 +706,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <div class="panel rv in">
           <h4>🛰️ Timeline Penempatan <span class="cnt" id="stageLbl">Tahap 1/6</span></h4>
           <div id="tlWrap"></div>
-          <button class="mini or demo-stage" id="btnStage" style="display:none" onclick="demoNextStage()">⚙️ Simulasi: majukan tahap (demo)</button>
         </div>
       </div>
 
@@ -894,22 +885,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
   <div class="wrap f-bot"><span>© 2026 PT. Juara. Seluruh hak cipta.</span><span>Dibangun dengan ❤️ untuk pekerja Indonesia · Supabase Powered</span></div>
 </footer>
 
-<!-- ===== MODAL DEMO ===== -->
-<div class="modal" id="modal">
-  <div class="box">
-    <h3>🧪 Masuk Mode Demo</h3>
-    <p>Simulasi alur tanpa Google &amp; Supabase. Data hanya tersimpan di browser ini.</p>
-    <div class="frm" style="margin-top:0;grid-template-columns:1fr">
-      <div class="fld"><label>Nama Lengkap</label><input id="dNamaIn" placeholder="cth: Budi Santoso"></div>
-      <div class="fld"><label>Email</label><input id="dEmailIn" type="email" placeholder="budi@gmail.com"></div>
-      <div style="display:flex;gap:10px;margin-top:8px">
-        <button class="btn b-pri" style="flex:1;justify-content:center" onclick="demoLogin()">Masuk Demo ✈</button>
-        <button class="btn b-ghost" onclick="closeModal()">Batal</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
 /* ================================================================
    KONFIGURASI SUPABASE — GANTI DUA BARIS INI DENGAN MILIK ANDA
@@ -943,16 +918,13 @@ const DEST=[
 ];
 
 /* ================= STATE ================= */
-let sb=null, DEMO=true, USER=null, PART=null, DOCLIST={}, qrShown=false;
-const DK='juara_demo_v1', memURL={};
-try{ if(SUPABASE_URL.includes('supabase.co') && !SUPABASE_URL.includes('GANTI-')){
-    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
-      auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:window.localStorage }
-    });
-    DEMO=false;
-  } }catch(e){ console.warn(e); }
-const demoGet=()=>{ try{return JSON.parse(localStorage.getItem(DK))||{}}catch(e){return{}} };
-const demoSet=o=>localStorage.setItem(DK,JSON.stringify(o));
+let sb=null, USER=null, PART=null, DOCLIST={}, qrShown=false;
+const memURL={};
+try{
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+    auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:window.localStorage }
+  });
+}catch(e){ console.error('Gagal inisialisasi Supabase:',e); }
 
 /* ================= UTIL ================= */
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
@@ -1068,11 +1040,11 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
 
 /* ================= AUTH ================= */
 function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');}
-function authBtnClick(){ if(USER){showTab('portal');} else {DEMO?openModal():loginGoogle();} }
-async function loginGoogle(){ if(DEMO){toast('Isi SUPABASE_URL & KEY terlebih dahulu untuk Google OAuth','err');openModal();return;}
+function authBtnClick(){ if(USER){showTab('portal');} else {loginGoogle();} }
+async function loginGoogle(){
   const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});
   if(error)toast('Gagal: '+error.message,'err'); }
-async function logout(){ if(!DEMO)await sb.auth.signOut(); localStorage.removeItem(DK); USER=null;PART=null;DOCLIST={};qrShown=false;
+async function logout(){ await sb.auth.signOut(); USER=null;PART=null;DOCLIST={};qrShown=false;
   setAuthUI(false); setState('#stGuest'); toast('Sampai jumpa! Kamu telah keluar. 👋'); }
 
 function setAuthUI(loggedIn){
@@ -1083,16 +1055,14 @@ function setAuthUI(loggedIn){
   $$('.auth-only').forEach(a=>a.style.display=loggedIn?'':'none');
 }
 
-if(!DEMO){
-  sb.auth.getSession().then(({data})=>{ if(data.session)onAuth(data.session.user); });
-  sb.auth.onAuthStateChange((ev,ses)=>{ if(ses&&ses.user)onAuth(ses.user); });
-}
+sb.auth.getSession().then(({data})=>{ if(data.session)onAuth(data.session.user); });
+sb.auth.onAuthStateChange((ev,ses)=>{ if(ses&&ses.user)onAuth(ses.user); });
 function onAuth(u){ USER=u; setAuthUI(true);
   if(location.hash.includes('access_token')||location.hash.startsWith('#portal')){
     history.replaceState(null,'',location.pathname+'#portal');
   }
   showTab('portal');
-  if(DEMO){const d=demoGet();PART=d.participant||null;DOCLIST=d.docs||{};renderDash();} else loadParticipant(u.id); }
+  loadParticipant(u.id); }
 
 /* ================= ONBOARDING ================= */
 function withTimeout(promise,ms=15000,label='permintaan'){
@@ -1114,13 +1084,11 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
   const kode='GK-'+new Date().getFullYear()+'-'+rand4(); const btn=$('#btnDaftar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Memproses…';
   const resetBtn=()=>{btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>';};
   try{
-    if(DEMO){ PART={id:'demo-'+Date.now(),nama,nik,wa,negara,posisi,kode}; const d=demoGet();d.participant=PART;demoSet(d);
-      toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); renderDash(); resetBtn(); }
-    else{ const {data:pdata,error}=await withTimeout(sb.from('participants').insert({user_id:USER.id,nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}).select('id').single(),15000,'simpan data');
-      if(error){console.error('insert participants gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
-      const {error:err2}=await withTimeout(sb.from('progress').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
-      if(err2)console.warn('progress insert gagal:',err2.message);
-      PART={nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}; await loadParticipant(USER.id); toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); resetBtn(); }
+    const {data:pdata,error}=await withTimeout(sb.from('participants').insert({user_id:USER.id,nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}).select('id').single(),15000,'simpan data');
+    if(error){console.error('insert participants gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
+    const {error:err2}=await withTimeout(sb.from('progress').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
+    if(err2)console.warn('progress insert gagal:',err2.message);
+    PART={nama,nik,telepon:wa,negara,posisi,kode_peserta:kode}; await loadParticipant(USER.id); toast('Kode peserta terbit: <b>'+kode+'</b> 🎉','ok'); resetBtn();
     confetti();
   }catch(err){ console.error(err); toast(err.message||'Terjadi kesalahan tak dikenal','err'); resetBtn(); }
 });
@@ -1131,12 +1099,10 @@ function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.
   const nama=PART.nama||'-', kode=PART.kode_peserta||PART.kode, negara=PART.negara||'-';
   $('#dAva').textContent=nama[0].toUpperCase(); $('#dNama').textContent=nama;
   $('#dMeta').textContent=`${PART.posisi||'Posisi —'} · Tujuan: ${negara} · WA ${PART.telepon||PART.wa||'-'}`;
-  $('#dKode').textContent=kode; $('#btnStage').style.display=DEMO?'inline-flex':'none';
+  $('#dKode').textContent=kode;
   renderDocs(); renderTL(getStage()); renderQR(); }
 
-function getStage(){ const req=DOCS.filter(x=>x.req), ok=req.filter(d=>DOCLIST[d.k]).length;
-  if(DEMO){const d=demoGet();return Math.max(d.stage??0, ok===req.length?1:0);}
-  return window._stage??0; }
+function getStage(){ return window._stage??0; }
 
 function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
   let upReq=0,totReq=0;
@@ -1170,16 +1136,13 @@ async function uploadDoc(k,file,card){
   const resetUpBtn=()=>{if(btn){btn.disabled=false;btn.textContent='⬆ Unggah';}};
   const def=DOCS.find(x=>x.k===k);
   try{
-    if(DEMO){ const entry={file_name:file.name,size:file.size,uploaded_at:new Date().toISOString(),status:'menunggu'};
-      if(file.size<600000&&/image/.test(file.type)){ entry.data=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file);}); }
-      DOCLIST[k]=entry; const d=demoGet();d.docs=DOCLIST;demoSet(d);
-    } else { const pid=PART.id, ext=file.name.split('.').pop();
-      const path=`peserta/${pid}/${k}_${Date.now()}.${ext}`;
-      const {error:er1}=await sb.storage.from('dokumen').upload(path,file,{upsert:true,contentType:file.type});
-      if(er1){toast('Upload gagal: '+er1.message,'err');resetUpBtn();return;}
-      const {error:er2}=await sb.from('documents').upsert({participant_id:pid,jenis:k,file_name:file.name,storage_path:path,status:'menunggu',uploaded_at:new Date().toISOString()},{onConflict:'participant_id,jenis'});
-      if(er2){toast('Gagal mencatat berkas: '+er2.message,'err');resetUpBtn();return;}
-      DOCLIST[k]={file_name:file.name,size:file.size,uploaded_at:new Date().toISOString(),storage_path:path}; }
+    const pid=PART.id, ext=file.name.split('.').pop();
+    const path=`peserta/${pid}/${k}_${Date.now()}.${ext}`;
+    const {error:er1}=await sb.storage.from('dokumen').upload(path,file,{upsert:true,contentType:file.type});
+    if(er1){toast('Upload gagal: '+er1.message,'err');resetUpBtn();return;}
+    const {error:er2}=await sb.from('documents').upsert({participant_id:pid,jenis:k,file_name:file.name,storage_path:path,status:'menunggu',uploaded_at:new Date().toISOString()},{onConflict:'participant_id,jenis'});
+    if(er2){toast('Gagal mencatat berkas: '+er2.message,'err');resetUpBtn();return;}
+    DOCLIST[k]={file_name:file.name,size:file.size,uploaded_at:new Date().toISOString(),storage_path:path};
     toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
     const {pct,upReq,totReq}=renderDocs(); renderQR();
     if(upReq===totReq&&!qrShown){qrShown=true;confetti();const tk=$('#qrTicket');tk.classList.add('glow');tk.scrollIntoView({behavior:'smooth',block:'center'});
@@ -1201,8 +1164,6 @@ function tlHTML(t){ return '<ul class="tl">'+STAGES.map((s,i)=>{
   const cls=i<t?'done':i===t?'cur':'';
   return `<li class="${cls}"><span class="nd">${i<t?'✓':i+1}</span><div><h5>${s}</h5><p>${STAGES_D[i]}</p>${i<=t?`<span class="dt">${i===t?'● SEDANG BERJALAN':'✓ selesai'}</span>`:''}</div></li>`;}).join('')+'</ul>'; }
 function renderTL(t){ $('#tlWrap').innerHTML=tlHTML(t); $('#stageLbl').textContent=`Tahap ${Math.min(t+1,6)}/6 — ${STAGES[Math.min(t,5)]}`; }
-function demoNextStage(){ const d=demoGet(); d.stage=Math.min((d.stage??0)+1,5); demoSet(d); renderTL(d.stage); renderQR();
-  toast('⚙️ (Demo) Tahap dimajukan ke: <b>'+STAGES[d.stage]+'</b>','ok'); if(d.stage===5)confetti(); }
 
 /* ================= QR TICKET ================= */
 function renderQR(){ if(!PART)return; const kode=PART.kode_peserta||PART.kode;
@@ -1214,7 +1175,7 @@ function renderQR(){ if(!PART)return; const kode=PART.kode_peserta||PART.kode;
   const lock=$('#qrLock');
   if(upReq===totReq){ lock.style.display='none'; }
   else{ lock.style.display='flex'; $('#qrLockTxt').innerHTML=`🔒 Lengkapi <b>${totReq-upReq}</b> dokumen wajib lagi<br>untuk mengaktifkan QR`; }
-  const payload=`${APP_DEEP_LINK}?kode=${encodeURIComponent(kode)}&src=web${DEMO?'&demo=1':''}`;
+  const payload=`${APP_DEEP_LINK}?kode=${encodeURIComponent(kode)}&src=web`;
   drawQR(payload,upReq===totReq); }
 
 function drawQR(text,active){
@@ -1245,10 +1206,8 @@ $('#cekForm').addEventListener('submit',async e=>{e.preventDefault();
   if(kode.length<6)return toast('Masukkan kode peserta yang valid','err');
   box.innerHTML='<div><div class="spin" style="border-color:rgba(11,31,58,.2);border-top-color:var(--navy);width:30px;height:30px;margin:0 auto"></div><p style="margin-top:12px">Melacak ke satelit… 🛰️</p></div>';
   let res=null;
-  if(DEMO){ const d=demoGet(); if(d.participant&&(d.participant.kode_peserta||d.participant.kode)===kode)
-      res={nama:d.participant.nama,negara:d.participant.negara,tahap:Math.max(d.stage??0,(Object.keys(d.docs||{}).length>=6?1:0)),updated:new Date().toISOString()}; }
-  else{ const {data}=await sb.from('participants').select('nama,negara,kode_peserta,progress(tahap,updated_at)').eq('kode_peserta',kode).maybeSingle();
-      if(data)res={nama:data.nama,negara:data.negara,tahap:data.progress?.tahap??0,updated:data.progress?.updated_at}; }
+  const {data}=await sb.from('participants').select('nama,negara,kode_peserta,progress(tahap,updated_at)').eq('kode_peserta',kode).maybeSingle();
+  if(data)res={nama:data.nama,negara:data.negara,tahap:data.progress?.tahap??0,updated:data.progress?.updated_at};
   if(!res){ box.innerHTML=`<div><div class="ph">🚫</div><b style="color:var(--navy)">Kode tidak ditemukan</b><br>Periksa kembali kode peserta kamu, atau hubungi hotline 0812 9000 1234.</div>`; return; }
   box.innerHTML=`<div style="width:100%"><div style="text-align:left;margin-bottom:18px">
       <span class="tag">DITEMUKAN ✔</span>
@@ -1347,22 +1306,7 @@ function testiUpdateArrows(){
 
 /* ================= INIT ================= */
 renderDest();
-if(DEMO){ $('#demoBadge').classList.add('on'); $('#gateNote').style.display='block';
-  const d=demoGet(); if(d.user){ USER=d.user; PART=d.participant||null; DOCLIST=d.docs||{};
-    setAuthUI(true); if(PART)renderDash(); else setState('#stGuest'); }
-  else setState('#stGuest');
-} else { setState('#stGuest'); }
-
-function openModal(){$('#modal').classList.add('on');setTimeout(()=>$('#dNamaIn').focus(),100);}
-function closeModal(){$('#modal').classList.remove('on');}
-$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
-function demoLogin(){ const n=$('#dNamaIn').value.trim(),em=$('#dEmailIn').value.trim();
-  if(!n)return toast('Nama wajib diisi','err');
-  USER={id:'demo',nama:n,email:em||'demo@juara.id'}; const d=demoGet();d.user=USER;demoSet(d);
-  closeModal(); setAuthUI(true);
-  toast('Selamat datang, <b>'+n.split(' ')[0]+'</b>! (akun demo)','ok');
-  if(PART)renderDash(); else {$('#obNama').textContent=n.split(' ')[0];$('#fNama').value=n;setState('#stForm');}
-  showTab('portal'); }
+setState('#stGuest');
 
 /* jam board hidup */
 setInterval(()=>{const el=document.querySelector('.board-f span:last-child');
