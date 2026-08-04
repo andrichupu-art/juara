@@ -1068,7 +1068,12 @@ async function loginGoogle(){
   // tab #portal — bukan event SIGNED_IN/INITIAL_SESSION lain yang juga bisa terpicu Supabase
   // saat tab kembali fokus atau sinkron sesi antar-tab (bukan aksi login user).
   sessionStorage.setItem('juara_fresh_login','1');
-  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});
+  // Jangan otomatis memakai akun Google terakhir di browser. Dengan prompt ini,
+  // pengguna dapat memilih akun lain setiap kali menekan tombol login/daftar.
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{
+    redirectTo:location.origin+location.pathname,
+    queryParams:{prompt:'select_account'}
+  }});
   if(error){toast('Gagal: '+error.message,'err'); sessionStorage.removeItem('juara_fresh_login');} }
 async function logout(){ await sb.auth.signOut(); USER=null;PART=null;DOCLIST={};qrShown=false;
   setAuthUI(false); setState('#stGuest'); toast('Sampai jumpa! Kamu telah keluar. 👋'); }
