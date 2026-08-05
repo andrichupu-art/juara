@@ -1196,13 +1196,15 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
     }
     USER=freshUser;
     if(freshUser.is_anonymous){toast('Pendaftaran baru harus menggunakan Google','err');resetBtn();return;}
-    const {data:pdata,error}=await withTimeout(sb.from('participants_v2').insert({google_user_id:USER.id,nama,nik,telepon:wa,kota}).select('id,qr_token,kode_peserta').single(),15000,'simpan data');
-    if(error){console.error('insert participants gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
-    const {error:err2}=await withTimeout(sb.from('progress_v2').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
-    if(err2)console.warn('progress insert gagal:',err2.message);
-    // Insert sudah sukses. Tampilkan dashboard langsung memakai id yang dikembalikan
-    // server; jangan bergantung pada query ulang yang bisa tertunda atau diblokir RLS.
-    PART={id:pdata.id,nama,nik,telepon:wa,kota,qr_token:pdata.qr_token,kode_peserta:pdata.kode_peserta};
+    // Pakai RPC (SECURITY DEFINER) supaya insert + return row dilakukan di server,
+    // tanpa lewat SELECT policy client-side yang sebelumnya bikin error 42501
+    // palsu (RETURNING clause ikut dicek RLS SELECT, bukan cuma INSERT).
+    const {data:pdata,error}=await withTimeout(sb.rpc('register_participant',{p_nama:nama,p_nik:nik,p_telepon:wa,p_kota:kota}),15000,'simpan data');
+    if(error){console.error('register_participant gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
+    const row=Array.isArray(pdata)?pdata[0]:pdata;
+    if(!row){toast('Gagal menyimpan: respons kosong dari server','err');resetBtn();return;}
+    // Insert (termasuk progress awal) sudah dilakukan di server lewat RPC.
+    PART={id:row.id,nama:row.nama,nik:row.nik,telepon:row.telepon,kota:row.kota,qr_token:row.qr_token,kode_peserta:row.kode_peserta};
     await Promise.all([loadDocs(),loadStage()]);
     renderDash();
     toast('QR peserta berhasil dibuat. Simpan kartu QR kamu baik-baik. 🎉','ok'); resetBtn();
