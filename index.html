@@ -634,9 +634,9 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <div class="rv">
       <div class="eyebrow">Lacak Berkas</div>
       <h2 class="sec">Sudah mendaftar?<br>Cek statusmu di sini.</h2>
-      <p class="sec-sub">Masukkan kode peserta (contoh: <b style="font-family:var(--mono)">GK-2026-7F3A</b>) yang tertera di portal atau boarding pass QR kamu.</p>
+      <p class="sec-sub">Masukkan kode peserta (contoh: <b style="font-family:var(--mono)">JR-3FA85F64</b>) yang tertera di portal atau boarding pass QR kamu.</p>
       <form class="cek-form" id="cekForm">
-        <input id="inpKode" type="text" placeholder="GK-2026-XXXX" autocomplete="off" style="text-transform:uppercase">
+        <input id="inpKode" type="text" placeholder="JR-XXXXXXXX" autocomplete="off" style="text-transform:uppercase">
         <button class="btn b-navy" type="submit">Lacak <span class="pl">🔎</span></button>
       </form>
     </div>
@@ -962,7 +962,6 @@ function toastNear(m,t,sel){const a=$(sel);const d=document.createElement('div')
 function fmtSz(b){return b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';}
 const fmtT=d=>new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(new Date(d));
 function confetti(){const c=$('#cfx'),cols=['#13314D','#BE8146','#2E9BD6','#0B1F3A','#17B26A','#fff'];for(let i=0;i<90;i++){const s=document.createElement('i');s.style.left=Math.random()*100+'%';s.style.background=cols[i%cols.length];s.style.animationDelay=(Math.random()*.5)+'s';s.style.transform=`rotate(${Math.random()*360}deg)`;c.appendChild(s);setTimeout(()=>s.remove(),3300);}}
-function rand4(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ123456789';let s='';for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
 
 /* ================= NAV / TABS ================= */
 function syncHdrH(){document.documentElement.style.setProperty('--hdr-h',$('#hdr').offsetHeight+'px');}
@@ -1185,7 +1184,7 @@ beginQrLogin();
 $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
   const nama=$('#fNama').value.trim(),nik=$('#fNik').value.trim(),wa=$('#fWa').value.trim(),kota=$('#fKota').value.trim();
   if(!/^\d{16}$/.test(nik))return toast('NIK harus 16 digit angka','err');
-  const kode='GK-'+new Date().getFullYear()+'-'+rand4(); const btn=$('#btnDaftar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Memproses…';
+  const btn=$('#btnDaftar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Memproses…';
   const resetBtn=()=>{btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>';};
   try{
     // Re-validasi sesi ke server tepat sebelum insert. Jangan pakai USER.id yang di-cache dari
@@ -1197,13 +1196,13 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
     }
     USER=freshUser;
     if(freshUser.is_anonymous){toast('Pendaftaran baru harus menggunakan Google','err');resetBtn();return;}
-    const {data:pdata,error}=await withTimeout(sb.from('participants_v2').insert({google_user_id:USER.id,nama,nik,telepon:wa,kota}).select('id,qr_token').single(),15000,'simpan data');
+    const {data:pdata,error}=await withTimeout(sb.from('participants_v2').insert({google_user_id:USER.id,nama,nik,telepon:wa,kota}).select('id,qr_token,kode_peserta').single(),15000,'simpan data');
     if(error){console.error('insert participants gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
     const {error:err2}=await withTimeout(sb.from('progress_v2').insert({participant_id:pdata.id,tahap:0}),15000,'simpan progres');
     if(err2)console.warn('progress insert gagal:',err2.message);
     // Insert sudah sukses. Tampilkan dashboard langsung memakai id yang dikembalikan
     // server; jangan bergantung pada query ulang yang bisa tertunda atau diblokir RLS.
-    PART={id:pdata.id,nama,nik,telepon:wa,kota,qr_token:pdata.qr_token};
+    PART={id:pdata.id,nama,nik,telepon:wa,kota,qr_token:pdata.qr_token,kode_peserta:pdata.kode_peserta};
     await Promise.all([loadDocs(),loadStage()]);
     renderDash();
     toast('QR peserta berhasil dibuat. Simpan kartu QR kamu baik-baik. 🎉','ok'); resetBtn();
@@ -1549,13 +1548,15 @@ $('#cekForm').addEventListener('submit',async e=>{e.preventDefault();
   if(kode.length<6)return toast('Masukkan kode peserta yang valid','err');
   box.innerHTML='<div><div class="spin" style="border-color:rgba(11,31,58,.2);border-top-color:var(--navy);width:30px;height:30px;margin:0 auto"></div><p style="margin-top:12px">Melacak ke satelit… 🛰️</p></div>';
   let res=null;
-  const {data}=await sb.from('participants').select('nama,negara,kode_peserta,progress(tahap,updated_at)').eq('kode_peserta',kode).maybeSingle();
-  if(data)res={nama:data.nama,negara:data.negara,tahap:data.progress?.tahap??0,updated:data.progress?.updated_at};
+  const {data,error}=await sb.rpc('cek_status_publik',{p_kode:kode});
+  if(error)console.error('cek_status_publik gagal:',error);
+  const row=Array.isArray(data)?data[0]:data;
+  if(row)res={nama:row.nama,kota:row.kota,tahap:row.tahap??0,updated:row.updated_at};
   if(!res){ box.innerHTML=`<div><div class="ph">🚫</div><b style="color:var(--navy)">Kode tidak ditemukan</b><br>Periksa kembali kode peserta kamu, atau hubungi hotline 0812 9000 1234.</div>`; return; }
   box.innerHTML=`<div style="width:100%"><div style="text-align:left;margin-bottom:18px">
       <span class="tag">DITEMUKAN ✔</span>
       <h3 style="font:800 1.4rem var(--disp);color:var(--navy);margin-top:10px">${res.nama}</h3>
-      <p style="font-size:.86rem;color:var(--mut)">Tujuan: <b style="color:var(--navy)">${res.negara}</b> · Kode: <b style="font-family:var(--mono)">${kode}</b> · Update: ${fmtT(res.updated||Date.now())}</p>
+      <p style="font-size:.86rem;color:var(--mut)">Kota: <b style="color:var(--navy)">${res.kota}</b> · Kode: <b style="font-family:var(--mono)">${kode}</b> · Update: ${fmtT(res.updated||Date.now())}</p>
     </div>${tlHTML(res.tahap)}</div>`; });
 
 /* ================= ELIGIBILITAS ================= */
