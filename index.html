@@ -105,10 +105,17 @@ header .btn.b-pri{background:var(--gold);border-color:var(--gold);color:#fff}
 header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-color:#fff;color:var(--navy)}
 .mnav{display:none}
 @media(max-width:1080px){
-  .nav-l{display:none}.burger{display:block}
-  .mnav{display:block;max-height:0;overflow:hidden;transition:.35s;background:#fff;border-bottom:1px solid var(--line)}
-  .mnav.open{max-height:440px;overflow-y:auto}
-  .mnav a{display:block;padding:15px 6%;font-weight:700;border-top:1px solid var(--line)}
+  .nav-l{display:none}.burger{display:none}
+  .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;top:auto;z-index:60;
+    background:#13314D;border-top:3px solid var(--gold);border-bottom:none;
+    max-height:none;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;padding:6px 10px;gap:4px}
+  .mnav::-webkit-scrollbar{display:none}
+  .mnav a{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+    padding:11px 16px;font-weight:700;font-size:.78rem;color:#fff;border-top:none;
+    white-space:nowrap;border-radius:10px}
+  .mnav a.active{background:rgba(255,255,255,.14)}
+  body{padding-bottom:60px}
 }
 @media(max-width:520px){
   #navActions{gap:6px}
