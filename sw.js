@@ -1,4 +1,5 @@
-const CACHE_NAME = 'pejuang-devisa-v1';
+const CACHE_NAME = 'pejuang-devisa-v2'; // dinaikkan dari v1 supaya cache lama (yang mungkin sudah
+                                          // terlanjur berisi respons API Supabase yang basi) ikut dibuang
 const PRECACHE = [
   './',
   './index.html',
@@ -28,6 +29,14 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
 
+  const url = new URL(req.url);
+
+  // PENTING: jangan pernah campur tangan request ke luar origin situs ini (Supabase REST,
+  // Storage, Auth, dll). Data peserta/dokumen harus selalu diambil langsung dari server,
+  // tidak boleh disajikan dari cache — kalau tidak, upload/perubahan terbaru bisa "hilang"
+  // dari tampilan karena Service Worker menyajikan respons API yang sudah basi.
+  if (url.origin !== self.location.origin) return;
+
   const isHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
 
   if (isHTML) {
@@ -44,7 +53,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // cache-first untuk aset statis (ikon, manifest, dll)
+  // cache-first HANYA untuk aset statis situs sendiri (ikon, manifest, dll)
   e.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
