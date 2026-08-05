@@ -1513,21 +1513,39 @@ function img_payload_for_card(){ return location.origin+location.pathname+'#port
    fallback buka tab + instruksi simpan gambar. */
 async function downloadQR(){
   if(!PART){ toast('QR belum siap','err'); return; }
+  const ua=navigator.userAgent||''; const isIOS=/iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  // PENTING: window.open harus dipanggil di sini, MASIH dalam gesture klik asli,
+  // sebelum ada 'await' apa pun. Kalau dipanggil setelah await (mis. setelah
+  // buildIDCardBlob selesai), Safari iOS menganggap itu bukan lagi respons
+  // langsung ke klik pengguna → popup diblokir atau (lebih parah) Safari
+  // malah menavigasi TAB UTAMA ke blob image, sehingga app ter-reload dan
+  // tampilannya "kembali ke menu/form" walau sesi login tetap tersimpan.
+  let popup=null;
+  if(isIOS){ popup=window.open('','_blank'); }
+
   const btn=$('#btnQRDown'); const orig=btn?btn.innerHTML:null;
   if(btn){ btn.innerHTML='⏳ Menyiapkan kartu…'; btn.disabled=true; }
   const kode=participantCode();
   const filename='Kartu-Peserta-'+kode+'.png';
-  const ua=navigator.userAgent||''; const isIOS=/iPad|iPhone|iPod/.test(ua) && !window.MSStream;
 
   let blob=null;
   try{ blob=await buildIDCardBlob(); }catch(e){ console.error('buildIDCardBlob error:',e); }
 
   if(btn){ btn.innerHTML=orig; btn.disabled=false; }
-  if(!blob){ toast('Gagal membuat kartu, coba lagi','err'); return; }
+  if(!blob){ toast('Gagal membuat kartu, coba lagi','err'); if(popup)popup.close(); return; }
 
   if(isIOS){
     const url=URL.createObjectURL(blob);
-    window.open(url,'_blank');
+    if(popup){
+      popup.location.href=url;
+    }else{
+      // Popup diblokir Safari (mis. pengaturan browser). Jangan navigasi tab
+      // utama sebagai fallback — itu justru penyebab bug ini. Minta user
+      // izinkan pop-up lalu coba lagi.
+      toast('Pop-up diblokir Safari. Izinkan pop-up untuk situs ini di pengaturan Safari, lalu coba unduh lagi','err');
+      URL.revokeObjectURL(url);
+      return;
+    }
     setTimeout(()=>URL.revokeObjectURL(url),15000);
     toast('Tekan &amp; tahan kartu yang terbuka, lalu pilih "Simpan Gambar" 📥','ok');
     return;
