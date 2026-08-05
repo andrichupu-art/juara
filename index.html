@@ -554,8 +554,8 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     </nav>
     <div style="display:flex;gap:10px;align-items:center" id="navActions">
       <button class="btn b-ghost sm" id="installBtn" onclick="installPWA()" style="display:none;border-color:#fff;color:#fff">⬇ Pasang App</button>
-      <a href="#portal" id="daftarWrap"><button class="btn b-pri sm">Daftar Sekarang <span class="pl">✈</span></button></a>
-      <button class="btn b-ghost sm" id="loginBtn" onclick="authBtnClick()" style="border-color:#fff;color:#fff">Login</button>
+      <button class="btn b-pri sm" id="daftarWrap" onclick="showGuestMode('register')">Daftar Sekarang <span class="pl">✈</span></button>
+      <button class="btn b-ghost sm" id="loginBtn" onclick="showGuestMode('login')" style="border-color:#fff;color:#fff">Login</button>
       <button class="btn b-pri sm" id="authBtn" onclick="authBtnClick()" style="display:none">👤 Portal Saya</button>
       <button class="btn b-ghost sm" id="logoutBtn" onclick="logout()" style="display:none;border-color:#fff;color:#fff">Keluar ⏻</button>
       <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
@@ -661,18 +661,32 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <div class="pstate" id="stGuest" style="margin-top:44px">
       <div class="gate rv">
         <div>
-          <h3>Masuk untuk memulai pendaftaran</h3>
-          <p>Sudah pernah daftar? Login cukup dengan scan/upload QR peserta yang sudah kamu unduh — tidak perlu masuk Google lagi.</p>
-          <div class="gbtns">
-            <button type="button" class="btn b-pri" id="btnQrLogin" style="width:100%;justify-content:center" onclick="$('#qrLoginFile').click()">📷 Scan / Upload QR Peserta</button>
-            <input type="file" id="qrLoginFile" accept="image/*" capture="environment" style="display:none">
-            <div style="text-align:center;margin:14px 0;color:var(--mut);font:600 .8rem var(--body)">— belum pernah daftar? —</div>
-            <button class="gbtn g" id="btnGoogle" onclick="loginGoogle()">
-              <svg class="gsvg" viewBox="0 0 24 24"><path fill="#fff" d="M21.35 11.1H12v2.9h5.35c-.25 1.4-1.6 4.1-5.35 4.1a6 6 0 1 1 0-12c1.85 0 3.1.8 3.8 1.45l2.6-2.5C16.7 4.5 14.55 3.5 12 3.5a8.5 8.5 0 1 0 0 17c4.9 0 8.15-3.45 8.15-8.3 0-.55-.05-.95-.15-1.1z" transform="translate(0 .5)"/><path fill="#fff" opacity=".01" d="M0 0h24v24H0z"/></svg>
-              Daftar dengan Google
-            </button>
+          <h3 id="guestTitle">Daftar akun peserta baru</h3>
+
+          <div id="guestRegisterPanel">
+            <p>Cukup sekali klik dengan akun Google — data kamu aman dan terenkripsi di cloud.</p>
+            <ul class="glist">
+              <li>Upload 7 dokumen wajib langsung dari HP/laptop</li>
+              <li>Notifikasi tiap perubahan status verifikasi</li>
+              <li>QR pribadi → sinkron ke aplikasi mobile Juara</li>
+              <li>Riwayat berkas tersimpan permanen &amp; bisa diunduh ulang</li>
+            </ul>
+            <div class="gbtns">
+              <button class="gbtn g" id="btnGoogle" onclick="loginGoogle()">
+                <svg class="gsvg" viewBox="0 0 24 24"><path fill="#fff" d="M21.35 11.1H12v2.9h5.35c-.25 1.4-1.6 4.1-5.35 4.1a6 6 0 1 1 0-12c1.85 0 3.1.8 3.8 1.45l2.6-2.5C16.7 4.5 14.55 3.5 12 3.5a8.5 8.5 0 1 0 0 17c4.9 0 8.15-3.45 8.15-8.3 0-.55-.05-.95-.15-1.1z" transform="translate(0 .5)"/><path fill="#fff" opacity=".01" d="M0 0h24v24H0z"/></svg>
+                Daftar dengan Google
+              </button>
+            </div>
           </div>
-          <p class="meta" id="qrLoginStatus" style="margin-top:10px"></p>
+
+          <div id="guestLoginPanel" style="display:none">
+            <p>Login cukup dengan scan/upload QR peserta yang sudah kamu unduh — tidak perlu masuk Google lagi.</p>
+            <div class="gbtns">
+              <button type="button" class="btn b-pri" id="btnQrLogin" style="width:100%;justify-content:center" onclick="$('#qrLoginFile').click()">📷 Scan / Upload QR Peserta</button>
+              <input type="file" id="qrLoginFile" accept="image/*" capture="environment" style="display:none">
+            </div>
+            <p class="meta" id="qrLoginStatus" style="margin-top:10px"></p>
+          </div>
         </div>
         <div class="gate-side">
           <b>“Sekali unggah, terpantau sampai terbang.”</b>
@@ -1066,6 +1080,15 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
 /* ================= AUTH ================= */
 function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');}
 function authBtnClick(){ showTab('portal'); }
+let guestMode='register';
+function showGuestMode(mode){
+  guestMode=(mode==='login')?'login':'register';
+  const isReg=guestMode==='register';
+  const t=$('#guestTitle'); if(t)t.textContent=isReg?'Daftar akun peserta baru':'Login peserta';
+  const rp=$('#guestRegisterPanel'); if(rp)rp.style.display=isReg?'':'none';
+  const lp=$('#guestLoginPanel'); if(lp)lp.style.display=isReg?'none':'';
+  showTab('portal');
+}
 function clearAuthState(){
   authEpoch++; loadingUserId=null; USER=null; PART=null; DOCLIST={}; qrShown=false;
   setAuthUI(false); setState('#stGuest');
