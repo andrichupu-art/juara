@@ -954,7 +954,7 @@ const DEST=[
 ];
 
 /* ================= STATE ================= */
-let sb=null, USER=null, PART=null, DOCLIST={}, qrShown=false;
+let sb=null, sbQr=null, CUR_DB=null, USER=null, PART=null, DOCLIST={}, qrShown=false;
 let authEpoch=0, loadingUserId=null, loginInProgress=false;
 let QR_LOGIN_TOKEN=(()=>{const q=(location.hash.split('?')[1]||'');return new URLSearchParams(q).get('qr');})();
 const memURL={};
@@ -963,6 +963,14 @@ try{
     // Sesi hanya berada di memori halaman. Tidak ada token yang disimpan di
     // localStorage/sessionStorage, sehingga tiap refresh memerlukan login ulang.
     auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}
+  });
+  // Client TERPISAH khusus untuk sesi anonim via QR, dengan storageKey unik sendiri.
+  // Supabase v2 tetap menyiarkan event auth antar-tab lewat BroadcastChannel berbasis
+  // storageKey (walau persistSession:false) — kalau satu storageKey dipakai bersama,
+  // login Google di tab lain bisa diam-diam menimpa sesi anonim QR di tab ini.
+  // Dengan storageKey berbeda, broadcast channel-nya juga berbeda → tidak saling ganggu.
+  sbQr=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+    auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'juara-qr-session-v2'}
   });
 }catch(e){ console.error('Gagal inisialisasi Supabase:',e); }
 
@@ -1090,7 +1098,7 @@ function showGuestMode(mode){
   showTab('portal');
 }
 function clearAuthState(){
-  authEpoch++; loadingUserId=null; USER=null; PART=null; DOCLIST={}; qrShown=false;
+  authEpoch++; loadingUserId=null; USER=null; PART=null; DOCLIST={}; qrShown=false; CUR_DB=null;
   setAuthUI(false); setState('#stGuest');
 }
 async function loginGoogle(){
@@ -1110,7 +1118,7 @@ async function loginGoogle(){
   }});
   if(error){loginInProgress=false;toast('Gagal: '+error.message,'err');} }
 async function logout(){
-  await sb.auth.signOut({scope:'local'});
+  await Promise.all([sb.auth.signOut({scope:'local'}),sbQr.auth.signOut({scope:'local'})]);
   clearAuthState();
   toast('Sampai jumpa! Kamu telah keluar. 👋');
 }
@@ -1124,16 +1132,19 @@ function setAuthUI(loggedIn){
 }
 
 sb.auth.onAuthStateChange((ev,ses)=>{
-  if(ev==='SIGNED_OUT'||!ses?.user){loginInProgress=false;clearAuthState();return;}
-  if(QR_LOGIN_TOKEN&&ses.user.is_anonymous){activateQrSession(ses.user,QR_LOGIN_TOKEN);return;}
+  if(ev==='SIGNED_OUT'||!ses?.user){loginInProgress=false;if(CUR_DB!==sbQr)clearAuthState();return;}
   if(ev==='TOKEN_REFRESHED'&&USER?.id===ses.user.id)return;
-  activateSession(ses.user);
+  CUR_DB=sb; activateSession(ses.user);
+});
+sbQr.auth.onAuthStateChange((ev,ses)=>{
+  if(ev==='SIGNED_OUT'||!ses?.user){if(CUR_DB===sbQr){loginInProgress=false;clearAuthState();}return;}
+  if(QR_LOGIN_TOKEN&&ses.user.is_anonymous){CUR_DB=sbQr; activateQrSession(ses.user,QR_LOGIN_TOKEN);}
 });
 async function activateSession(u){
   // Abaikan event ganda dari Supabase untuk akun yang sudah sedang dimuat.
   if(USER?.id===u.id&&loadingUserId===u.id)return;
   const request=++authEpoch;
-  loginInProgress=false; USER=u; PART=null; DOCLIST={}; qrShown=false; loadingUserId=u.id;
+  CUR_DB=sb; loginInProgress=false; USER=u; PART=null; DOCLIST={}; qrShown=false; loadingUserId=u.id;
   setAuthUI(true);
   const isFreshLogin=new URLSearchParams(location.search).get('fresh_login')==='1';
   const curTab=location.hash.replace('#','').split('&')[0];
@@ -1182,9 +1193,9 @@ async function loadParticipant(uid,request){
 async function activateQrSession(anonymousUser,token){
   if(loadingUserId===anonymousUser.id)return;
   const request=++authEpoch;
-  USER=anonymousUser; PART=null; DOCLIST={}; qrShown=false; loadingUserId=anonymousUser.id;
+  CUR_DB=sbQr; USER=anonymousUser; PART=null; DOCLIST={}; qrShown=false; loadingUserId=anonymousUser.id;
   setAuthUI(true); showTab('portal');
-  const {data,error}=await sb.rpc('login_with_qr_v2',{p_qr_token:token});
+  const {data,error}=await sbQr.rpc('login_with_qr_v2',{p_qr_token:token});
   if(request!==authEpoch)return;
   const participant=Array.isArray(data)?data[0]:data;
   if(error||!participant){
@@ -1198,10 +1209,10 @@ async function activateQrSession(anonymousUser,token){
 }
 async function beginQrLogin(){
   if(!QR_LOGIN_TOKEN)return;
-  const {data:{session}}=await sb.auth.getSession();
+  const {data:{session}}=await sbQr.auth.getSession();
   if(session?.user?.is_anonymous)return activateQrSession(session.user,QR_LOGIN_TOKEN);
-  await sb.auth.signOut({scope:'local'});
-  const {error}=await sb.auth.signInAnonymously();
+  await sbQr.auth.signOut({scope:'local'});
+  const {error}=await sbQr.auth.signInAnonymously();
   if(error)toast('Login QR gagal: '+error.message,'err');
 }
 beginQrLogin();
@@ -1245,9 +1256,9 @@ function decodeQrFromFile(file){
 async function loginWithQrToken(token){
   if(!token){toast('QR tidak dikenali, coba foto/upload ulang','err');return;}
   QR_LOGIN_TOKEN=token;
-  await sb.auth.signOut({scope:'local'});
+  await sbQr.auth.signOut({scope:'local'});
   clearAuthState();
-  const {error}=await sb.auth.signInAnonymously();
+  const {error}=await sbQr.auth.signInAnonymously();
   if(error)toast('Login QR gagal: '+error.message,'err');
 }
 const qrLoginFileInput=$('#qrLoginFile'), qrLoginStatus=$('#qrLoginStatus'), btnQrLogin=$('#btnQrLogin');
@@ -1352,13 +1363,14 @@ async function uploadDoc(k,file,card){
   const btn=card.querySelector('[data-up],[data-re]'); if(btn){btn.disabled=true;btn.innerHTML='<span class="spin" style="border-color:rgba(19,49,77,.3);border-top-color:var(--orange)"></span> Mengunggah…';}
   const resetUpBtn=()=>{if(btn){btn.disabled=false;btn.textContent='⬆ Unggah';}};
   const def=DOCS.find(x=>x.k===k);
+  const db=CUR_DB||sb;
   try{
     const pid=PART.id, ext=file.name.split('.').pop();
     const path=`${pid}/${k}_${Date.now()}.${ext}`;
-    const {error:er1}=await sb.storage.from('juara-v2-documents').upload(path,file,{upsert:true,contentType:file.type});
+    const {error:er1}=await db.storage.from('juara-v2-documents').upload(path,file,{upsert:true,contentType:file.type});
     if(er1){toast('Upload gagal: '+er1.message,'err');resetUpBtn();return;}
     const uploadedAt=new Date().toISOString();
-    const {error:er2}=await sb.from('documents_v2').upsert({participant_id:pid,jenis:k,file_name:file.name,size:file.size,storage_path:path,status:'menunggu',uploaded_at:uploadedAt},{onConflict:'participant_id,jenis'});
+    const {error:er2}=await db.from('documents_v2').upsert({participant_id:pid,jenis:k,file_name:file.name,size:file.size,storage_path:path,status:'menunggu',uploaded_at:uploadedAt},{onConflict:'participant_id,jenis'});
     if(er2){toast('Gagal mencatat berkas: '+er2.message,'err');resetUpBtn();return;}
     // Perbarui langsung, lalu sinkronkan semua jenis berkas dari server. Ini mencegah
     // kartu berkas sebelumnya kembali "Belum diunggah" setelah upload berikutnya.
@@ -1372,15 +1384,17 @@ async function uploadDoc(k,file,card){
 }
 
 async function viewDoc(k){ const d=DOCLIST[k]; if(!d)return;
+  const db=CUR_DB||sb;
   if(d.data||memURL[k])return window.open(d.data||memURL[k],'_blank');
-  if(d.storage_path&&sb){ const {data}=await sb.storage.from('juara-v2-documents').createSignedUrl(d.storage_path,300); if(data)return window.open(data.signedUrl,'_blank'); }
+  if(d.storage_path&&db){ const {data}=await db.storage.from('juara-v2-documents').createSignedUrl(d.storage_path,300); if(data)return window.open(data.signedUrl,'_blank'); }
   toast('Pratinjau tidak tersedia pada mode ini',''); }
 
 let _docsReqSeq=0;
 async function loadDocs(participantId=PART?.id,request=authEpoch){
   if(!participantId)return false;
+  const db=CUR_DB||sb;
   const mySeq=++_docsReqSeq; // penanda urutan, supaya respons yang telat tidak menimpa yang lebih baru
-  const {data,error}=await sb.from('documents_v2').select('*').eq('participant_id',participantId);
+  const {data,error}=await db.from('documents_v2').select('*').eq('participant_id',participantId);
   // Jangan kosongkan kartu yang sudah tampil jika jaringan atau RLS sementara gagal.
   if(error){console.error('loadDocs gagal:',error);return false;}
   // Kalau ada panggilan loadDocs() lain yang dimulai setelah ini (mis. karena reload participant
@@ -1394,7 +1408,8 @@ async function loadDocs(participantId=PART?.id,request=authEpoch){
 }
 async function loadStage(participantId=PART?.id,request=authEpoch){
   if(!participantId)return false;
-  const {data,error}=await sb.from('progress_v2').select('tahap').eq('participant_id',participantId).maybeSingle();
+  const db=CUR_DB||sb;
+  const {data,error}=await db.from('progress_v2').select('tahap').eq('participant_id',participantId).maybeSingle();
   if(error||request!==authEpoch||PART?.id!==participantId)return false;
   window._stage=data?.tahap??0;
   return true;
