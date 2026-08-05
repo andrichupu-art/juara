@@ -681,6 +681,32 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <div class="eyebrow rv">Portal Pekerja</div>
     <h2 class="sec rv">Unggah dokumenmu.<br>Dapatkan <span style="background:linear-gradient(135deg,#EDBA67,#BE8146);-webkit-background-clip:text;background-clip:text;color:transparent">QR boarding pass.</span></h2>
 
+    <!-- QR TICKET -->
+    <div class="ticket rv in" id="qrTicket">
+      <div class="tk-l">
+        <div class="tk-head"><b>PT. JUARA · MOBILE PASS</b><span style="font:800 .7rem var(--mono);color:var(--mut)" id="tkDate"></span></div>
+        <h3>Scan untuk membuka progresmu di aplikasi 📱</h3>
+        <div class="tk-rows">
+          <div><span>PESERTA</span><b id="qrNama">—</b></div>
+          <div><span>KODE</span><b id="qrKode">—</b></div>
+          <div><span>NEGARA TUJUAN</span><b id="qrNegara">—</b></div>
+          <div><span>STATUS BERKAS</span><b id="qrStatus">—</b></div>
+        </div>
+        <div class="tk-steps"><b>Cara melanjutkan:</b> ① Unduh aplikasi <b>Juara Mobile</b> di Play Store / App Store → ② Buka menu <b>“Scan QR Peserta”</b> → ③ Arahkan kamera ke QR di samping. Progres verifikasi, jadwal pelatihan, dan tiket akan muncul otomatis.</div>
+      </div>
+      <div class="tk-r">
+        <div class="qrframe">
+          <span class="qr-corner tl"></span><span class="qr-corner tr"></span><span class="qr-corner bl"></span><span class="qr-corner br"></span>
+          <div class="qrbox"><img id="qrImg" class="qrImgTarget" alt="QR Peserta"><div class="qrlock" id="qrLock"><span class="lk">🔒</span><span id="qrLockTxt">Lengkapi dokumen wajib untuk mengaktifkan QR</span></div></div>
+          <div class="qr-badge">PT. Juara · Resmi</div>
+        </div>
+        <div class="tk-btns">
+          <button class="mini or" id="btnQRDown" onclick="downloadQR()">⬇ Unduh QR</button>
+          <button class="mini" id="btnApp" onclick="openApp()">📲 Buka Aplikasi</button>
+        </div>
+      </div>
+    </div>
+
     <!-- STATE: MEMERIKSA SESI (mencegah kilasan ke halaman Daftar/Login saat baru kembali dari Google) -->
     <div class="pstate" id="stAuthLoading" style="margin-top:24px">
       <div class="gate rv" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 30px;gap:14px">
@@ -753,7 +779,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <div class="ava" id="dAva">G</div>
         <div><h3 id="dNama">—</h3><div class="meta" id="dMeta">—</div><div class="meta" id="dAccount">—</div></div>
         <div class="kode"><span>KODE PESERTA</span><b id="dKode">—</b></div>
-        <img class="kode-mark" src="loogojuara_2.svg" alt="PT. JUARA">
+        <img class="kode-mark" src="loogojuara 2.svg" alt="PT. JUARA">
       </div>
 
       <div class="dash-grid">
@@ -773,31 +799,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         </div>
       </div>
 
-      <!-- QR TICKET -->
-      <div class="ticket rv in" id="qrTicket">
-        <div class="tk-l">
-          <div class="tk-head"><b>PT. JUARA · MOBILE PASS</b><span style="font:800 .7rem var(--mono);color:var(--mut)" id="tkDate"></span></div>
-          <h3>Scan untuk membuka progresmu di aplikasi 📱</h3>
-          <div class="tk-rows">
-            <div><span>PESERTA</span><b id="qrNama">—</b></div>
-            <div><span>KODE</span><b id="qrKode">—</b></div>
-            <div><span>NEGARA TUJUAN</span><b id="qrNegara">—</b></div>
-            <div><span>STATUS BERKAS</span><b id="qrStatus">—</b></div>
-          </div>
-          <div class="tk-steps"><b>Cara melanjutkan:</b> ① Unduh aplikasi <b>Juara Mobile</b> di Play Store / App Store → ② Buka menu <b>“Scan QR Peserta”</b> → ③ Arahkan kamera ke QR di samping. Progres verifikasi, jadwal pelatihan, dan tiket akan muncul otomatis.</div>
-        </div>
-        <div class="tk-r">
-          <div class="qrframe">
-            <span class="qr-corner tl"></span><span class="qr-corner tr"></span><span class="qr-corner bl"></span><span class="qr-corner br"></span>
-            <div class="qrbox"><img id="qrImg" class="qrImgTarget" alt="QR Peserta"><div class="qrlock" id="qrLock"><span class="lk">🔒</span><span id="qrLockTxt">Lengkapi dokumen wajib untuk mengaktifkan QR</span></div></div>
-            <div class="qr-badge">PT. Juara · Resmi</div>
-          </div>
-          <div class="tk-btns">
-            <button class="mini or" id="btnQRDown" onclick="downloadQR()">⬇ Unduh QR</button>
-            <button class="mini" id="btnApp" onclick="openApp()">📲 Buka Aplikasi</button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </section>
