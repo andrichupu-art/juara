@@ -1171,20 +1171,26 @@ function withTimeout(promise,ms=15000,label='permintaan'){
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('Waktu '+label+' habis (>'+(ms/1000)+'d). Cek koneksi internet atau status project Supabase (kemungkinan project sedang paused).')),ms))
   ]);
 }
-// Muat dokumen+tahap dengan 1x percobaan ulang. loadDocs()/loadStage() menelan error
-// query secara diam-diam (return false) tanpa melempar exception, supaya kegagalan jaringan
-// sementara tidak menghapus kartu yang sudah tampil. Tapi itu artinya pemanggil HARUS
-// mengecek hasilnya — kalau tidak, race sesaat setelah login (token baru terbit, request
-// pertama kadang lebih cepat dari kesiapan sesi) bisa membuat dashboard merender DOCLIST
-// kosong yang dikira "belum ada berkas", padahal query-nya sendiri yang gagal.
-async function loadDocsAndStage(pid,request,attempt=1){
-  const [okDocs,okStage]=await Promise.all([loadDocs(pid,request),loadStage(pid,request)]);
-  if((!okDocs||!okStage)&&attempt<3&&request===authEpoch){
-    await new Promise(r=>setTimeout(r,500*attempt));
-    if(request!==authEpoch)return;
-    return loadDocsAndStage(pid,request,attempt+1);
-  }
-  if(!okDocs||!okStage){console.error('loadDocsAndStage: gagal setelah beberapa percobaan');}
+// Muat dokumen+tahap, lalu sembuhkan diri sendiri di belakang layar.
+// Catatan: loadDocs()/loadStage() bisa saja "berhasil" (tidak error) tapi hasilnya
+// belum lengkap — misalnya baris yang BARU SAJA di-upload lalu langsung logout+login
+// belum ikut terbaca di query pertama sesaat setelah sesi baru terbentuk. Karena tidak
+// ada error yang bisa dideteksi, solusinya bukan retry-saat-gagal, tapi baca ulang lagi
+// beberapa saat kemudian dan render ulang HANYA kalau jumlah dokumen memang berubah.
+async function loadDocsAndStage(pid,request){
+  await Promise.all([loadDocs(pid,request),loadStage(pid,request)]);
+  scheduleDocsSelfHeal(pid,request);
+}
+function scheduleDocsSelfHeal(pid,request,delays=[900,1800,3000]){
+  delays.forEach(delay=>{
+    setTimeout(async()=>{
+      if(request!==authEpoch||PART?.id!==pid)return; // sesi/participant sudah berganti, jangan sentuh apa pun
+      const beforeCount=Object.keys(DOCLIST).length;
+      await Promise.all([loadDocs(pid,request),loadStage(pid,request)]);
+      if(request!==authEpoch||PART?.id!==pid)return;
+      if(Object.keys(DOCLIST).length!==beforeCount)renderDash();
+    },delay);
+  });
 }
 async function loadParticipant(uid,request){
   let data,error;
