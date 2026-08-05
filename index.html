@@ -1171,6 +1171,21 @@ function withTimeout(promise,ms=15000,label='permintaan'){
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('Waktu '+label+' habis (>'+(ms/1000)+'d). Cek koneksi internet atau status project Supabase (kemungkinan project sedang paused).')),ms))
   ]);
 }
+// Muat dokumen+tahap dengan 1x percobaan ulang. loadDocs()/loadStage() menelan error
+// query secara diam-diam (return false) tanpa melempar exception, supaya kegagalan jaringan
+// sementara tidak menghapus kartu yang sudah tampil. Tapi itu artinya pemanggil HARUS
+// mengecek hasilnya — kalau tidak, race sesaat setelah login (token baru terbit, request
+// pertama kadang lebih cepat dari kesiapan sesi) bisa membuat dashboard merender DOCLIST
+// kosong yang dikira "belum ada berkas", padahal query-nya sendiri yang gagal.
+async function loadDocsAndStage(pid,request,attempt=1){
+  const [okDocs,okStage]=await Promise.all([loadDocs(pid,request),loadStage(pid,request)]);
+  if((!okDocs||!okStage)&&attempt<3&&request===authEpoch){
+    await new Promise(r=>setTimeout(r,500*attempt));
+    if(request!==authEpoch)return;
+    return loadDocsAndStage(pid,request,attempt+1);
+  }
+  if(!okDocs||!okStage){console.error('loadDocsAndStage: gagal setelah beberapa percobaan');}
+}
 async function loadParticipant(uid,request){
   let data,error;
   try{ ({data,error}=await withTimeout(sb.from('participants_v2').select('*').eq('google_user_id',uid).maybeSingle(),15000,'muat data peserta')); }
@@ -1182,7 +1197,7 @@ async function loadParticipant(uid,request){
   if(error){loadingUserId=null;console.error('loadParticipant gagal:',error);toast('Gagal memuat data peserta: '+error.message,'err');return;}
   PART=data;
   if(PART){
-    await Promise.all([loadDocs(PART.id,request),loadStage(PART.id,request)]);
+    await loadDocsAndStage(PART.id,request);
     if(request===authEpoch&&USER?.id===uid)renderDash();
   }else{
     $('#obNama').textContent=(USER.user_metadata?.full_name||'Calon Peserta').split(' ')[0];
@@ -1203,7 +1218,7 @@ async function activateQrSession(anonymousUser,token){
     toast(error?.message||'QR tidak valid atau sudah tidak berlaku','err'); return;
   }
   PART=participant;
-  await Promise.all([loadDocs(PART.id,request),loadStage(PART.id,request)]);
+  await loadDocsAndStage(PART.id,request);
   if(request===authEpoch)renderDash();
   if(request===authEpoch)loadingUserId=null;
 }
