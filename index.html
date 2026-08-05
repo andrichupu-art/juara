@@ -988,6 +988,21 @@ const DEST=[
 /* ================= STATE ================= */
 let sb=null, sbQr=null, CUR_DB=null, USER=null, PART=null, DOCLIST={}, qrShown=false;
 let authEpoch=0, loadingUserId=null, loginInProgress=false;
+// Deteksi "baru kembali dari login Google" (dipakai di beberapa tempat: tab awal,
+// pstate awal, dan penjaga di bawah supaya tidak lompat ke halaman Guest sebelum waktunya).
+function isIncomingAuthReturn(){
+  try{
+    return new URLSearchParams(location.search).get('fresh_login')==='1'
+      ||location.hash.includes('access_token')
+      ||!!new URLSearchParams(location.search).get('code');
+  }catch(e){ return false; }
+}
+let pendingAuthReturn=isIncomingAuthReturn(), pendingAuthTimer=null;
+if(pendingAuthReturn){
+  // Jaga-jaga: kalau proses tukar sesi OAuth ternyata gagal/kadaluarsa dan tidak
+  // pernah kunjung selesai, jangan macet selamanya di layar spinner.
+  pendingAuthTimer=setTimeout(()=>{ pendingAuthReturn=false; clearAuthState(); },9000);
+}
 let QR_LOGIN_TOKEN=(()=>{const q=(location.hash.split('?')[1]||'');return new URLSearchParams(q).get('qr');})();
 const memURL={};
 try{
@@ -1078,11 +1093,9 @@ $$('.rv,.stat,.board').forEach(el=>obs.observe(el));
 (function initTab(){
   const h=location.hash.replace('#','').split('&')[0];
   // Samakan dengan pengecekan di activateSession(): kalau ini baru kembali dari
-  // login Google (fresh_login / access_token di hash), langsung buka tab Portal
-  // dari awal — supaya tidak sempat kelihatan tab Beranda dulu baru pindah ke Portal.
-  const isFreshLogin=new URLSearchParams(location.search).get('fresh_login')==='1';
-  const hasAuthHash=location.hash.includes('access_token');
-  if(isFreshLogin||hasAuthHash){ showTab('portal'); return; }
+  // login Google (fresh_login / access_token / code di URL), langsung buka tab
+  // Portal dari awal — supaya tidak sempat kelihatan tab Beranda dulu baru pindah ke Portal.
+  if(isIncomingAuthReturn()){ showTab('portal'); return; }
   showTab(TAB_IDS.includes(h)?h:'home');
 })();
 function runCount(el){const t=+el.dataset.count,s=performance.now();(function f(n){const p=Math.min(1,(n-s)/1600),e=1-Math.pow(1-p,3);el.textContent=Math.round(t*e).toLocaleString('id-ID');if(p<1)requestAnimationFrame(f);})(s);}
@@ -1137,6 +1150,7 @@ function showGuestMode(mode){
 }
 function clearAuthState(){
   authEpoch++; loadingUserId=null; USER=null; PART=null; DOCLIST={}; qrShown=false; CUR_DB=null;
+  pendingAuthReturn=false; if(pendingAuthTimer){clearTimeout(pendingAuthTimer);pendingAuthTimer=null;}
   setAuthUI(false); setState('#stGuest');
 }
 async function loginGoogle(){
@@ -1170,8 +1184,20 @@ function setAuthUI(loggedIn){
 }
 
 sb.auth.onAuthStateChange((ev,ses)=>{
-  if(ev==='SIGNED_OUT'||!ses?.user){loginInProgress=false;if(CUR_DB!==sbQr)clearAuthState();return;}
+  if(ev==='SIGNED_OUT'||!ses?.user){
+    loginInProgress=false;
+    // Supabase kadang mengirim event "belum ada sesi" LEBIH DULU sebelum proses
+    // tukar kode OAuth (?code=...) selesai. Kalau kita baru saja kembali dari
+    // Google, event ini masih sementara — abaikan dulu, jangan sampai halaman
+    // sempat lompat ke Guest lalu balik lagi ke form (kelihatan 2x perpindahan).
+    // Timer cadangan di atas yang akan menampilkan halaman Guest kalau memang
+    // sesi tidak pernah berhasil terbentuk.
+    if(pendingAuthReturn)return;
+    if(CUR_DB!==sbQr)clearAuthState();
+    return;
+  }
   if(ev==='TOKEN_REFRESHED'&&USER?.id===ses.user.id)return;
+  pendingAuthReturn=false; if(pendingAuthTimer){clearTimeout(pendingAuthTimer);pendingAuthTimer=null;}
   CUR_DB=sb; activateSession(ses.user);
 });
 sbQr.auth.onAuthStateChange((ev,ses)=>{
@@ -1866,17 +1892,9 @@ function testiUpdateArrows(){
 
 /* ================= INIT ================= */
 renderDest();
-(function initialPortalState(){
-  // Deteksi kemungkinan ada sesi (baru kembali dari Google, atau sesi tersimpan) —
-  // supaya tidak sempat menampilkan halaman Daftar/Login sepersekian detik
-  // sebelum berpindah ke halaman form/dashboard yang sebenarnya.
-  let hasStoredSession=false;
-  try{ hasStoredSession=Object.keys(localStorage).some(k=>/^sb-.*-auth-token$/.test(k)); }catch(e){}
-  const incomingAuth=hasStoredSession
-    ||new URLSearchParams(location.search).get('fresh_login')==='1'
-    ||location.hash.includes('access_token');
-  setState(incomingAuth?'#stAuthLoading':'#stGuest');
-})();
+// Sesi tidak pernah disimpan di localStorage (persistSession:false), jadi cukup
+// pakai isIncomingAuthReturn() yang sama dipakai di initTab() & onAuthStateChange.
+setState(pendingAuthReturn?'#stAuthLoading':'#stGuest');
 
 /* jam board hidup */
 setInterval(()=>{const el=document.querySelector('.board-f span:last-child');
