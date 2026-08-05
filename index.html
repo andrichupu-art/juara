@@ -681,8 +681,8 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <div class="eyebrow rv">Portal Pekerja</div>
     <h2 class="sec rv">Unggah dokumenmu.<br>Dapatkan <span style="background:linear-gradient(135deg,#EDBA67,#BE8146);-webkit-background-clip:text;background-clip:text;color:transparent">QR boarding pass.</span></h2>
 
-    <!-- QR TICKET -->
-    <div class="ticket rv in" id="qrTicket">
+    <!-- QR TICKET (hanya tampil setelah login & masuk state Dashboard) -->
+    <div class="ticket rv in" id="qrTicket" style="display:none">
       <div class="tk-l">
         <div class="tk-head"><b>PT. JUARA · MOBILE PASS</b><span style="font:800 .7rem var(--mono);color:var(--mut)" id="tkDate"></span></div>
         <h3>Scan untuk membuka progresmu di aplikasi 📱</h3>
@@ -1138,7 +1138,8 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
   if(!o){f.classList.add('open');a.style.maxHeight=a.scrollHeight+'px';}});
 
 /* ================= AUTH ================= */
-function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');}
+function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');
+  const qt=document.getElementById('qrTicket'); if(qt) qt.style.display=(s==='#stDash')?'':'none';}
 function authBtnClick(){ showTab('portal'); }
 let guestMode='register';
 function showGuestMode(mode){
