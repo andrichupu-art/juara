@@ -1540,6 +1540,31 @@ function drawJuaraMark(ctx,cx,cy,size){
   }
 }
 
+/* Logo resmi PT. JUARA (file SVG asli yang diunggah user), digambar sebagai
+   image ke canvas kartu unduhan. Dimuat sekali & di-cache; kalau gagal
+   dimuat (mis. browser lama), otomatis jatuh ke mark vektor lama sebagai
+   fallback supaya kartu tetap bisa dibuat. */
+const JUARA_LOGO_SVG_B64='PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8IS0tIENyZWF0b3I6IENvcmVsRFJBVyAtLT4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiB3aWR0aD0iMTAuMjExM2NtIiBoZWlnaHQ9IjEzLjc4MDNjbSIgdmVyc2lvbj0iMS4xIiBzdHlsZT0ic2hhcGUtcmVuZGVyaW5nOmdlb21ldHJpY1ByZWNpc2lvbjsgdGV4dC1yZW5kZXJpbmc6Z2VvbWV0cmljUHJlY2lzaW9uOyBpbWFnZS1yZW5kZXJpbmc6b3B0aW1pemVRdWFsaXR5OyBmaWxsLXJ1bGU6ZXZlbm9kZDsgY2xpcC1ydWxlOmV2ZW5vZGQiDQp2aWV3Qm94PSIwIDAgMi42NTIwMSAzLjU3ODk1Ig0KIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIg0KIHhtbG5zOnhvZG09Imh0dHA6Ly93d3cuY29yZWwuY29tL2NvcmVsZHJhdy9vZG0vMjAwMyI+DQogPGRlZnM+DQogIDxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+DQogICA8IVtDREFUQVsNCiAgICAuZmlsMCB7ZmlsbDp1cmwoI2lkMCk7ZmlsbC1ydWxlOm5vbnplcm99DQogICBdXT4NCiAgPC9zdHlsZT4NCiAgPGxpbmVhckdyYWRpZW50IGlkPSJpZDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4MT0iMCIgeTE9Ii0wLjY5MDE2IiB4Mj0iMCIgeTI9IjEuODU0MDEiPg0KICAgPHN0b3Agb2Zmc2V0PSIwIiBzdHlsZT0ic3RvcC1vcGFjaXR5OjE7IHN0b3AtY29sb3I6I0VEQkE2NyIvPg0KICAgPHN0b3Agb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1vcGFjaXR5OjE7IHN0b3AtY29sb3I6I0JFODE0NiIvPg0KICA8L2xpbmVhckdyYWRpZW50Pg0KIDwvZGVmcz4NCiA8ZyBpZD0iTGF5ZXJfeDAwMjBfMSI+DQogIDxtZXRhZGF0YSBpZD0iQ29yZWxDb3JwSURfMENvcmVsLUxheWVyIi8+DQogIDxwYXRoIGNsYXNzPSJmaWwwIiBkPSJNMS45NjgzMyAxLjE0MjcybDAuMDAwMjMgMC44NjA2M2MtMC4wMDAzMSwwLjA4OTI5IC0wLjAwMDM2LDAuMTc4NTMgLTAuMDAwMTUsMC4yNjc3NiAwLjAwMDA4LDAuMDI0MTEgLTAuMDAzODgsMC4wNTg0NyAtMC4wMDk1OCwwLjA4NTc3IC0wLjAyMDgzLDAuMDk5MjMgLTAuMDY1NjksMC4xOTExNiAtMC4xMzQ1NCwwLjI3NTgzIC0wLjAyNjYxLDAuMDMyNzQgLTAuMDUwNDYsMC4wNTcwNiAtMC4wNzE1NywwLjA3MjkzIC0wLjA0ODgyLDAuMDM2NzIgLTAuMDk1ODksMC4wNzIyNCAtMC4xNDY5OSwwLjA5NDM3IC0wLjA5NTg5LDAuMDQxNTIgLTAuMjEyNTUsMC4wNjU3OSAtMC4zMTgyNSwwLjA1Mzc3IC0wLjE1ODE0LC0wLjAxNzkgLTAuMjkxNjIsLTAuMDg0MjYgLTAuNDAwNDUsLTAuMTk5MDkgLTAuMDE2NjEsLTAuMDE3NTQgLTAuMDMxMjMsLTAuMDM2MjEgLTAuMDQzODEsLTAuMDU1OTggLTAuMDE2NTEsLTAuMDI0MTEgLTAuMDM0MzksLTAuMDQ3MzggLTAuMDQ2MzgsLTAuMDcyNzggLTAuMDIxNDksLTAuMDQ1MjIgLTAuMDM3ODMsLTAuMDg3IC0wLjA0ODk3LC0wLjEyNTMyIC0wLjAxMTk3LC0wLjA0MTExIC0wLjAxODUyLC0wLjA4ODcyIC0wLjAxOTYyLC0wLjE0MjgxIC0wLjAwMTQxLC0wLjA2OTQ2IC0wLjAwMjAzLC0wLjEzODQ2IC0wLjAwMTgyLC0wLjIwNzAxbC0wLjAwMDIzIC0wLjYxMTMzYzAsLTAuMDAzMDMgMC4wMDI0OSwtMC4wMDU0NyAwLjAwNTU1LC0wLjAwNTQ3bDAuMTc1OTYgMGMwLjAwMjY0LDAgMC4wMDQ4LDAuMDAyMTMgMC4wMDQ4LDAuMDA0NzhsLTAuMDAwMDggMC40ODQxMmMtMC4wMDAzNiwwLjA4NDM2IC0wLjAwMDI4LDAuMTY4NjkgMC4wMDAyMywwLjI1MyAwLjAwMDQ2LDAuMDc0NzggMC4wMDQ4MywwLjEyOTA0IDAuMDEzMDcsMC4xNjI4MSAwLjAxNzgsMC4wNzI3IDAuMDUyOCwwLjEzNzQ0IDAuMTA1MDMsMC4xOTQyMiAwLjExODk1LDAuMTE3NjEgMC4yNjEzNCwwLjE1NzY3IDAuNDI3MjQsMC4xMjAxNiAwLjA1NjAxLC0wLjAxMjY5IDAuMTA4NDIsLTAuMDM5MDYgMC4xNTcxOSwtMC4wNzkxNyAwLjAzNDAzLC0wLjAyNzk5IDAuMDU4OTYsLTAuMDUzMDggMC4wNzQ4MywtMC4wNzUyOSAwLjA0MTA2LC0wLjA1NzQ1IDAuMDY4NTYsLTAuMTE2MiAwLjA4MjUxLC0wLjE3NjI3IDAuMDA0OTMsLTAuMDIxMjkgMC4wMDc0NSwtMC4wNDcyNSAwLjAwNzYsLTAuMDc3ODkgMC4wMDA2NCwtMC4xMDk1OCAwLjAwMSwtMC4yMTkxNSAwLjAwMTEzLC0wLjMyODczIC0wLjAwMDAzLC0wLjAwMzM5IC0wLjAwMDAzLC0wLjAwNjY1IDAsLTAuMDA5NjhsMC4wMDAzOCAtMC45MTc5OCAtMC4wMDAyMyAtMC4wNDc2MWMwLC0wLjAwMjM5IC0wLjAwMTkzLC0wLjAwNDM0IC0wLjAwNDM0LC0wLjAwNDM0bC0xLjc3MzczIDBjLTAuMDAxNzUsMCAtMC4wMDMxOCwtMC4wMDE0NiAtMC4wMDMxOCwtMC4wMDMyNmwwIC0wLjIwNDFjMCwtMC4wMDI4NSAwLjAwMjI5LC0wLjAwNTE2IDAuMDA1MTEsLTAuMDA1MTZsMS45NTkzNSAwYzAuMDAyMjYsMCAwLjAwNDExLDAuMDAxODUgMC4wMDQxMSwwLjAwNDExbC0wLjAwMDM4IDAuNDE0OTkgLTAuMDAwMDEgMC4wMDAwM3ptLTAuNTM5MzMgMC4zNzAxMmwwLjAwMDMxIC0wLjIxODQ5YzAsLTAuMDAxOSAtMC4wMDE1NCwtMC4wMDM0MiAtMC4wMDM0MiwtMC4wMDM0MmwtMS40MjA3MSAwYy0wLjAwMjcsMCAtMC4wMDQ4NSwtMC4wMDIyMSAtMC4wMDQ4NSwtMC4wMDQ5M2wwIC0wLjIwMTNjMCwtMC4wMDI5IDAuMDAyMzEsLTAuMDA1MjQgMC4wMDUxNiwtMC4wMDUyNGwxLjYwNTA0IDBjMC4wMDI4MywwIDAuMDA1MTEsMC4wMDIyOSAwLjAwNTExLDAuMDA1MDlsMC4wMDA5OCAwLjM4OTY3YzAuMDAwNTcsMC4yNDUzNyAwLjAwMDY5LDAuNDkwNzQgMC4wMDAzOCwwLjczNjA2IC0wLjAwMDA1LDAuMDM0ODIgLTAuMDA3ODMsMC4wNzAxMyAtMC4wMjMzNCwwLjEwNTkzIC0wLjAzMzA1LDAuMDc2MjQgLTAuMDg4OTMsMC4xMjYxNiAtMC4xNjc2MSwwLjE0OTc0IC0wLjExMzA3LDAuMDMzODUgLTAuMjMwOTYsLTAuMDAyMjEgLTAuMjk4MjUsLTAuMDk5NTQgLTAuMDQyMjIsLTAuMDYwOTEgLTAuMDUwMiwtMC4xMjA4NSAtMC4wNDk5NywtMC4yMDM5NSAwLjAwMDQxLC0wLjExODQ0IDAuMDAwNTQsLTAuMzQ3NzMgMC4wMDAzOCwtMC42ODc5MSAwLC0wLjAxMzg0IDAuMDAwMzQsLTAuMDI2MjQgMC4wMDEsLTAuMDM3MTggMC4wMDAxNSwtMC4wMDIxOCAwLjAwMTk4LC0wLjAwMzg4IDAuMDA0MTksLTAuMDAzODggMCwwIDAsMCAwLDBsMC4xNzM4NSAwYzAsMCAwLDAgMCwwIDAuMDAzNzUsMCAwLjAwNjc4LDAuMDAzMDMgMC4wMDY3OCwwLjAwNjc4IDAsMC4wMDAwMyAwLDAuMDAwMDUgMCwwLjAwMDA4IC0wLjAwMDYyLDAuMDY1MzUgLTAuMDAwNjQsMC4zMDExNSAtMC4wMDAwOCwwLjcwNzQgMC4wMDAwOCwwLjAzMTMzIDAuMDAyNjcsMC4wNDc0NiAwLjAwNjk4LDAuMDgzNDMgMC4wMDY5OCwwLjA1NzM0IDAuMDc2MjcsMC4wNjQwMiAwLjExOTQ2LDAuMDQzMTIgMC4wMjg5NywtMC4wMTQwNyAwLjAzNzcyLC0wLjA0NTA5IDAuMDM4LC0wLjA3NzI3IDAuMDAwODcsLTAuMjI4MDQgMC4wMDExMywtMC40NTYwNyAwLjAwMDg1LC0wLjY4NDExbC0wLjAwMDA1IC0wLjAwMDA4em0wLjcwNDE5IC0wLjA3MDM0bDAuMDAwMjMgLTAuODQ1MDVjMCwtMC4wMDI0NCAtMC4wMDE5OCwtMC4wMDQ0MiAtMC4wMDQ0MiwtMC4wMDQ0MmwtMi4xMjUwNiAwYy0wLjAwMjE4LDAgLTAuMDAzOTYsLTAuMDAxNzcgLTAuMDAzOTYsLTAuMDAzOTZsMCAtMC4yMDUzNGMwLC0wLjAwMjM5IDAuMDAxOSwtMC4wMDQzNCAwLjAwNDI2LC0wLjAwNDM0bDIuMzEyMzcgMGMwLjAwMjE4LDAgMC4wMDM5NiwwLjAwMTggMC4wMDM5NiwwLjAwNDAzbDAuMDAwMzggMS4wNDEzMiAwLjAwMDA4IDAuNTI3NjJjMC4wMDAxLDAuMTAxOCAtMC4wMDAzNiwwLjIwMjc5IC0wLjAwMTM2LDAuMzAyOTcgLTAuMDAwMjYsMC4wMjIzNyAtMC4wMDA1NCwwLjAzNjI2IC0wLjAwMDg1LDAuMDQxNjggLTAuMDAzOTYsMC4wNzQ1MiAtMC4wMjQxOSwwLjE1Mzc3IC0wLjA0Nzc2LDAuMjI5MjIgLTAuMDA5NzMsMC4wMzExMiAtMC4wMTkxOCwwLjA1NTQ5IC0wLjAyODM4LDAuMDczMDggLTAuMDE1ODksMC4wMzA2NCAtMC4wMjYyNCwwLjA2MTg5IC0wLjA0NTU2LDAuMDk0MDcgLTAuMDMyNzksMC4wNTQ4IC0wLjA2OTU5LDAuMTA3MDEgLTAuMTEwMzUsMC4xNTY1NyAtMC4wOTE3NSwwLjEwODE0IC0wLjIwMTY0LDAuMTkzMzQgLTAuMzI5NiwwLjI1NTU5IC0wLjAyMDM0LDAuMDA5ODkgLTAuMDU0NjUsMC4wMjMyMSAtMC4xMDI5OCwwLjA0MDAxIC0wLjAzODkzLDAuMDEzNDggLTAuMDc0MjksMC4wMjM1NSAtMC4xMDYwOCwwLjAzMDIgLTAuMjI5NjYsMC4wNDc5MiAtMC40NjUwNCwwLjAxNzggLTAuNjcwODgsLTAuMDk0NjggLTAuMTI4MTcsLTAuMDY4NjQgLTAuMjM0MTcsLTAuMTU4NTcgLTAuMzE4MDIsLTAuMjY5NzQgLTAuMDIyODgsLTAuMDMwNCAtMC4wNjA2OCwtMC4wODQ0OSAtMC4wODM1OSwtMC4xMzAzNSAtMC4wMzUyMSwtMC4wNzA2NSAtMC4wNTM5MywtMC4xMDU5MyAtMC4wNzExMSwtMC4xNjgwNyAtMC4wMTI1OCwtMC4wMzI2OSAtMC4wMjE0MiwtMC4wNjM1OCAtMC4wMjY1NSwtMC4wOTI2MyAtMC4wMTE4NiwtMC4wNjc5IC0wLjAxODU3LC0wLjEzNTY3IC0wLjAxODg1LC0wLjIwOTQ0IC0wLjAwMDMxLC0wLjA4ODc4IC0wLjAwMDM2LC0wLjE3NzcgLTAuMDAwMTUsLTAuMjY2NzZsMC4wMDAxNSAtMC41MDU2NGMwLC0wLjAwMjI2IDAuMDAxOCwtMC4wMDQxMSAwLjAwNDAzLC0wLjAwNDExbDAuMTc4OTQgMGMwLjAwMjQ0LDAgMC4wMDQ0MiwwLjAwMTk4IDAuMDA0NDIsMC4wMDQ0MmwwLjAwMDQ2IDAuNTg4ODRjLTAuMDAwMDUsMC4wNzQwMSAtMC4wMDAwMywwLjE0ODIgMC4wMDAwOCwwLjIyMjUyIDAuMDAwMDUsMC4wNDE1MiAwLjAwNjkxLDAuMDk2MyAwLjAyMDYyLDAuMTY0MzUgMC4wMjI1MiwwLjA2OTI2IDAuMDQwMTYsMC4xMTcwNyAwLjA1MjkzLDAuMTQzNSAwLjAwODczLDAuMDE4IDAuMDI2NDUsMC4wNDc2NiAwLjA1MzIzLDAuMDg4OTggMC4wNzg3OCwwLjEyMTM2IDAuMTk4MTcsMC4yMjM0MSAwLjMxOTcxLDAuMjgzNDMgMC4wNjE4OSwwLjAzMDUzIDAuMTM1MiwwLjA1MzM2IDAuMjE5OTIsMC4wNjg1MSAwLjEyMTk4LDAuMDE0NTMgMC4yNDc1MywwLjAwODM3IDAuMzY1NTUsLTAuMDI3NTMgMC4xMzEzMywtMC4wMzk5MyAwLjI1MDc0LC0wLjEyMDY5IDAuMzQzMjYsLTAuMjIxNDQgMC4wMjk3MSwtMC4wMzIzNiAwLjA0OTgyLC0wLjA1NjAzIDAuMDYzLC0wLjA3MTAzIDAuMDYzODksLTAuMDkxMjEgMC4xMDgyNCwtMC4xOTExMSAwLjEzMzA3LC0wLjI5OTcxIDAuMDExNCwtMC4wNDk5NSAwLjAxNzE1LC0wLjEwMDU0IDAuMDE3MjYsLTAuMTUxNzkgMC4wMDAyMSwtMC4wODk2NyAwLjAwMDM0LC0wLjE3OTcxIDAuMDAwMzgsLTAuMjcwMDVsLTAuMDAwMTUgLTAuNTE0ODMgMC4wMDAwNSAwem0wLjMyODY3IC0wLjA0OTM2bDAuMDAwMzEgLTEuMTcyMjZjMCwtMC4wMDMxMSAtMC4wMDI1MiwtMC4wMDU2MiAtMC4wMDU2MiwtMC4wMDU2MmwtMi40NTA3OCAwYy0wLjAwMzExLDAgLTAuMDA1NjIsLTAuMDAyNTIgLTAuMDA1NjIsLTAuMDA1NjJsMCAtMC4yMDU2OWMwLC0wLjAwMjE4IDAuMDAxNzcsLTAuMDAzOTYgMC4wMDM5NiwtMC4wMDM5NmwyLjY0Mjk0IDBjMC4wMDIzMSwwIDAuMDA0MTksMC4wMDE4OCAwLjAwNDE5LDAuMDA0MTlsMC4wMDAzOCAxLjM2NTk2YzAuMDAwNTcsMC40NDE1NiAwLjAwMDUxLDAuNzM0OTMgLTAuMDAwMTUsMC44ODAxIC0wLjAwMDMxLDAuMDY5MDUgLTAuMDA2NTcsMC4xNDMyNyAtMC4wMTg3NywwLjIyMjY3IC0wLjAwMTY3LDAuMDEwNjYgLTAuMDA2MTksMC4wMjk3OSAtMC4wMTM1MywwLjA1NzQyIC0wLjA1MDg1LDAuMjI5NjYgLTAuMTU0MDMsMC40MzI0NSAtMC4zMDk1MiwwLjYwODM4IC0wLjA3MjcsMC4wNzgyNyAtMC4xNTI5NSwwLjE0NzY4IC0wLjI0MDc3LDAuMjA4MjEgLTAuMDMzLDAuMDIyNzUgLTAuMDk5NTQsMC4wNjU3OSAtMC4xNDk5NywwLjA4OTQyIC0wLjA5MTY1LDAuMDQyOTQgLTAuMTY1OTQsMC4wNzI2MiAtMC4yMjI4MiwwLjA4OTA2IC0wLjMwMTM1LDAuMDg3MDUgLTAuNTk4ODgsMC4wNjc5NSAtMC44OTI1NSwtMC4wNTcyNyAtMC4yMjg4MSwtMC4wOTgwNCAtMC40MTQ1OCwtMC4yNDgyIC0wLjU1NzM2LC0wLjQ1MDQyIC0wLjA0NjI1LC0wLjA2NTUxIC0wLjA4MzEsLTAuMTI2NjggLTAuMTEwNTgsLTAuMTgzNTggLTAuMDgwOTcsLTAuMTY3NjYgLTAuMTI1NTUsLTAuMzM4NzkgLTAuMTMzNzcsLTAuNTEzMzkgLTAuMDAxNTEsLTAuMDMxNzQgLTAuMDAxNzUsLTAuMTA2NDkgLTAuMDAwNjksLTAuMjI0MjZsLTAuMDAwNzcgLTAuNjU5NDFjMCwtMC4wMDE1MSAwLjAwMTIzLC0wLjAwMjc1IDAuMDAyNzUsLTAuMDAyNzVsMC4xODMxMiAwYzAuMDAxMzksMCAwLjAwMjUyLDAuMDAxMTYgMC4wMDI1MiwwLjAwMjU5bDAuMDAwMzggMC43MDY3MWMwLjAwMDA1LDAuMDM2MzEgMC4wMDAwOCwwLjA3MjY1IDAuMDAwMDgsMC4xMDkwNiAwLjAwMDA4LDAuMDgyNTEgMC4wMDcyOSwwLjE1NDIzIDAuMDIzMTksMC4yMzExNyAwLjAwMjAzLDAuMDA5OTkgMC4wMDg1LDAuMDM1MDUgMC4wMTkzOSwwLjA3NTIyIDAuMDA4NTgsMC4wMzE2OSAwLjAxNjMzLDAuMDU2NDIgMC4wMjMyNywwLjA3NDIxIDAuMDM1ODUsMC4wOTIxNyAwLjA4MTc0LDAuMTc5NSAwLjEzNzY0LDAuMjYxOTggMC4wNTA2OSwwLjA2NzM4IDAuMDg1OCwwLjExMTE5IDAuMTA1MzQsMC4xMzE0IDAuMTMwNzYsMC4xMzU2MiAwLjI4NDAyLDAuMjM0NzEgMC40NTk3NywwLjI5NzI3IDAuMTIwNTcsMC4wMzgxOSAwLjIzNjI1LDAuMDU3OTggMC4zNDcwOSwwLjA1OTQgMC4wNjA2OCwwLjAwMDc3IDAuMTI1NzMsLTAuMDAzNyAwLjE5NTE0LC0wLjAxMzM4IDAuMDY4NDksLTAuMDA5NTMgMC4xMzE4NCwtMC4wMjQzNyAwLjE5MDAzLC0wLjA0NDQ4IDAuMTY1MDIsLTAuMDU2OTggMC4zMTA5LC0wLjE0NzM4IDAuNDM3NjYsLTAuMjcxMTggMC4wMzk1NSwtMC4wNDI0MiAwLjA4MjM2LC0wLjA4NjA4IDAuMTEyMzIsLTAuMTMyODQgMC4wMjMxMSwtMC4wMzU5OCAwLjA0ODIzLC0wLjA2NDU2IDAuMDY4ODIsLTAuMTAzMTMgMC4wMzg1MiwtMC4wNzIxOSAwLjA2Mjk5LC0wLjEyMjk1IDAuMDczMzksLTAuMTUyMjYgMC4wMjA5OCwtMC4wNTk0NyAwLjAzODM5LC0wLjEwMTk3IDAuMDUwNzIsLTAuMTU2NjUgMC4wMTc0NCwtMC4wNzc2OCAwLjAyNzE5LC0wLjE1NjM5IDAuMDI5MjgsLTAuMjM2MTJsLTAuMDAwMzggLTAuODgwMSAwIC0wLjAwMDA2eiIvPg0KIDwvZz4NCjwvc3ZnPg0K';
+let _juaraLogoImgPromise=null;
+function loadJuaraLogoImage(){
+  if(_juaraLogoImgPromise) return _juaraLogoImgPromise;
+  _juaraLogoImgPromise=new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>resolve(null);
+    img.src='data:image/svg+xml;base64,'+JUARA_LOGO_SVG_B64;
+  });
+  return _juaraLogoImgPromise;
+}
+/* Gambar logo SVG asli ke canvas, dijaga proporsinya (tinggi=maxH), rata tengah di (cx,cy).
+   Kalau gambar gagal dimuat, otomatis fallback ke mark vektor lama. */
+function drawJuaraLogoImg(ctx,img,cx,cy,maxH){
+  if(!img){ drawJuaraMark(ctx,cx,cy,maxH); return; }
+  const ratio=(img.naturalWidth||img.width)/(img.naturalHeight||img.height)||0.74;
+  const h=maxH, w=h*ratio;
+  ctx.drawImage(img,cx-w/2,cy-h/2,w,h);
+}
+
 function drawQR(text,active){
   try{ const qr=qrcode(0,'M'); qr.addData(text); qr.make(); const n=qr.getModuleCount(), sc=8, pad=2, size=(n+pad*2)*sc;
     const cv=document.createElement('canvas');cv.width=cv.height=size;const ctx=cv.getContext('2d');
@@ -1567,14 +1592,14 @@ let QR_BLOB=null, QR_BLOB_URL=null;
    Digambar terpisah dari preview QR kecil di layar (yang tetap 196x196px),
    supaya hasil unduhan berupa kartu vertikal lengkap: header navy + logo,
    nama & kode peserta, QR besar dengan bingkai emas, dan status berkas. */
-function drawCardHeader(ctx,CW,headerH){
+function drawCardHeader(ctx,CW,headerH,logoImg){
   const g=ctx.createLinearGradient(0,0,CW,headerH);
   g.addColorStop(0,'#081527'); g.addColorStop(1,'#1B3A66');
   ctx.fillStyle=g; ctx.fillRect(0,0,CW,headerH);
   /* logo di backdrop putih supaya kontras di atas navy */
-  const lcx=64+56, lcy=headerH/2-6, lsize=100;
+  const lcx=64+56, lcy=headerH/2-6;
   roundRectPath(ctx,lcx-64,lcy-64,128,128,26); ctx.fillStyle='#fff'; ctx.fill();
-  drawJuaraMark(ctx,lcx,lcy,lsize);
+  drawJuaraLogoImg(ctx,logoImg,lcx,lcy,96);
   /* wordmark */
   ctx.textBaseline='alphabetic'; ctx.textAlign='left'; ctx.fillStyle='#fff';
   ctx.font='800 46px Sora, sans-serif';
@@ -1618,21 +1643,21 @@ function wrapCenteredText(ctx,text,cx,y,maxW,lh){
 async function buildIDCardBlob(){
   if(!PART) return null;
   try{ await document.fonts.load('800 46px Sora'); await document.fonts.load('700 26px "Plus Jakarta Sans"'); await document.fonts.ready; }catch(e){}
+  const logoImg=await loadJuaraLogoImage();
   const kode=participantCode();
   const nama=PART.nama||'-', negara=(PART.kota||'-').toUpperCase();
-  const totReqEl=$('#qrStatus'); const status=totReqEl?totReqEl.textContent:'—';
   const active=$('#qrLock') ? $('#qrLock').style.display==='none' : true;
   const tanggal=new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric'}).format(new Date());
 
   const CW=1000, headerH=340;
   const cv=document.createElement('canvas'); cv.width=CW;
   /* hitung tinggi konten dulu berdasarkan layout tetap di bawah */
-  const CH=1780; cv.height=CH;
+  const CH=1700; cv.height=CH;
   const ctx=cv.getContext('2d');
   ctx.save(); roundRectPath(ctx,0,0,CW,CH,44); ctx.clip();
   ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,CW,CH);
 
-  drawCardHeader(ctx,CW,headerH);
+  drawCardHeader(ctx,CW,headerH,logoImg);
   drawPerforation(ctx,CW,headerH);
 
   let y=headerH+70;
@@ -1648,16 +1673,15 @@ async function buildIDCardBlob(){
   ctx.fillText('Program Penempatan Pekerja ke Luar Negeri',64,y);
   y+=46;
 
-  const gap=24, cellW=(CW-128-gap)/2, cellH=110;
+  /* Satu baris: KODE PESERTA · NEGARA TUJUAN · TANGGAL CETAK (kolom Status Berkas dihapus) */
+  const gap=20, cellH=110, cellW=(CW-128-gap*2)/3;
   drawInfoCell(ctx,64,y,cellW,cellH,'KODE PESERTA',kode);
   drawInfoCell(ctx,64+cellW+gap,y,cellW,cellH,'NEGARA TUJUAN',negara);
-  y+=cellH+gap;
-  drawInfoCell(ctx,64,y,cellW,cellH,'TANGGAL CETAK',tanggal);
-  drawInfoCell(ctx,64+cellW+gap,y,cellW,cellH,'STATUS BERKAS',status.replace('✔','').trim());
+  drawInfoCell(ctx,64+(cellW+gap)*2,y,cellW,cellH,'TANGGAL CETAK',tanggal);
   y+=cellH+56;
 
-  /* kotak QR besar dengan bingkai emas */
-  const qrBox=440, qrX=(CW-qrBox)/2;
+  /* kotak QR — diperbesar — dengan bingkai emas */
+  const qrBox=560, qrX=(CW-qrBox)/2;
   roundRectPath(ctx,qrX,y,qrBox,qrBox,22); ctx.fillStyle='#fff'; ctx.fill();
   ctx.strokeStyle='rgba(19,49,77,.08)'; ctx.lineWidth=1; ctx.stroke();
   try{
@@ -1667,7 +1691,7 @@ async function buildIDCardBlob(){
     for(let r=0;r<n;r++)for(let c=0;c<n;c++) if(qr.isDark(r,c)) ctx.fillRect(qrX+off+(c+pad)*sc,y+off+(r+pad)*sc,sc+0.6,sc+0.6);
     const mid=qrX+qrBox/2, midY=y+qrBox/2, bs=sc*3.9*2.1;
     ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mid,midY,bs/2+9,0,Math.PI*2); ctx.fill();
-    drawJuaraMark(ctx,mid,midY,bs);
+    drawJuaraLogoImg(ctx,logoImg,mid,midY,bs*0.82);
   }catch(e){}
   /* bingkai sudut emas */
   ctx.strokeStyle='#BE8146'; ctx.lineWidth=5; ctx.lineCap='round';
