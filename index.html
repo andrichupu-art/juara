@@ -1779,16 +1779,15 @@ async function downloadQR(){
 
 /* ===== Modal wajib unduh QR sesaat setelah pendaftaran berhasil =====
    Popup ini memaksa peserta mengunduh QR (kunci akses akun) sebelum
-   tombol "Lanjutkan ke Portal" aktif, supaya QR tidak sampai hilang/lupa. */
+   masuk ke halaman login. Begitu unduhan berhasil, modal langsung
+   tertutup otomatis dan tampilan dialihkan ke layar login (mode QR)
+   supaya peserta terbiasa masuk memakai QR, bukan Google lagi. */
 function openQrFirstDownloadModal(){
   const m=$('#qrFirstModal'); if(!m)return;
-  const cont=$('#btnQRContinueModal'); if(cont)cont.disabled=true;
   const dl=$('#btnQRDownModal'); if(dl){ dl.disabled=false; dl.innerHTML='⬇ Unduh QR Sekarang'; }
   m.classList.add('on');
 }
 function closeQrFirstDownloadModal(){
-  const cont=$('#btnQRContinueModal');
-  if(cont&&cont.disabled){ toast('Unduh QR kamu dulu sebelum lanjut ke portal','err'); return; }
   const m=$('#qrFirstModal'); if(m)m.classList.remove('on');
 }
 async function handleFirstQrDownload(){
@@ -1798,9 +1797,13 @@ async function handleFirstQrDownload(){
   try{ ok=await downloadQR(); }catch(e){ console.error('handleFirstQrDownload error:',e); }
   if(btn){ btn.disabled=false; btn.innerHTML=orig; }
   if(ok){
-    const cont=$('#btnQRContinueModal');
-    if(cont){ cont.disabled=false; cont.innerHTML='Lanjutkan ke Portal ✈'; }
-    toast('QR berhasil diunduh. Sekarang kamu bisa lanjut ke portal 🎉','ok');
+    closeQrFirstDownloadModal();
+    // Keluar dari sesi Google saat ini supaya peserta langsung diarahkan
+    // ke layar login dan masuk lagi memakai QR yang baru diunduh.
+    try{ await Promise.all([sb.auth.signOut({scope:'local'}),sbQr.auth.signOut({scope:'local'})]); }catch(e){}
+    clearAuthState();
+    showGuestMode('login');
+    toast('QR berhasil diunduh. Silakan login memakai QR peserta kamu 🎉','ok');
   }
 }
 function openApp(){
@@ -1981,11 +1984,9 @@ window.addEventListener('appinstalled',()=>{
       <div class="qrbox"><img class="qrImgTarget" id="qrImgModal" alt="QR Peserta"></div>
     </div>
     <p style="text-align:left;background:#FFF6E9;border:1px solid #F3D9A6;border-radius:12px;padding:12px 14px;color:var(--navy);font-size:.85rem;line-height:1.5">
-      ⚠️ <b>Simpan QR ini baik-baik.</b> QR ini adalah kunci akses masuk ke akun privasi kamu — jangan bagikan ke siapa pun. Unduh dulu sebelum melanjutkan ke portal.
+      ⚠️ <b>Simpan QR ini baik-baik.</b> QR ini adalah kunci akses masuk ke akun privasi kamu — jangan bagikan ke siapa pun. Setelah diunduh, kamu akan otomatis diarahkan ke halaman login untuk masuk memakai QR tersebut.
     </p>
     <button type="button" class="btn b-pri" id="btnQRDownModal" style="width:100%;justify-content:center;margin-top:6px" onclick="handleFirstQrDownload()">⬇ Unduh QR Sekarang</button>
-    <button type="button" class="btn b-ghost sm" id="btnQRContinueModal" style="width:100%;justify-content:center;margin-top:10px" disabled onclick="closeQrFirstDownloadModal()">Lanjutkan ke Portal ✈</button>
-    <p style="font-size:.72rem;color:var(--mut);margin-top:8px;margin-bottom:0">Tombol lanjut aktif setelah QR berhasil diunduh</p>
   </div>
 </div>
 
