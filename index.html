@@ -681,15 +681,23 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <div class="eyebrow rv">Portal Pekerja</div>
     <h2 class="sec rv">Unggah dokumenmu.<br>Dapatkan <span style="background:linear-gradient(135deg,#EDBA67,#BE8146);-webkit-background-clip:text;background-clip:text;color:transparent">QR boarding pass.</span></h2>
 
+    <!-- STATE: MEMERIKSA SESI (mencegah kilasan ke halaman Daftar/Login saat baru kembali dari Google) -->
+    <div class="pstate" id="stAuthLoading" style="margin-top:24px">
+      <div class="gate rv" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 30px;gap:14px">
+        <div style="width:38px;height:38px;border:3px solid rgba(19,49,77,.15);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite"></div>
+        <p style="color:var(--mut);font-weight:600">Memeriksa sesi akunmu...</p>
+      </div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
     <!-- STATE: GUEST -->
-    <div class="pstate" id="stGuest" style="margin-top:44px">
+    <div class="pstate" id="stGuest" style="margin-top:24px">
       <div class="gate rv">
         <div>
           <h3 id="guestTitle">Daftar akun peserta baru</h3>
 
           <div id="guestRegisterPanel">
-            <p>Cukup sekali klik dengan akun Google — data kamu aman dan terenkripsi di cloud.</p>
-            <ul class="glist">
+            <ul class="glist" style="margin-top:2px">
               <li>Upload 7 dokumen wajib langsung dari HP/laptop</li>
               <li>Notifikasi tiap perubahan status verifikasi</li>
               <li>QR pribadi → sinkron ke aplikasi mobile Juara</li>
@@ -1069,6 +1077,12 @@ $$('.rv,.stat,.board').forEach(el=>obs.observe(el));
 
 (function initTab(){
   const h=location.hash.replace('#','').split('&')[0];
+  // Samakan dengan pengecekan di activateSession(): kalau ini baru kembali dari
+  // login Google (fresh_login / access_token di hash), langsung buka tab Portal
+  // dari awal — supaya tidak sempat kelihatan tab Beranda dulu baru pindah ke Portal.
+  const isFreshLogin=new URLSearchParams(location.search).get('fresh_login')==='1';
+  const hasAuthHash=location.hash.includes('access_token');
+  if(isFreshLogin||hasAuthHash){ showTab('portal'); return; }
   showTab(TAB_IDS.includes(h)?h:'home');
 })();
 function runCount(el){const t=+el.dataset.count,s=performance.now();(function f(n){const p=Math.min(1,(n-s)/1600),e=1-Math.pow(1-p,3);el.textContent=Math.round(t*e).toLocaleString('id-ID');if(p<1)requestAnimationFrame(f);})(s);}
@@ -1852,7 +1866,17 @@ function testiUpdateArrows(){
 
 /* ================= INIT ================= */
 renderDest();
-setState('#stGuest');
+(function initialPortalState(){
+  // Deteksi kemungkinan ada sesi (baru kembali dari Google, atau sesi tersimpan) —
+  // supaya tidak sempat menampilkan halaman Daftar/Login sepersekian detik
+  // sebelum berpindah ke halaman form/dashboard yang sebenarnya.
+  let hasStoredSession=false;
+  try{ hasStoredSession=Object.keys(localStorage).some(k=>/^sb-.*-auth-token$/.test(k)); }catch(e){}
+  const incomingAuth=hasStoredSession
+    ||new URLSearchParams(location.search).get('fresh_login')==='1'
+    ||location.hash.includes('access_token');
+  setState(incomingAuth?'#stAuthLoading':'#stGuest');
+})();
 
 /* jam board hidup */
 setInterval(()=>{const el=document.querySelector('.board-f span:last-child');
