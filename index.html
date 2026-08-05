@@ -757,7 +757,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <div class="tk-r">
           <div class="qrframe">
             <span class="qr-corner tl"></span><span class="qr-corner tr"></span><span class="qr-corner bl"></span><span class="qr-corner br"></span>
-            <div class="qrbox"><img id="qrImg" alt="QR Peserta"><div class="qrlock" id="qrLock"><span class="lk">🔒</span><span id="qrLockTxt">Lengkapi dokumen wajib untuk mengaktifkan QR</span></div></div>
+            <div class="qrbox"><img id="qrImg" class="qrImgTarget" alt="QR Peserta"><div class="qrlock" id="qrLock"><span class="lk">🔒</span><span id="qrLockTxt">Lengkapi dokumen wajib untuk mengaktifkan QR</span></div></div>
             <div class="qr-badge">PT. Juara · Resmi</div>
           </div>
           <div class="tk-btns">
@@ -1299,8 +1299,9 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
     PART={id:row.id,nama:row.nama,nik:row.nik,telepon:row.telepon,kota:row.kota,qr_token:row.qr_token,kode_peserta:row.kode_peserta};
     await Promise.all([loadDocs(),loadStage()]);
     renderDash();
-    toast('QR peserta berhasil dibuat. Simpan kartu QR kamu baik-baik. 🎉','ok'); resetBtn();
+    resetBtn();
     confetti();
+    openQrFirstDownloadModal();
   }catch(err){ console.error(err); toast(err.message||'Terjadi kesalahan tak dikenal','err'); resetBtn(); }
 });
 
@@ -1446,16 +1447,17 @@ function drawQR(text,active){
     const mid=size/2,bs=sc*3.9;
     ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(mid,mid,bs/2+5,0,Math.PI*2);ctx.fill();
     drawJuaraMark(ctx,mid,mid,bs);
-    const img=$('#qrImg'); img.style.filter=active?'none':'grayscale(1) opacity(.55)';
-    img.dataset.payload=text;
+    const imgs=$$('.qrImgTarget');
+    imgs.forEach(img=>{ img.style.filter=active?'none':'grayscale(1) opacity(.55)'; img.dataset.payload=text; });
     cv.toBlob(blob=>{
-      if(!blob){ img.src=cv.toDataURL('image/png'); QR_BLOB=null; return; }
+      if(!blob){ const url=cv.toDataURL('image/png'); imgs.forEach(img=>img.src=url); QR_BLOB=null; return; }
       if(QR_BLOB_URL) URL.revokeObjectURL(QR_BLOB_URL);
-      QR_BLOB=blob; QR_BLOB_URL=URL.createObjectURL(blob); img.src=QR_BLOB_URL;
+      QR_BLOB=blob; QR_BLOB_URL=URL.createObjectURL(blob);
+      imgs.forEach(img=>img.src=QR_BLOB_URL);
     },'image/png');
   }catch(e){ QR_BLOB=null;
-    $('#qrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(text);
-    $('#qrImg').style.filter=active?'none':'grayscale(1) opacity(.55)'; } }
+    const fallback='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(text);
+    $$('.qrImgTarget').forEach(img=>{ img.src=fallback; img.style.filter=active?'none':'grayscale(1) opacity(.55)'; }); } }
 
 let QR_BLOB=null, QR_BLOB_URL=null;
 
@@ -1604,7 +1606,7 @@ function img_payload_for_card(){ return location.origin+location.pathname+'#port
    mendukung atribut download untuk sumber non-lokal, jadi disediakan
    fallback buka tab + instruksi simpan gambar. */
 async function downloadQR(){
-  if(!PART){ toast('QR belum siap','err'); return; }
+  if(!PART){ toast('QR belum siap','err'); return false; }
   const ua=navigator.userAgent||''; const isIOS=/iPad|iPhone|iPod/.test(ua) && !window.MSStream;
   // PENTING: window.open harus dipanggil di sini, MASIH dalam gesture klik asli,
   // sebelum ada 'await' apa pun. Kalau dipanggil setelah await (mis. setelah
@@ -1624,7 +1626,7 @@ async function downloadQR(){
   try{ blob=await buildIDCardBlob(); }catch(e){ console.error('buildIDCardBlob error:',e); }
 
   if(btn){ btn.innerHTML=orig; btn.disabled=false; }
-  if(!blob){ toast('Gagal membuat kartu, coba lagi','err'); if(popup)popup.close(); return; }
+  if(!blob){ toast('Gagal membuat kartu, coba lagi','err'); if(popup)popup.close(); return false; }
 
   if(isIOS){
     const url=URL.createObjectURL(blob);
@@ -1636,16 +1638,44 @@ async function downloadQR(){
       // izinkan pop-up lalu coba lagi.
       toast('Pop-up diblokir Safari. Izinkan pop-up untuk situs ini di pengaturan Safari, lalu coba unduh lagi','err');
       URL.revokeObjectURL(url);
-      return;
+      return false;
     }
     setTimeout(()=>URL.revokeObjectURL(url),15000);
     toast('Tekan &amp; tahan kartu yang terbuka, lalu pilih "Simpan Gambar" 📥','ok');
-    return;
+    return true;
   }
   const url=URL.createObjectURL(blob); const a=document.createElement('a');
   a.href=url; a.download=filename; document.body.appendChild(a); a.click();
   document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),4000);
   toast('Kartu peserta terunduh — simpan atau tunjukkan ke petugas 📥','ok');
+  return true;
+}
+
+/* ===== Modal wajib unduh QR sesaat setelah pendaftaran berhasil =====
+   Popup ini memaksa peserta mengunduh QR (kunci akses akun) sebelum
+   tombol "Lanjutkan ke Portal" aktif, supaya QR tidak sampai hilang/lupa. */
+function openQrFirstDownloadModal(){
+  const m=$('#qrFirstModal'); if(!m)return;
+  const cont=$('#btnQRContinueModal'); if(cont)cont.disabled=true;
+  const dl=$('#btnQRDownModal'); if(dl){ dl.disabled=false; dl.innerHTML='⬇ Unduh QR Sekarang'; }
+  m.classList.add('on');
+}
+function closeQrFirstDownloadModal(){
+  const cont=$('#btnQRContinueModal');
+  if(cont&&cont.disabled){ toast('Unduh QR kamu dulu sebelum lanjut ke portal','err'); return; }
+  const m=$('#qrFirstModal'); if(m)m.classList.remove('on');
+}
+async function handleFirstQrDownload(){
+  const btn=$('#btnQRDownModal'); const orig=btn?btn.innerHTML:null;
+  if(btn){ btn.disabled=true; btn.innerHTML='⏳ Menyiapkan…'; }
+  let ok=false;
+  try{ ok=await downloadQR(); }catch(e){ console.error('handleFirstQrDownload error:',e); }
+  if(btn){ btn.disabled=false; btn.innerHTML=orig; }
+  if(ok){
+    const cont=$('#btnQRContinueModal');
+    if(cont){ cont.disabled=false; cont.innerHTML='Lanjutkan ke Portal ✈'; }
+    toast('QR berhasil diunduh. Sekarang kamu bisa lanjut ke portal 🎉','ok');
+  }
 }
 function openApp(){
   if(!PART?.qr_token)return toast('QR belum siap','err');
@@ -1813,5 +1843,23 @@ window.addEventListener('appinstalled',()=>{
   toast('Terpasang! Buka lagi dari layar utama ya 🚀','ok');
 });
 </script>
+<!-- MODAL WAJIB UNDUH QR SETELAH DAFTAR -->
+<div class="modal" id="qrFirstModal">
+  <div class="box" style="max-width:380px;text-align:center">
+    <div style="font-size:2.4rem;line-height:1;margin-bottom:6px">🔑</div>
+    <h3>Kode QR Kamu Sudah Dibuat!</h3>
+    <div class="qrframe" style="margin:14px auto 10px;max-width:220px">
+      <span class="qr-corner tl"></span><span class="qr-corner tr"></span><span class="qr-corner bl"></span><span class="qr-corner br"></span>
+      <div class="qrbox"><img class="qrImgTarget" id="qrImgModal" alt="QR Peserta"></div>
+    </div>
+    <p style="text-align:left;background:#FFF6E9;border:1px solid #F3D9A6;border-radius:12px;padding:12px 14px;color:var(--navy);font-size:.85rem;line-height:1.5">
+      ⚠️ <b>Simpan QR ini baik-baik.</b> QR ini adalah kunci akses masuk ke akun privasi kamu — jangan bagikan ke siapa pun. Unduh dulu sebelum melanjutkan ke portal.
+    </p>
+    <button type="button" class="btn b-pri" id="btnQRDownModal" style="width:100%;justify-content:center;margin-top:6px" onclick="handleFirstQrDownload()">⬇ Unduh QR Sekarang</button>
+    <button type="button" class="btn b-ghost sm" id="btnQRContinueModal" style="width:100%;justify-content:center;margin-top:10px" disabled onclick="closeQrFirstDownloadModal()">Lanjutkan ke Portal ✈</button>
+    <p style="font-size:.72rem;color:var(--mut);margin-top:8px;margin-bottom:0">Tombol lanjut aktif setelah QR berhasil diunduh</p>
+  </div>
+</div>
+
 </body>
 </html>
