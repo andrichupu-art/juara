@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pejuang-devisa-v7'; // dinaikkan dari v1 supaya cache lama (yang mungkin sudah
+const CACHE_NAME = 'pejuang-devisa-v8'; // dinaikkan dari v1 supaya cache lama (yang mungkin sudah
                                           // terlanjur berisi respons API Supabase yang basi) ikut dibuang
 const PRECACHE = [
   './',
