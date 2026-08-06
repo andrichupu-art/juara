@@ -1652,7 +1652,7 @@ async function buildIDCardBlob(){
   const CW=1000, headerH=340;
   const cv=document.createElement('canvas'); cv.width=CW;
   /* hitung tinggi konten dulu berdasarkan layout tetap di bawah */
-  const CH=1700; cv.height=CH;
+  const CH=1780; cv.height=CH;
   const ctx=cv.getContext('2d');
   ctx.save(); roundRectPath(ctx,0,0,CW,CH,44); ctx.clip();
   ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,CW,CH);
@@ -1681,7 +1681,7 @@ async function buildIDCardBlob(){
   y+=cellH+56;
 
   /* kotak QR — diperbesar — dengan bingkai emas */
-  const qrBox=560, qrX=(CW-qrBox)/2;
+  const qrBox=640, qrX=(CW-qrBox)/2;
   roundRectPath(ctx,qrX,y,qrBox,qrBox,22); ctx.fillStyle='#fff'; ctx.fill();
   ctx.strokeStyle='rgba(19,49,77,.08)'; ctx.lineWidth=1; ctx.stroke();
   try{
@@ -1689,8 +1689,8 @@ async function buildIDCardBlob(){
     const n=qr.getModuleCount(), pad=2, inner=qrBox-48, sc=inner/(n+pad*2), off=(qrBox-(n+pad*2)*sc)/2;
     ctx.fillStyle='#0B1F3A';
     for(let r=0;r<n;r++)for(let c=0;c<n;c++) if(qr.isDark(r,c)) ctx.fillRect(qrX+off+(c+pad)*sc,y+off+(r+pad)*sc,sc+0.6,sc+0.6);
-    const mid=qrX+qrBox/2, midY=y+qrBox/2, bs=sc*3.9*1.4;
-    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mid,midY,bs/2+9,0,Math.PI*2); ctx.fill();
+    const mid=qrX+qrBox/2, midY=y+qrBox/2, bs=sc*3.9;
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mid,midY,bs/2+5,0,Math.PI*2); ctx.fill();
     drawJuaraLogoImg(ctx,logoImg,mid,midY,bs*0.82);
   }catch(e){}
   /* bingkai sudut emas */
