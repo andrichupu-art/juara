@@ -1570,10 +1570,10 @@ function drawQR(text,active){
     const cv=document.createElement('canvas');cv.width=cv.height=size;const ctx=cv.getContext('2d');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);ctx.fillStyle='#0B1F3A';
     for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect((c+pad)*sc,(r+pad)*sc,sc,sc);
-    /* logo tengah — mark PT. Juara */
-    const mid=size/2,bs=sc*3.9;
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(mid,mid,bs/2+5,0,Math.PI*2);ctx.fill();
-    drawJuaraMark(ctx,mid,mid,bs);
+    /* Logo tengah SENGAJA dihapus dari kode QR yang bisa dipindai (bukan cuma dikecilkan).
+       Sudah diuji: kombinasi logo tengah + efek anti-moire pada modul QR bisa membuat
+       QR gagal dibaca scanner, khususnya saat payload berupa URL panjang (versi/modul QR
+       jadi rapat). Branding tetap ada lewat header kartu, bukan menimpa kode QR. */
     const imgs=$$('.qrImgTarget');
     imgs.forEach(img=>{ img.style.filter=active?'none':'grayscale(1) opacity(.55)'; img.dataset.payload=text; });
     cv.toBlob(blob=>{
@@ -1689,9 +1689,10 @@ async function buildIDCardBlob(){
     const n=qr.getModuleCount(), pad=2, inner=qrBox-48, sc=inner/(n+pad*2), off=(qrBox-(n+pad*2)*sc)/2;
     ctx.fillStyle='#0B1F3A';
     for(let r=0;r<n;r++)for(let c=0;c<n;c++) if(qr.isDark(r,c)) ctx.fillRect(qrX+off+(c+pad)*sc,y+off+(r+pad)*sc,sc+0.6,sc+0.6);
-    const mid=qrX+qrBox/2, midY=y+qrBox/2, bs=sc*3.9;
-    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mid,midY,bs/2+5,0,Math.PI*2); ctx.fill();
-    drawJuaraLogoImg(ctx,logoImg,mid,midY,bs*0.82);
+    /* Logo tengah SENGAJA dihapus dari kode QR (bukan cuma dikecilkan). Sudah diuji & terbukti:
+       kombinasi logo tengah + efek anti-moire (sc+0.6 di atas) bisa membuat QR gagal dibaca
+       scanner sama sekali, terutama untuk payload URL panjang (QR versi tinggi/rapat) —
+       inilah penyebab bug "QR tidak terbaca" saat login. Branding cukup lewat header kartu. */
   }catch(e){}
   /* bingkai sudut emas */
   ctx.strokeStyle='#BE8146'; ctx.lineWidth=5; ctx.lineCap='round';
