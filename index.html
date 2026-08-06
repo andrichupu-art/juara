@@ -1566,7 +1566,7 @@ function drawJuaraLogoImg(ctx,img,cx,cy,maxH){
 }
 
 function drawQR(text,active){
-  try{ const qr=qrcode(0,'M'); qr.addData(text); qr.make(); const n=qr.getModuleCount(), sc=8, pad=2, size=(n+pad*2)*sc;
+  try{ const qr=qrcode(0,'H'); qr.addData(text); qr.make(); const n=qr.getModuleCount(), sc=8, pad=2, size=(n+pad*2)*sc;
     const cv=document.createElement('canvas');cv.width=cv.height=size;const ctx=cv.getContext('2d');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);ctx.fillStyle='#0B1F3A';
     for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect((c+pad)*sc,(r+pad)*sc,sc,sc);
@@ -1685,11 +1685,11 @@ async function buildIDCardBlob(){
   roundRectPath(ctx,qrX,y,qrBox,qrBox,22); ctx.fillStyle='#fff'; ctx.fill();
   ctx.strokeStyle='rgba(19,49,77,.08)'; ctx.lineWidth=1; ctx.stroke();
   try{
-    const qr=qrcode(0,'M'); qr.addData(img_payload_for_card(kode)); qr.make();
+    const qr=qrcode(0,'H'); qr.addData(img_payload_for_card(kode)); qr.make();
     const n=qr.getModuleCount(), pad=2, inner=qrBox-48, sc=inner/(n+pad*2), off=(qrBox-(n+pad*2)*sc)/2;
     ctx.fillStyle='#0B1F3A';
     for(let r=0;r<n;r++)for(let c=0;c<n;c++) if(qr.isDark(r,c)) ctx.fillRect(qrX+off+(c+pad)*sc,y+off+(r+pad)*sc,sc+0.6,sc+0.6);
-    const mid=qrX+qrBox/2, midY=y+qrBox/2, bs=sc*3.9*2.1;
+    const mid=qrX+qrBox/2, midY=y+qrBox/2, bs=sc*3.9*1.4;
     ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mid,midY,bs/2+9,0,Math.PI*2); ctx.fill();
     drawJuaraLogoImg(ctx,logoImg,mid,midY,bs*0.82);
   }catch(e){}
