@@ -106,34 +106,20 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .mnav{display:none}
 @media(max-width:1080px){
   .nav-l{display:none}.burger{display:none}
-  /* navbar bawah mobile disembunyikan — navigasi antar-tab sudah lewat swipe (lihat SWIPE ANTAR-TAB) */
-  .mnav{display:none}
+  .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;top:auto;z-index:60;
+    background:#13314D;border-top:3px solid var(--gold);border-bottom:none;
+    max-height:none;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;padding:6px 10px;gap:4px}
+  .mnav::-webkit-scrollbar{display:none}
+  .mnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1 1 0;
+    padding:9px 4px;font-weight:700;font-size:.78rem;color:#fff;border-top:none;
+    white-space:nowrap;border-radius:10px;min-width:44px}
+  .mnav a .ico{font-size:1.25rem;line-height:1;display:flex}
+  .mnav a .ico svg{width:22px;height:22px}
+  .mnav a .lbl{display:none}
+  .mnav a.active{background:rgba(255,255,255,.14);color:var(--gold)}
+  body{padding-bottom:58px}
 }
-
-/* ============ SWIPE HINT (mobile only) ============ */
-.swipe-hint{display:none}
-@media(max-width:1080px){
-  .swipe-hint{
-    display:flex;align-items:center;gap:10px;
-    position:fixed;left:50%;bottom:22px;z-index:55;
-    transform:translateX(-50%);
-    background:var(--navy2);color:#fff;
-    padding:10px 16px;border-radius:100px;
-    font:700 .8rem var(--body);white-space:nowrap;
-    box-shadow:0 8px 24px rgba(0,0,0,.28);
-    border:1.5px solid rgba(190,129,70,.5);
-    opacity:0;pointer-events:none;
-    animation:shIn .4s ease .3s forwards, shOut .4s ease 4.3s forwards;
-  }
-  .swipe-hint.gone{display:none}
-  .sh-arrow{width:16px;height:16px;flex:none;color:var(--gold)}
-  .sh-l{animation:shNudgeL 1.3s ease-in-out infinite}
-  .sh-r{animation:shNudgeR 1.3s ease-in-out infinite}
-}
-@keyframes shIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
-@keyframes shOut{from{opacity:1}to{opacity:0;pointer-events:none}}
-@keyframes shNudgeL{0%,100%{transform:translateX(0)}50%{transform:translateX(-4px)}}
-@keyframes shNudgeR{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
 @media(max-width:520px){
   #navActions{gap:6px}
   #navActions .btn.sm{padding:8px 11px;font-size:.76rem}
@@ -605,12 +591,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
   <a href="#home" class="tab-link active" title="Beranda"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 5l8 7"/><path d="M6 10.5V19a1 1 0 0 0 1 1h4v-5h2v5h4a1 1 0 0 0 1-1v-8.5"/></svg></span><span class="lbl">Beranda</span></a><a href="#destinasi" class="tab-link" title="Destinasi"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-7.4 7-12.5A7 7 0 0 0 5 8.5C5 13.6 12 21 12 21Z"/><circle cx="12" cy="8.5" r="2.4"/></svg></span><span class="lbl">Destinasi</span></a><a href="#alur" class="tab-link" title="Alur"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15 9l-1.8 5.2L8 16l1.8-5.2Z"/></svg></span><span class="lbl">Alur</span></a><a href="#cek" class="tab-link auth-only" title="Cek Status"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg></span><span class="lbl">Cek Status</span></a>
   <a href="#portal" class="tab-link auth-only" title="Portal Pekerja"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="8" width="17.6" height="11" rx="2"/><path d="M8.5 8V6.3a1.8 1.8 0 0 1 1.8-1.8h3.4a1.8 1.8 0 0 1 1.8 1.8V8"/><path d="M3.2 13h17.6"/></svg></span><span class="lbl">Portal Pekerja</span></a><a href="#elig" class="tab-link" title="Kelayakan"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.3l2.6 2.6 5-5.6"/></svg></span><span class="lbl">Kelayakan</span></a><a href="#testi" class="tab-link" title="Testimoni"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.7a8 8 0 0 1-8 8 8 8 0 0 1-3.6-.85L4 20l1.15-4.9A8 8 0 1 1 20.5 11.7Z"/></svg></span><span class="lbl">Testimoni</span></a><a href="#faq" class="tab-link" title="FAQ"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.4 2.4 0 1 1 3.5 2.1c-.9.55-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r="0.9" fill="currentColor" stroke="none"/></svg></span><span class="lbl">FAQ</span></a>
 </nav>
-
-<div class="swipe-hint" id="swipeHint" aria-hidden="true">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="sh-arrow sh-l"><path d="M15 6l-6 6 6 6"/></svg>
-  <span>Geser untuk pindah tab</span>
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="sh-arrow sh-r"><path d="M9 6l6 6-6 6"/></svg>
-</div>
 
 <!-- ===== TAB: BERANDA ===== -->
 <div class="tabpanel active" id="home" data-tab="home">
@@ -1106,64 +1086,6 @@ document.addEventListener('click',e=>{
   if(id==='portal'&&!USER){showTab('portal');return;}
   showTab(id);
 });
-
-/* ================= SWIPE HINT (mobile, tampil sekali) ================= */
-function dismissSwipeHint(){
-  const hint=$('#swipeHint'); if(!hint)return;
-  hint.classList.add('gone');
-  try{localStorage.setItem('swipeHintSeen','1');}catch(e){}
-}
-(function(){
-  let seen=false;
-  try{seen=localStorage.getItem('swipeHintSeen')==='1';}catch(e){}
-  const hint=$('#swipeHint');
-  if(!hint||seen){ if(hint)hint.classList.add('gone'); return; }
-  setTimeout(dismissSwipeHint,4800); // sinkron dgn animasi shOut (4.3s+.4s)
-})();
-
-/* ================= SWIPE ANTAR-TAB (mobile) ================= */
-(function(){
-  const SWIPE_MIN_DIST=55;   // jarak geser horizontal minimal (px) supaya dianggap swipe
-  const SWIPE_MAX_OFF=70;    // toleransi gerak vertikal (px) — kalau lebih, dianggap scroll biasa
-  const SWIPE_MAX_TIME=650;  // batas waktu gesture (ms)
-  // area/elemen yang punya scroll atau interaksi horizontal sendiri: jangan dianggap swipe-tab
-  const NO_SWIPE_SEL='.testi-viewport,.mnav,input,select,textarea,.csel,.csel-opt,[data-no-swipe]';
-  let sx=0,sy=0,st=0,active=false;
-
-  const AUTH_ONLY_TABS=['cek','portal'];
-  function visibleTabOrder(){
-    // #mnav sudah disembunyikan (CSS), jadi urutan tab diambil langsung dari TAB_IDS,
-    // tab auth-only (cek/portal) hanya ikut kalau user sudah login — sama seperti perilaku navbar lama.
-    return TAB_IDS.filter(id=>!AUTH_ONLY_TABS.includes(id)||!!USER);
-  }
-
-  document.addEventListener('touchstart',e=>{
-    if(e.touches.length!==1||e.target.closest(NO_SWIPE_SEL)){active=false;return;}
-    const t=e.touches[0];
-    sx=t.clientX;sy=t.clientY;st=Date.now();active=true;
-  },{passive:true});
-
-  document.addEventListener('touchend',e=>{
-    if(!active)return; active=false;
-    const t=e.changedTouches[0];
-    const dx=t.clientX-sx, dy=t.clientY-sy, dt=Date.now()-st;
-    if(dt>SWIPE_MAX_TIME||Math.abs(dx)<SWIPE_MIN_DIST||Math.abs(dy)>SWIPE_MAX_OFF)return;
-    const order=visibleTabOrder();
-    const curId=location.hash.replace('#','')||'home';
-    const cur=order.indexOf(curId);
-    if(cur===-1)return;
-    let nextIdx=cur;
-    if(dx<0&&cur<order.length-1)nextIdx=cur+1;      // geser ke kiri -> tab berikutnya
-    else if(dx>0&&cur>0)nextIdx=cur-1;               // geser ke kanan -> tab sebelumnya
-    if(nextIdx===cur)return;
-    dismissSwipeHint();
-    const id=order[nextIdx];
-    $('#mnav').classList.remove('open');
-    if(id==='cek'&&!USER){toastNear('Login atau daftar dulu untuk cek status berkas','err','.tabpanel.active .faq-list, .tabpanel.active .wrap');return;}
-    if(id==='portal'&&!USER){showTab('portal');return;}
-    showTab(id);
-  },{passive:true});
-})();
 
 const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');
   e.target.querySelectorAll('[data-count]').forEach(runCount);obs.unobserve(e.target);}}),{threshold:.16});
