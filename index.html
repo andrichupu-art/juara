@@ -757,6 +757,15 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
               </div>
             </div>
             <p class="meta" id="qrLoginStatus" style="margin-top:10px"></p>
+            <p class="meta" style="margin-top:14px;text-align:center">
+              <a href="javascript:void(0)" onclick="toggleRecoverPanel()" id="recoverToggleLink">QR hilang / tidak ketemu? Masuk pakai NIK &amp; WhatsApp</a>
+            </p>
+            <div id="recoverPanel" style="display:none;margin-top:14px">
+              <div class="fld"><label>NIK (16 digit)</label><input id="rNik" inputmode="numeric" maxlength="16" placeholder="3271xxxxxxxxxx"></div>
+              <div class="fld"><label>No. WhatsApp Terdaftar</label><input id="rWa" inputmode="tel" placeholder="08xxxxxxxxxx"></div>
+              <button type="button" class="btn b-pri" id="btnRecover" style="width:100%;justify-content:center;margin-top:6px" onclick="recoverByNikWa()">🔑 Masuk Tanpa QR</button>
+              <p class="meta" id="recoverStatus" style="margin-top:10px"></p>
+            </div>
           </div>
         </div>
       </div>
@@ -1342,6 +1351,56 @@ async function activateQrSession(anonymousUser,token){
   await loadDocsAndStage(PART.id,request);
   if(request===authEpoch)renderDash();
   if(request===authEpoch)loadingUserId=null;
+}
+/* ===== Recovery login: NIK + WhatsApp (dipakai kalau QR peserta hilang) =====
+   Memakai jalur sesi anonim sbQr yang sama seperti login QR, tapi RPC-nya
+   mencocokkan NIK+telepon alih-alih token QR. Server (RPC login_recover_v2)
+   sebaiknya sekaligus menerbitkan qr_token BARU supaya QR lama yang hilang
+   otomatis tidak berlaku lagi (invalidasi otomatis demi keamanan). */
+function toggleRecoverPanel(){
+  const p=$('#recoverPanel'); if(!p)return;
+  const showing=p.style.display!=='none';
+  p.style.display=showing?'none':'block';
+  const link=$('#recoverToggleLink'); if(link)link.textContent=showing?'QR hilang / tidak ketemu? Masuk pakai NIK & WhatsApp':'Batal, saya mau pakai QR';
+}
+async function recoverByNikWa(){
+  const nik=$('#rNik').value.trim(), wa=$('#rWa').value.trim();
+  const st=$('#recoverStatus'), btn=$('#btnRecover');
+  if(!/^\d{16}$/.test(nik)){if(st)st.textContent='NIK harus 16 digit angka';return;}
+  if(!wa){if(st)st.textContent='Isi nomor WhatsApp yang terdaftar';return;}
+  const origHTML=btn?btn.innerHTML:null;
+  if(btn){btn.disabled=true;btn.innerHTML='⏳ Memeriksa…';}
+  if(st)st.textContent='';
+  try{
+    await sbQr.auth.signOut({scope:'local'});
+    clearAuthState();
+    const {error:signInErr}=await sbQr.auth.signInAnonymously();
+    if(signInErr)throw signInErr;
+    const {data:{session}}=await sbQr.auth.getSession();
+    if(!session?.user)throw new Error('Gagal membuat sesi sementara');
+    const request=++authEpoch;
+    CUR_DB=sbQr; USER=session.user; PART=null; DOCLIST={}; qrShown=false; loadingUserId=session.user.id;
+    setAuthUI(true); showTab('portal');
+    const {data,error}=await sbQr.rpc('login_recover_v2',{p_nik:nik,p_telepon:wa});
+    if(request!==authEpoch)return;
+    const participant=Array.isArray(data)?data[0]:data;
+    if(error||!participant){
+      loadingUserId=null; clearAuthState();
+      toast(error?.message||'NIK/WhatsApp tidak cocok dengan data peserta manapun','err');
+      return;
+    }
+    PART=participant;
+    await loadDocsAndStage(PART.id,request);
+    if(request===authEpoch)renderDash();
+    if(request===authEpoch)loadingUserId=null;
+    toast('Berhasil masuk! QR kamu yang lama sudah tidak berlaku — unduh QR baru dari menu Portal, lalu simpan baik-baik.','ok');
+    if($('#recoverPanel'))$('#recoverPanel').style.display='none';
+  }catch(err){
+    console.error('recoverByNikWa gagal:',err);
+    if(st)st.textContent=err.message||'Terjadi kesalahan, coba lagi';
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML=origHTML;}
+  }
 }
 async function beginQrLogin(){
   if(!QR_LOGIN_TOKEN)return;
