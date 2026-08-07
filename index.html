@@ -298,9 +298,15 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .portal .wrap{position:relative;z-index:1}
 .pstate{display:none}.pstate.on{display:block;animation:fadeIn .5s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.gate{display:grid;grid-template-columns:1fr;gap:44px;background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:48px;box-shadow:none}
+.gate{display:grid;grid-template-columns:1fr;gap:44px;background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:48px;box-shadow:none;position:relative}
 .gate h3{font:800 1.7rem var(--disp);color:var(--navy);margin-bottom:12px}
 .gate p{color:var(--mut);margin-bottom:26px}
+/* Link "Hilang QR" ditaruh di pojok kanan atas card, sejajar judul */
+.recover-corner{position:absolute;top:48px;right:48px;display:inline-flex;align-items:center;gap:6px;font:700 .78rem var(--body);color:var(--navy);white-space:nowrap;cursor:pointer}
+.recover-corner svg{width:15px;height:15px;flex:none}
+.recover-corner:hover{color:var(--gold)}
+@media(max-width:960px){.recover-corner{top:30px;right:30px}}
+@media(max-width:480px){.recover-corner{position:static;display:inline-flex;margin:14px 0 0}}
 .glist{list-style:none;margin-bottom:28px}
 .glist li{display:flex;gap:12px;padding:9px 0;font-size:.94rem;font-weight:600;border-bottom:1px dashed var(--line)}
 .glist li::before{content:"✈";color:var(--orange)}
@@ -325,6 +331,9 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .fld label{display:block;font:800 .72rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:7px}
 .fld input,.fld select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font:600 .95rem var(--body);background:var(--paper);transition:.2s}
 .fld input:focus,.fld select:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:none}
+/* Field di panel recovery (NIK & WhatsApp) tidak dibungkus .frm, jadi jaraknya disamakan manual di sini */
+#recoverPanel .fld{margin-bottom:16px}
+#recoverPanel .fld:last-of-type{margin-bottom:0}
 
 /* dashboard */
 .dash-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:var(--navy);color:#fff;border-radius:18px;padding:24px 30px;box-shadow:none;position:relative;overflow:hidden}
@@ -845,7 +854,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           </div>
 
           <div id="guestLoginPanel" style="display:none">
-            <p>Login cukup dengan scan/upload QR peserta yang sudah kamu unduh — tidak perlu masuk Google lagi.</p>
             <div class="gbtns">
               <button type="button" class="btn b-pri" id="btnQrLogin" style="width:100%;justify-content:center" onclick="$('#qrLoginFile').click()">📷 Scan / Upload QR Peserta</button>
               <input type="file" id="qrLoginFile" accept="image/*" style="display:none">
@@ -858,9 +866,10 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
               </div>
             </div>
             <p class="meta" id="qrLoginStatus" style="margin-top:10px"></p>
-            <p class="meta" style="margin-top:14px;text-align:center">
-              <a href="javascript:void(0)" onclick="toggleRecoverPanel()" id="recoverToggleLink">QR hilang / tidak ketemu? Masuk pakai NIK &amp; WhatsApp</a>
-            </p>
+            <a href="javascript:void(0)" onclick="toggleRecoverPanel()" id="recoverToggleLink" class="recover-corner">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"></circle><path d="M10.5 12.5 20 3"></path><path d="M16 7l3 3"></path><path d="M13 10l2 2"></path></svg>
+              <span id="recoverToggleText">Hilang QR</span>
+            </a>
             <div id="recoverPanel" style="display:none;margin-top:14px">
               <div class="fld"><label>NIK (16 digit)</label><input id="rNik" inputmode="numeric" maxlength="16" placeholder="3271xxxxxxxxxx"></div>
               <div class="fld"><label>No. WhatsApp Terdaftar</label><input id="rWa" inputmode="tel" placeholder="08xxxxxxxxxx"></div>
@@ -1468,7 +1477,7 @@ function toggleRecoverPanel(){
   const p=$('#recoverPanel'); if(!p)return;
   const showing=p.style.display!=='none';
   p.style.display=showing?'none':'block';
-  const link=$('#recoverToggleLink'); if(link)link.textContent=showing?'QR hilang / tidak ketemu? Masuk pakai NIK & WhatsApp':'Batal, saya mau pakai QR';
+  const label=$('#recoverToggleText'); if(label)label.textContent=showing?'Hilang QR':'Batal, pakai QR';
 }
 async function recoverByNikWa(){
   const nik=$('#rNik').value.trim(), wa=$('#rWa').value.trim();
