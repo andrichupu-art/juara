@@ -510,8 +510,8 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .cta-testi p{color:rgba(255,255,255,.78);font:500 1.02rem/1.6 var(--body);max-width:520px}
 .cta-testi .btn.b-pri{background:var(--gold);border-color:var(--gold);margin-top:6px}
 
-/* footer disembunyikan di tab home/destinasi/alur — biar .cta yang mengisi sisa ruang, bukan celah kream */
-#home.active ~ .cta,#destinasi.active ~ .cta,#alur.active ~ .cta,#elig.active ~ .cta,#testi.active ~ .cta{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center}
+/* footer disembunyikan di tab home/destinasi/alur/portal — biar .cta yang mengisi sisa ruang, bukan celah kream */
+#home.active ~ .cta,#destinasi.active ~ .cta,#alur.active ~ .cta,#elig.active ~ .cta,#testi.active ~ .cta,#portal.active ~ .cta{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center}
 @keyframes drift{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-18px) rotate(-2deg)}}
 footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 #portal.active ~ footer{display:none}
@@ -1235,7 +1235,7 @@ async function activateSession(u){
   USER=verifiedUser;
   const email=USER.email||USER.user_metadata?.email||'akun Google aktif';
   $('#obAccount').textContent='Login sebagai: '+email;
-  await loadParticipant(USER.id,request,isFreshLogin);
+  await loadParticipant(USER.id,request);
 }
 
 /* ================= ONBOARDING ================= */
@@ -1266,7 +1266,7 @@ function scheduleDocsSelfHeal(pid,request,delays=[900,1800,3000]){
     },delay);
   });
 }
-async function loadParticipant(uid,request,isFreshLogin=false){
+async function loadParticipant(uid,request){
   let data,error;
   try{ ({data,error}=await withTimeout(sb.from('participants_v2').select('*').eq('google_user_id',uid).maybeSingle(),15000,'muat data peserta')); }
   catch(err){
@@ -1277,21 +1277,19 @@ async function loadParticipant(uid,request,isFreshLogin=false){
   if(error){loadingUserId=null;console.error('loadParticipant gagal:',error);toast('Gagal memuat data peserta: '+error.message,'err');return;}
   PART=data;
   if(PART){
-    // Satu-satunya jalur OAuth Google di situs ini adalah tombol "Daftar dengan Google".
-    // Kalau baru saja kembali dari proses itu (isFreshLogin) dan ternyata datanya sudah
-    // ada di participants_v2, artinya akun/email ini memang sudah pernah terdaftar
-    // sebelumnya. Jangan biarkan masuk lewat sesi Google ini — sign out dulu, lalu
-    // arahkan ke panel login (QR), bukan ke dashboard.
-    if(isFreshLogin){
-      const email=USER?.email||USER?.user_metadata?.email||'Akun ini';
-      toast(email+' sudah terdaftar. Silakan login pakai QR peserta kamu ya.','err');
-      await sb.auth.signOut({scope:'local'});
-      clearAuthState();
-      showGuestMode('login');
-      return;
-    }
-    await loadDocsAndStage(PART.id,request);
-    if(request===authEpoch&&USER?.id===uid)renderDash();
+    // Jalur OAuth Google di situs ini HANYA dipakai untuk mendaftar (tidak ada
+    // tombol "Login dengan Google" — peserta lama selalu login pakai QR). Karena itu,
+    // begitu sesi Google ini menemukan data peserta yang SUDAH ADA di participants_v2,
+    // itu selalu berarti akun/email ini sudah pernah terdaftar. Blokir tanpa syarat —
+    // JANGAN bergantung pada flag "baru saja redirect" (isFreshLogin), karena Supabase
+    // bisa menembak event auth lebih dari sekali (INITIAL_SESSION lalu SIGNED_IN) dan
+    // panggilan kedua bisa lolos kalau pengecekannya cuma berlaku sekali.
+    const email=USER?.email||USER?.user_metadata?.email||'Akun ini';
+    toast(email+' sudah terdaftar. Silakan login pakai QR peserta kamu ya.','err');
+    await sb.auth.signOut({scope:'local'});
+    clearAuthState();
+    showGuestMode('login');
+    return;
   }else{
     $('#obNama').textContent=(USER.user_metadata?.full_name||'Calon Peserta').split(' ')[0];
     setState('#stForm');
