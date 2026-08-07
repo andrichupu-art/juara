@@ -358,7 +358,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .ticket{margin-top:26px;background:#fff;border:1.5px solid var(--navy);border-radius:20px;box-shadow:none;display:grid;grid-template-columns:1.2fr .8fr;overflow:hidden;position:relative;transition:.3s}
 .ticket.glow{animation:glow 1.6s ease 2}
 @keyframes glow{0%,100%{box-shadow:none}50%{box-shadow:none}}
-.tk-l{padding:34px;position:relative}
+.tk-l{padding:34px;position:relative;display:none}
 .tk-l::before{content:"";position:absolute;top:0;bottom:0;right:-1px;border-right:2px dashed var(--line)}
 .tk-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .tk-head b{font:800 .78rem var(--body);letter-spacing:.24em;color:var(--orange)}
@@ -370,8 +370,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .tk-steps{font-size:.85rem;color:var(--mut);border-top:1px dashed var(--line);padding-top:16px}
 .tk-steps b{color:var(--navy)}
 .tk-r{padding:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:repeating-linear-gradient(-45deg,#FBFCFE 0 12px,#F4F7FB 12px 24px);position:relative}
-.tk-r::before,.tk-r::after{content:"";position:absolute;left:-14px;width:26px;height:26px;border-radius:50%;background:var(--paper);border:1.5px solid var(--navy)}
-.tk-r::before{top:-14px;border-top:0}.tk-r::after{bottom:-14px;border-bottom:0}
+.ticket .tk-r::before,.ticket .tk-r::after{display:none}
 .qrframe{position:relative;padding:16px;border-radius:22px;background:linear-gradient(155deg,var(--navy) 0%,#0A2033 100%);box-shadow:0 14px 34px -14px rgba(11,31,58,.45)}
 .qrframe::before{content:"";position:absolute;inset:0;border-radius:22px;padding:1.5px;background:linear-gradient(155deg,var(--gold),transparent 40%,transparent 60%,var(--gold));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
 .qr-corner{position:absolute;width:20px;height:20px;border:2.5px solid var(--gold);pointer-events:none}
@@ -386,6 +385,34 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .qr-badge{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;font:800 .62rem var(--body);letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
 .qr-badge::before,.qr-badge::after{content:"";width:18px;height:1px;background:rgba(190,129,70,.5)}
 .tk-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* Baris header portal: judul kiri, tombol ikon QR di kanan atas (sejajar judul) */
+.portal-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+
+/* Tombol pemicu: ikon QR saja, bulat, kecil, tidak makan tempat */
+.tk-trigger-wrap{flex:0 0 auto;margin-top:2px}
+.tk-trigger{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;border:1.5px solid var(--navy);background:#fff;color:var(--navy);cursor:pointer;box-shadow:0 2px 10px rgba(19,49,77,.12);transition:.2s}
+.tk-trigger:hover{background:var(--navy);color:#fff;transform:scale(1.06)}
+.tk-trigger.glow{animation:tkPulse 1.6s ease 3}
+@keyframes tkPulse{0%,100%{box-shadow:0 2px 10px rgba(19,49,77,.12)}50%{box-shadow:0 0 0 8px rgba(190,129,70,.25)}}
+@media(max-width:640px){.tk-trigger{width:40px;height:40px}.tk-trigger svg{width:17px;height:17px}}
+
+/* Overlay + drawer/bottom-sheet */
+.tk-overlay{position:fixed;inset:0;background:rgba(11,31,58,.5);z-index:1000;opacity:0;visibility:hidden;transition:opacity .28s ease;display:flex}
+.tk-overlay.open{opacity:1;visibility:visible}
+.ticket.tk-drawer{position:relative;margin:0;background:#fff;border:none;border-radius:0 20px 20px 0;box-shadow:0 20px 60px rgba(11,31,58,.35);grid-template-columns:1fr;overflow-y:auto;height:100%;width:min(480px,88vw);transform:translateX(-100%);transition:transform .32s cubic-bezier(.32,.72,0,1)}
+.tk-overlay.open .ticket.tk-drawer{transform:translateX(0)}
+.ticket.tk-drawer .tk-l::before{display:none}
+.ticket.tk-drawer .tk-l{border-bottom:1px dashed var(--line);padding:28px 26px 22px}
+.ticket.tk-drawer .tk-r{padding:26px}
+.tk-close{position:absolute;top:14px;right:14px;z-index:5;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:.9rem;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s}
+.tk-close:hover{background:var(--navy);color:#fff}
+
+@media(max-width:640px){
+  .tk-overlay{align-items:flex-end}
+  .ticket.tk-drawer{width:100%;height:auto;max-height:86vh;border-radius:20px 20px 0 0;transform:translateY(100%)}
+  .tk-overlay.open .ticket.tk-drawer{transform:translateY(0)}
+}
 
 /* ============ ELIGIBILITAS ============ */
 .elig{position:relative}
@@ -685,33 +712,55 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 <!-- ===== PORTAL PEKERJA ===== -->
 <section class="tabpanel portal sec-pad" id="portal">
   <div class="wrap">
-    <div class="eyebrow rv">Portal Pekerja</div>
-    <h2 class="sec rv">Unggah dokumenmu.<br>Dapatkan <span style="background:linear-gradient(135deg,#EDBA67,#BE8146);-webkit-background-clip:text;background-clip:text;color:transparent">QR boarding pass.</span></h2>
-
-    <!-- QR TICKET (hanya tampil setelah login & masuk state Dashboard) -->
-    <div class="ticket rv in" id="qrTicket" style="display:none">
-      <div class="tk-l">
-        <div class="tk-head"><b>PT. JUARA · MOBILE PASS</b><span style="font:800 .7rem var(--mono);color:var(--mut)" id="tkDate"></span></div>
-        <h3>Scan untuk membuka progresmu di aplikasi 📱</h3>
-        <div class="tk-rows">
-          <div><span>PESERTA</span><b id="qrNama">—</b></div>
-          <div><span>KODE</span><b id="qrKode">—</b></div>
-          <div><span>NEGARA TUJUAN</span><b id="qrNegara">—</b></div>
-          <div><span>STATUS BERKAS</span><b id="qrStatus">—</b></div>
-        </div>
-        <div class="tk-steps"><b>Cara melanjutkan:</b> ① Unduh aplikasi <b>Juara Mobile</b> di Play Store / App Store → ② Buka menu <b>“Scan QR Peserta”</b> → ③ Arahkan kamera ke QR di samping. Progres verifikasi, jadwal pelatihan, dan tiket akan muncul otomatis.</div>
+    <div class="portal-head-row">
+      <div>
+        <div class="eyebrow rv">Portal Pekerja</div>
+        <h2 class="sec rv">Unggah dokumenmu.<br>Dapatkan <span style="background:linear-gradient(135deg,#EDBA67,#BE8146);-webkit-background-clip:text;background-clip:text;color:transparent">QR boarding pass.</span></h2>
       </div>
-      <div class="tk-r">
-        <div class="qrframe">
-          <span class="qr-corner tl"></span><span class="qr-corner tr"></span><span class="qr-corner bl"></span><span class="qr-corner br"></span>
-          <div class="qrbox"><img id="qrImg" class="qrImgTarget" alt="QR Peserta"><div class="qrlock" id="qrLock"><span class="lk">🔒</span><span id="qrLockTxt">Lengkapi dokumen wajib untuk mengaktifkan QR</span></div></div>
-          <div class="qr-badge">PT. Juara · Resmi</div>
+
+      <!-- QR TICKET (hanya tampil setelah login & masuk state Dashboard) -->
+      <!-- Tombol ikon kecil pemicu: buka drawer (desktop, dari kiri) / bottom-sheet (mobile, dari bawah) -->
+      <div class="tk-trigger-wrap rv in" id="qrTicketTrigger" style="display:none">
+        <button type="button" class="tk-trigger" id="btnTicketToggle" onclick="toggleTicket()" aria-label="Lihat boarding pass QR" title="Lihat boarding pass QR">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            <path d="M14 14h3v3"></path>
+            <path d="M14 21h3"></path>
+            <path d="M21 14v3"></path>
+            <path d="M21 21h.01"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="tk-overlay" id="tkOverlay" onclick="if(event.target===this) closeTicket()">
+      <div class="ticket tk-drawer" id="qrTicket">
+        <button type="button" class="tk-close" onclick="closeTicket()" aria-label="Tutup">✕</button>
+        <div class="tk-l">
+          <div class="tk-head"><b>PT. JUARA · MOBILE PASS</b><span style="font:800 .7rem var(--mono);color:var(--mut)" id="tkDate"></span></div>
+          <h3>Scan untuk membuka progresmu di aplikasi 📱</h3>
+          <div class="tk-rows">
+            <div><span>PESERTA</span><b id="qrNama">—</b></div>
+            <div><span>KODE</span><b id="qrKode">—</b></div>
+            <div><span>NEGARA TUJUAN</span><b id="qrNegara">—</b></div>
+            <div><span>STATUS BERKAS</span><b id="qrStatus">—</b></div>
+          </div>
         </div>
-        <div class="tk-btns">
-          <button class="mini or" id="btnQRDown" onclick="downloadQR()">⬇ Unduh QR</button>
+        <div class="tk-r">
+          <div class="qrframe">
+            <span class="qr-corner tl"></span><span class="qr-corner tr"></span><span class="qr-corner bl"></span><span class="qr-corner br"></span>
+            <div class="qrbox"><img id="qrImg" class="qrImgTarget" alt="QR Peserta"><div class="qrlock" id="qrLock"><span class="lk">🔒</span><span id="qrLockTxt">Lengkapi dokumen wajib untuk mengaktifkan QR</span></div></div>
+            <div class="qr-badge">PT. Juara · Resmi</div>
+          </div>
+          <div class="tk-btns">
+            <button class="mini or" id="btnQRDown" onclick="downloadQR()">⬇ Unduh QR</button>
+          </div>
         </div>
       </div>
     </div>
+
 
     <!-- STATE: MEMERIKSA SESI (mencegah kilasan ke halaman Daftar/Login saat baru kembali dari Google) -->
     <div class="pstate" id="stAuthLoading" style="margin-top:24px">
@@ -1185,7 +1234,8 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
 
 /* ================= AUTH ================= */
 function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');
-  const qt=document.getElementById('qrTicket'); if(qt) qt.style.display=(s==='#stDash')?'':'none';
+  const qtt=document.getElementById('qrTicketTrigger'); if(qtt) qtt.style.display=(s==='#stDash')?'':'none';
+  if(s!=='#stDash') closeTicket();
   adjustCtaFill();}
 function authBtnClick(){ showTab('portal'); }
 let guestMode='register';
@@ -1611,7 +1661,7 @@ async function uploadDoc(k,file,card){
     await loadDocs();
     toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
     const {pct,upReq,totReq}=renderDocs(); renderQR();
-    if(upReq===totReq&&!qrShown){qrShown=true;confetti();const tk=$('#qrTicket');tk.classList.add('glow');tk.scrollIntoView({behavior:'smooth',block:'center'});
+    if(upReq===totReq&&!qrShown){qrShown=true;confetti();const trig=$('#qrTicketTrigger');if(trig){trig.querySelector('.tk-trigger').classList.add('glow');trig.scrollIntoView({behavior:'smooth',block:'center'});}openTicket();
       toast('🎉 <b>Berkas lengkap!</b> QR boarding pass kamu telah aktif.','ok');}
   }catch(err){ console.error('uploadDoc error:',err); toast('Ups, gagal mengunggah berkas. Coba lagi.','err'); resetUpBtn(); }
 }
@@ -1886,6 +1936,21 @@ async function buildIDCardBlob(){
   return new Promise(res=>cv.toBlob(b=>res(b),'image/png'));
 }
 function img_payload_for_card(){ return location.origin+location.pathname+'#portal?qr='+encodeURIComponent(PART.qr_token); }
+
+/* Buka/tutup boarding pass sebagai drawer (desktop, slide dari kiri) / bottom-sheet (mobile, slide dari bawah). */
+function openTicket(){
+  const ov=document.getElementById('tkOverlay'); if(!ov) return;
+  ov.classList.add('open'); document.body.style.overflow='hidden';
+}
+function closeTicket(){
+  const ov=document.getElementById('tkOverlay'); if(!ov) return;
+  ov.classList.remove('open'); document.body.style.overflow='';
+}
+function toggleTicket(){
+  const ov=document.getElementById('tkOverlay'); if(!ov) return;
+  if(ov.classList.contains('open')) closeTicket(); else openTicket();
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeTicket(); });
 
 /* Unduh kartu ID lengkap (bukan sekadar QR polos): berisi logo PT. JUARA,
    nama & kode peserta, negara tujuan, status berkas, dan QR bingkai emas.
