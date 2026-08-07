@@ -1580,7 +1580,7 @@ function drawJuaraLogoImg(ctx,img,cx,cy,maxH){
 }
 
 function drawQR(text,active){
-  try{ const qr=qrcode(0,'H'); qr.addData(text); qr.make(); const n=qr.getModuleCount(), sc=8, pad=2, size=(n+pad*2)*sc;
+  try{ const qr=qrcode(0,'M'); qr.addData(text); qr.make(); const n=qr.getModuleCount(), sc=8, pad=2, size=(n+pad*2)*sc;
     const cv=document.createElement('canvas');cv.width=cv.height=size;const ctx=cv.getContext('2d');
     ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);ctx.fillStyle='#0B1F3A';
     for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect((c+pad)*sc,(r+pad)*sc,sc,sc);
@@ -1699,7 +1699,7 @@ async function buildIDCardBlob(){
   roundRectPath(ctx,qrX,y,qrBox,qrBox,22); ctx.fillStyle='#fff'; ctx.fill();
   ctx.strokeStyle='rgba(19,49,77,.08)'; ctx.lineWidth=1; ctx.stroke();
   try{
-    const qr=qrcode(0,'H'); qr.addData(img_payload_for_card(kode)); qr.make();
+    const qr=qrcode(0,'M'); qr.addData(img_payload_for_card(kode)); qr.make();
     const n=qr.getModuleCount(), pad=2, inner=qrBox-48;
     const gridN=n+pad*2;
     /* Render 1 pixel per modul dulu di canvas terpisah (tanpa anti-aliasing/fraksi sama sekali),
