@@ -146,6 +146,18 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .tabpanel{display:none}
 .tabpanel.active{display:block;animation:tabIn .35s ease}
 @keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* slide transisi ala Android ViewPager: panel lama geser keluar, panel baru geser masuk dari arah berlawanan */
+.tabpanel.tab-out-l{display:block;animation:tabOutL .22s ease forwards}
+.tabpanel.tab-out-r{display:block;animation:tabOutR .22s ease forwards}
+@keyframes tabOutL{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-28px)}}
+@keyframes tabOutR{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(28px)}}
+.tabpanel.active.tab-in-l{animation:tabInL .28s cubic-bezier(.22,.61,.36,1)}
+.tabpanel.active.tab-in-r{animation:tabInR .28s cubic-bezier(.22,.61,.36,1)}
+@keyframes tabInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes tabInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){
+  .tabpanel.tab-out-l,.tabpanel.tab-out-r,.tabpanel.active.tab-in-l,.tabpanel.active.tab-in-r{animation:none}
+}
 
 /* ============ HERO ============ */
 .hero{position:relative;padding:28px 0 40px;overflow:hidden;z-index:0}
@@ -1208,10 +1220,33 @@ function resetElig(){
   const res=$('#eligRes');
   if(res)res.innerHTML=`<div><div style="font-size:2.2rem">🎯</div><b style="font:800 1.1rem var(--disp)">Skor Kelayakan</b><p>Isi data di samping dan lihat peluangmu bekerja di luar negeri — gratis, tanpa komitmen.</p></div>`;
 }
+const REDUCE_MOTION=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function showTab(id){
   if(!TAB_IDS.includes(id))return;
+  const cur=$('.tabpanel.active');
+  const curId=cur?(cur.dataset.tab||cur.id):null;
+  if(curId===id){ applyTab(id,0); return; }
+  const oldIdx=TAB_IDS.indexOf(curId), newIdx=TAB_IDS.indexOf(id);
+  const dir=(oldIdx===-1||newIdx===-1)?0:(newIdx>oldIdx?1:-1);
+  if(cur&&dir!==0&&!REDUCE_MOTION){
+    cur.classList.remove('active');
+    cur.classList.add(dir>0?'tab-out-l':'tab-out-r');
+    setTimeout(()=>{
+      cur.classList.remove('tab-out-l','tab-out-r');
+      applyTab(id,dir);
+    },210);
+  }else{
+    applyTab(id,dir);
+  }
+}
+function applyTab(id,dir){
   resetElig();
-  $$('.tabpanel').forEach(p=>p.classList.toggle('active',p.dataset.tab===id||p.id===id));
+  $$('.tabpanel').forEach(p=>{
+    const active=p.dataset.tab===id||p.id===id;
+    p.classList.remove('tab-in-l','tab-in-r');
+    p.classList.toggle('active',active);
+    if(active&&dir!==0&&!REDUCE_MOTION)p.classList.add(dir>0?'tab-in-r':'tab-in-l');
+  });
   $$('.nav-l a,.mnav a').forEach(a=>{
     const h=(a.getAttribute('href')||'').replace('#','');
     a.classList.toggle('active',h===id);
