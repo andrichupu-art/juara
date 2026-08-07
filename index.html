@@ -618,9 +618,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
   box-shadow:none;display:flex;gap:10px;align-items:center;animation:tIn .35s ease;border-left:4px solid var(--orange);max-width:360px}
 .tst.ok{border-left-color:var(--green)} .tst.err{border-left-color:var(--red)}
 @keyframes tIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
-#cfx{position:fixed;inset:0;pointer-events:none;z-index:300;overflow:hidden}
-#cfx i{position:absolute;top:-24px;width:9px;height:15px;border-radius:2px;animation:fall 2.7s ease-in forwards}
-@keyframes fall{to{transform:translateY(108vh) rotate(720deg);opacity:.7}}
 .modal{position:fixed;inset:0;background:rgba(8,21,39,.6);backdrop-filter:blur(5px);z-index:150;display:none;place-items:center;padding:20px}
 .modal.on{display:grid}
 .modal .box{background:#fff;border-radius:20px;padding:38px;max-width:440px;width:100%;box-shadow:none;animation:fadeIn .3s ease}
@@ -689,7 +686,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
   </div>
 </div>
 
-<div id="cfx"></div>
 <div id="toast"></div>
 
 <!-- ===== NAV ===== -->
@@ -1189,7 +1185,6 @@ function toastNear(m,t,sel){const a=$(sel);const d=document.createElement('div')
   setTimeout(()=>{d.style.opacity=0;d.style.transition='.4s';setTimeout(()=>d.remove(),400)},3800);}
 function fmtSz(b){return b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';}
 const fmtT=d=>new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(new Date(d));
-function confetti(){const c=$('#cfx'),cols=['#13314D','#BE8146','#2E9BD6','#0B1F3A','#17B26A','#fff'];for(let i=0;i<90;i++){const s=document.createElement('i');s.style.left=Math.random()*100+'%';s.style.background=cols[i%cols.length];s.style.animationDelay=(Math.random()*.5)+'s';s.style.transform=`rotate(${Math.random()*360}deg)`;c.appendChild(s);setTimeout(()=>s.remove(),3300);}}
 
 /* ================= NAV / TABS ================= */
 function syncHdrH(){document.documentElement.style.setProperty('--hdr-h',$('#hdr').offsetHeight+'px');}
@@ -1793,7 +1788,6 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
     await Promise.all([loadDocs(),loadStage()]);
     renderDash();
     resetBtn();
-    confetti();
     openQrFirstDownloadModal();
   }catch(err){ console.error(err); toast(err.message||'Terjadi kesalahan tak dikenal','err'); resetBtn(); }
 });
@@ -1860,7 +1854,7 @@ async function uploadDoc(k,file,card){
     await loadDocs();
     toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
     const {pct,upReq,totReq}=renderDocs(); renderQR();
-    if(upReq===totReq&&!qrShown){qrShown=true;confetti();const trig=$('#qrTicketTrigger');if(trig){trig.querySelector('.tk-trigger').classList.add('glow');trig.scrollIntoView({behavior:'smooth',block:'center'});}
+    if(upReq===totReq&&!qrShown){qrShown=true;const trig=$('#qrTicketTrigger');if(trig){trig.querySelector('.tk-trigger').classList.add('glow');trig.scrollIntoView({behavior:'smooth',block:'center'});}
       toast('🎉 <b>Berkas lengkap!</b> QR boarding pass kamu telah aktif.','ok');}
   }catch(err){ console.error('uploadDoc error:',err); toast('Ups, gagal mengunggah berkas. Coba lagi.','err'); resetUpBtn(); }
 }
@@ -2272,7 +2266,6 @@ function hitungElig(){
   const res=$('#eligRes');
   if(res)res.innerHTML=`<div><div class="elig-score">${s}</div><div style="font:700 .78rem var(--body);letter-spacing:.2em;color:#9db4d0">/ 100 SKOR</div>
     <h4>${v[0]}</h4><p>${v[1]}</p><a href="#portal"><button class="btn b-pri sm" style="margin-top:16px">Lanjut ke Portal ✈</button></a></div>`;
-  if(s>=80)confetti();
   lockElig();
   }catch(err){ console.error('hitungElig error:',err); toast('Ups, ada kendala saat menghitung. Coba lagi.','err'); }
 }
