@@ -268,7 +268,15 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .step:hover .no{background:var(--orange);color:#fff;border-color:var(--orange);transform:rotate(-6deg) scale(1.08)}
 .step h4{font:700 1rem var(--disp);margin-bottom:8px}
 .step p{font-size:.82rem;color:#9db4d0;line-height:1.55}
-@media(max-width:900px){.step-track{grid-template-columns:repeat(2,1fr)}.step-track::before,.plane-line{display:none}}
+@media(max-width:900px){
+  .step-track{grid-template-columns:repeat(2,1fr)}
+  .step-track::before{display:none}
+  /* Di mobile grid-nya 2 kolom jadi garis putus-putus horizontal (5 kolom) tidak muat lagi,
+     tapi pesawatnya tetap dimunculkan — cukup melayang pelan di pojok atas section ini. */
+  .step-track .plane-line{position:absolute;top:-38px;left:auto;right:6%;font-size:32px;opacity:.55;
+    animation:planeDriftMobile 6s ease-in-out infinite}
+  @keyframes planeDriftMobile{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-10px) rotate(6deg)}}
+}
 
 /* ============ CEK STATUS (publik) ============ */
 .cekband{background:transparent;border-block:none}
