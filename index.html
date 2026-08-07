@@ -106,6 +106,16 @@ header.scr{background:#13314D;box-shadow:none}
 .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
 .logo{display:flex;align-items:center;gap:11px;color:#fff}
 .logo .brand-logo{height:62px;width:auto;display:block;object-fit:contain}
+.logo-shine{position:relative;display:inline-block;line-height:0}
+.logo-shine::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 25%,rgba(255,255,255,.9) 48%,rgba(255,255,255,.9) 52%,transparent 75%);
+  background-size:260% 100%;
+  -webkit-mask-image:var(--shine-mask);mask-image:var(--shine-mask);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center;
+  animation:logoShine 2.8s ease-in-out infinite}
+@keyframes logoShine{0%{background-position:160% 0;opacity:0}10%{opacity:1}50%{background-position:-60% 0;opacity:1}62%{opacity:0}100%{background-position:-60% 0;opacity:0}}
 .nav-l{display:flex;gap:0;align-items:center}
 .nav-l a{font:600 .84rem var(--body);color:#fff;position:relative;padding:4px 14px;border-right:1px solid rgba(255,255,255,.2);white-space:nowrap}
 .nav-l a:last-child{border-right:none;padding-right:0}
@@ -362,6 +372,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .dash-top .kode b{font:800 1.25rem var(--mono);color:var(--gold);letter-spacing:.12em}
 .dash-top .kode span{display:block;font-size:.68rem;letter-spacing:.2em;color:#9db4d0}
 .dash-top .kode-mark{height:38px;width:auto;display:block;object-fit:contain}
+.dash-top .kode-mark img{height:100%;width:100%;display:block;object-fit:contain}
 .dash-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:26px;margin-top:26px;align-items:start}
 .panel{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:30px}
 .panel h4{font:800 1.1rem var(--disp);color:var(--navy);display:flex;align-items:center;gap:10px;margin-bottom:20px}
@@ -684,7 +695,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 <!-- ===== NAV ===== -->
 <header id="hdr">
   <div class="wrap nav">
-    <a class="logo" href="#home"><img class="brand-logo" src="loogojuara.svg" alt="PT. JUARA"></a>
+    <a class="logo" href="#home"><span class="logo-shine" style="--shine-mask:url('loogojuara.svg')"><img class="brand-logo" src="loogojuara.svg" alt="PT. JUARA"></span></a>
     <nav class="nav-l">
       <a href="#home" class="tab-link active">Beranda</a><a href="#destinasi" class="tab-link">Destinasi</a><a href="#alur" class="tab-link">Alur</a><a href="#cek" class="tab-link auth-only">Cek Status</a>
       <a href="#portal" class="tab-link auth-only">Portal Pekerja</a><a href="#elig" class="tab-link">Kelayakan</a><a href="#testi" class="tab-link">Testimoni</a><a href="#faq" class="tab-link">FAQ</a>
@@ -924,7 +935,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <div class="ava" id="dAva">G</div>
         <div><h3 id="dNama">—</h3><div class="meta" id="dMeta">—</div><div class="meta" id="dAccount">—</div></div>
         <div class="kode"><span>KODE PESERTA</span><b id="dKode">—</b></div>
-        <img class="kode-mark" src="loogojuara 2.svg" alt="PT. JUARA">
+        <span class="logo-shine kode-mark" style="--shine-mask:url('loogojuara 2.svg')"><img src="loogojuara 2.svg" alt="PT. JUARA"></span>
       </div>
 
       <div class="dash-grid">
@@ -1085,7 +1096,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 <footer id="siteFooter">
   <div class="wrap f-grid">
     <div class="f-brand">
-      <a class="logo" href="#home"><img class="brand-logo" src="loogojuara.svg" alt="PT. JUARA"></a>
+      <a class="logo" href="#home"><span class="logo-shine" style="--shine-mask:url('loogojuara.svg')"><img class="brand-logo" src="loogojuara.svg" alt="PT. JUARA"></span></a>
       <p>PT. Juara — mitra resmi penempatan &amp; pelindungan Pekerja Migran Indonesia sejak 2009.</p>
     </div>
     <div><h5>Layanan</h5><a href="#portal">Portal Pekerja</a><a href="#cek">Cek Status Berkas</a><a href="#elig">Cek Kelayakan</a><a href="#faq">FAQ</a></div>
