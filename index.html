@@ -1235,7 +1235,7 @@ async function activateSession(u){
   USER=verifiedUser;
   const email=USER.email||USER.user_metadata?.email||'akun Google aktif';
   $('#obAccount').textContent='Login sebagai: '+email;
-  await loadParticipant(USER.id,request);
+  await loadParticipant(USER.id,request,isFreshLogin);
 }
 
 /* ================= ONBOARDING ================= */
@@ -1266,7 +1266,7 @@ function scheduleDocsSelfHeal(pid,request,delays=[900,1800,3000]){
     },delay);
   });
 }
-async function loadParticipant(uid,request){
+async function loadParticipant(uid,request,isFreshLogin=false){
   let data,error;
   try{ ({data,error}=await withTimeout(sb.from('participants_v2').select('*').eq('google_user_id',uid).maybeSingle(),15000,'muat data peserta')); }
   catch(err){
@@ -1277,6 +1277,15 @@ async function loadParticipant(uid,request){
   if(error){loadingUserId=null;console.error('loadParticipant gagal:',error);toast('Gagal memuat data peserta: '+error.message,'err');return;}
   PART=data;
   if(PART){
+    // Satu-satunya jalur OAuth Google di situs ini adalah tombol "Daftar dengan Google".
+    // Kalau baru saja kembali dari proses itu (isFreshLogin) dan ternyata datanya sudah
+    // ada di participants_v2, artinya akun/email ini memang sudah pernah terdaftar
+    // sebelumnya — beri tahu penggunanya, lalu tetap masukkan ke dashboard mereka
+    // (itu sekaligus jadi "login langsung"-nya).
+    if(isFreshLogin){
+      const email=USER?.email||USER?.user_metadata?.email||'Akun ini';
+      toast(email+' sudah terdaftar sebelumnya. Kamu langsung masuk ke akunmu ya 👍','ok');
+    }
     await loadDocsAndStage(PART.id,request);
     if(request===authEpoch&&USER?.id===uid)renderDash();
   }else{
