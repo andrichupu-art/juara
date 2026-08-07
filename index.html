@@ -1860,7 +1860,7 @@ async function uploadDoc(k,file,card){
     await loadDocs();
     toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
     const {pct,upReq,totReq}=renderDocs(); renderQR();
-    if(upReq===totReq&&!qrShown){qrShown=true;confetti();const trig=$('#qrTicketTrigger');if(trig){trig.querySelector('.tk-trigger').classList.add('glow');trig.scrollIntoView({behavior:'smooth',block:'center'});}openTicket();
+    if(upReq===totReq&&!qrShown){qrShown=true;confetti();const trig=$('#qrTicketTrigger');if(trig){trig.querySelector('.tk-trigger').classList.add('glow');trig.scrollIntoView({behavior:'smooth',block:'center'});}
       toast('🎉 <b>Berkas lengkap!</b> QR boarding pass kamu telah aktif.','ok');}
   }catch(err){ console.error('uploadDoc error:',err); toast('Ups, gagal mengunggah berkas. Coba lagi.','err'); resetUpBtn(); }
 }
