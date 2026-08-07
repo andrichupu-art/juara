@@ -295,7 +295,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .gsvg{width:22px;height:22px}
 .qr-scanbox{position:relative;width:220px;max-width:100%;margin:0 auto;border-radius:14px;overflow:hidden;background:#0B1F3A;box-shadow:0 8px 28px rgba(11,31,58,.18)}
 .qr-scanbox img{display:block;width:100%;height:auto;filter:brightness(.97)}
-.qr-scanline{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,rgba(190,129,70,0) 0%,var(--gold) 50%,rgba(190,129,70,0) 100%);box-shadow:0 0 10px 2px rgba(190,129,70,.7);animation:qrscan 5s ease-in-out infinite}
+.qr-scanline{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,rgba(190,129,70,0) 0%,var(--gold) 50%,rgba(190,129,70,0) 100%);box-shadow:0 0 10px 2px rgba(190,129,70,.7);animation:qrscan 2.2s ease-in-out infinite}
 @keyframes qrscan{0%{top:4%}50%{top:94%}100%{top:4%}}
 .qr-scancorners{position:absolute;inset:0;pointer-events:none}
 .qr-scancorners i{position:absolute;width:22px;height:22px;border:3px solid var(--gold);opacity:.9}
@@ -709,7 +709,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         </div>
         <div class="tk-btns">
           <button class="mini or" id="btnQRDown" onclick="downloadQR()">⬇ Unduh QR</button>
-          <button class="mini" id="btnApp" onclick="openApp()">📲 Buka Aplikasi</button>
         </div>
       </div>
     </div>
@@ -1487,6 +1486,7 @@ if(qrLoginFileInput){
     const origHTML=btnQrLogin?btnQrLogin.innerHTML:null;
     if(btnQrLogin){btnQrLogin.disabled=true;btnQrLogin.innerHTML='⏳ Membaca QR…';}
     if(qrLoginStatus)qrLoginStatus.textContent='';
+    const scanStartedAt=Date.now();
     // Tampilkan foto/gambar QR yang baru diunggah + animasi garis scan di atasnya,
     // supaya user tahu sistem sedang benar-benar memproses gambar yang mereka pilih.
     if(qrScanPreviewWrap&&qrScanImg){
@@ -1499,6 +1499,12 @@ if(qrLoginFileInput){
       const text=await decodeQrFromFile(file);
       const token=extractQrTokenFromText(text);
       if(!token)throw new Error('Gambar ini bukan QR peserta PT. Juara yang valid');
+      // jsQR biasanya selesai dalam hitungan milidetik, jadi animasi garis-scan
+      // (durasi 1 siklus 5 detik) bisa "kepotong" dan nggak sempat kelihatan.
+      // Tahan dulu minimal 1.3 detik sebelum lanjut supaya animasinya terasa.
+      const MIN_SCAN_MS=4400;
+      const remaining=MIN_SCAN_MS-(Date.now()-scanStartedAt);
+      if(remaining>0)await new Promise(r=>setTimeout(r,remaining));
       await loginWithQrToken(token);
       if(qrScanPreviewWrap)qrScanPreviewWrap.style.display='none';
     }catch(err){
@@ -1961,12 +1967,7 @@ async function handleFirstQrDownload(){
     toast('QR berhasil diunduh. Silakan login memakai QR peserta kamu 🎉','ok');
   }
 }
-function openApp(){
-  if(!PART?.qr_token)return toast('QR belum siap','err');
-  const url=location.origin+location.pathname+'#portal?qr='+encodeURIComponent(PART.qr_token);
-  toast('Tautan login QR dibuka','ok');
-  window.open(url,'_blank');
-}
+
 
 /* ================= CEK STATUS PUBLIK ================= */
 $('#cekForm').addEventListener('submit',async e=>{e.preventDefault();
