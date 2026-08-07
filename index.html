@@ -202,6 +202,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .sec-pad{padding:96px 0}
 #destinasi.sec-pad{padding-top:28px}
 #alur.sec-pad{padding-top:28px}
+#cek.sec-pad{padding-top:28px}
 #elig.sec-pad{padding-top:28px}
 #testi.sec-pad{padding-top:28px}
 #portal.sec-pad{padding-top:28px}
@@ -254,7 +255,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 @media(max-width:900px){.step-track{grid-template-columns:repeat(2,1fr)}.step-track::before,.plane-line{display:none}}
 
 /* ============ CEK STATUS (publik) ============ */
-.cekband{background:#fff;border-block:1px solid var(--line)}
+.cekband{background:transparent;border-block:none}
 .cek-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:50px;align-items:center}
 .cek-form{display:flex;gap:10px;margin-top:22px}
 .cek-form input{flex:1;border:2px solid var(--navy);border-radius:11px;padding:14px 18px;font:700 1rem var(--mono);letter-spacing:.1em;text-transform:uppercase}
@@ -1229,7 +1230,12 @@ function setAuthUI(loggedIn){
   $('#logoutBtn').style.display=loggedIn?'inline-flex':'none';
   $('#daftarWrap').style.display=loggedIn?'none':'';
   $('#loginBtn').style.display=loggedIn?'none':'';
-  $$('.auth-only').forEach(a=>a.style.display=loggedIn?'inline-block':'none');
+  $$('.auth-only').forEach(a=>{
+    // .mnav butuh display:flex supaya ikon tetap center (align-items/justify-content
+    // pada .mnav a). Kalau dipaksa inline-block di sini, flex-nya rusak dan ikon
+    // jadi menempel ke kiri di dalam kotak highlight (active state).
+    a.style.display=loggedIn?(a.closest('.mnav')?'flex':'inline-block'):'none';
+  });
 }
 
 sb.auth.onAuthStateChange((ev,ses)=>{
