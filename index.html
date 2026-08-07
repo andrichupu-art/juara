@@ -410,9 +410,12 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 
 @media(max-width:640px){
   .tk-overlay{align-items:flex-end}
-  .ticket.tk-drawer{width:100%;height:auto;max-height:86vh;border-radius:20px 20px 0 0;transform:translateY(100%)}
+  .ticket.tk-drawer{width:100%;height:auto;max-height:82vh;border-radius:20px 20px 0 0;transform:translateY(100%)}
   .tk-overlay.open .ticket.tk-drawer{transform:translateY(0)}
+  .ticket.tk-drawer .tk-r{padding-bottom:calc(26px + env(safe-area-inset-bottom,0px))}
 }
+/* Sembunyikan bottom-nav mobile selagi boarding pass terbuka, agar tombol Unduh tidak tertutup */
+body.tk-open .mnav{display:none!important}
 
 /* ============ ELIGIBILITAS ============ */
 .elig{position:relative}
@@ -1940,11 +1943,11 @@ function img_payload_for_card(){ return location.origin+location.pathname+'#port
 /* Buka/tutup boarding pass sebagai drawer (desktop, slide dari kiri) / bottom-sheet (mobile, slide dari bawah). */
 function openTicket(){
   const ov=document.getElementById('tkOverlay'); if(!ov) return;
-  ov.classList.add('open'); document.body.style.overflow='hidden';
+  ov.classList.add('open'); document.body.classList.add('tk-open'); document.body.style.overflow='hidden';
 }
 function closeTicket(){
   const ov=document.getElementById('tkOverlay'); if(!ov) return;
-  ov.classList.remove('open'); document.body.style.overflow='';
+  ov.classList.remove('open'); document.body.classList.remove('tk-open'); document.body.style.overflow='';
 }
 function toggleTicket(){
   const ov=document.getElementById('tkOverlay'); if(!ov) return;
