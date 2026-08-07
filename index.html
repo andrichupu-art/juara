@@ -325,6 +325,16 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .qr-scancorners i:nth-child(2){top:8px;right:8px;border-left:none;border-bottom:none;border-top-right-radius:4px}
 .qr-scancorners i:nth-child(3){bottom:8px;left:8px;border-right:none;border-top:none;border-bottom-left-radius:4px}
 .qr-scancorners i:nth-child(4){bottom:8px;right:8px;border-left:none;border-top:none;border-bottom-right-radius:4px}
+/* Tombol Scan/Upload QR selagi "Membaca QR…": jangan pakai dim/opacity bawaan tombol disabled
+   (biar warna navy-nya tetap solid/tidak dop), ganti dengan efek sapuan terang dari kiri ke kanan
+   supaya terlihat jelas sedang loading. */
+#btnQrLogin[disabled]{opacity:1}
+#btnQrLogin.qr-btn-loading{position:relative;overflow:hidden;background:var(--navy2);border-color:var(--navy2)}
+#btnQrLogin.qr-btn-loading::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.06) 35%,rgba(255,255,255,.32) 50%,rgba(255,255,255,.06) 65%,rgba(255,255,255,0) 100%);
+  transform:translateX(-100%);
+  animation:qrBtnSweep 1.3s ease-in-out infinite}
+@keyframes qrBtnSweep{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 .onb{width:100%;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:44px;box-shadow:none}
 .frm{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
 .frm .full{grid-column:1/-1}
@@ -1663,17 +1673,34 @@ async function buildSampleCardDataURL(){
   ctx.strokeStyle='#1B3A66'; ctx.lineWidth=2; roundRectPath(ctx,1,1,CW-2,CH-2,44); ctx.stroke();
   return cv.toDataURL('image/png');
 }
+/* Kartu contoh cuma dipakai di layout mobile (breakpoint sama dengan bottom-nav .mnav di CSS).
+   Di desktop cukup garis loading tipis di dalam tombol, tanpa kartu contoh. */
+const mqMobileQr=window.matchMedia('(max-width:1080px)');
+function isMobileQrViewport(){ return mqMobileQr.matches; }
 async function showSampleQrPreview(){
   if(qrRealFileUploaded)return; // user sudah upload QR asli, jangan timpa dengan contoh
+  if(!isMobileQrViewport()){
+    // Desktop: sembunyikan kartu contoh, tampilkan cuma loading bar tipis di dalam tombol
+    if(qrScanPreviewWrap)qrScanPreviewWrap.style.display='none';
+    if(btnQrLogin)btnQrLogin.classList.add('qr-btn-loading');
+    return;
+  }
+  if(btnQrLogin)btnQrLogin.classList.remove('qr-btn-loading');
   if(!qrScanPreviewWrap||!qrScanImg)return;
   try{
     if(!qrSampleDataUrl)qrSampleDataUrl=await buildSampleCardDataURL();
-    if(qrRealFileUploaded)return; // bisa saja user sempat upload selagi kartu contoh digambar
+    if(qrRealFileUploaded||!isMobileQrViewport())return; // bisa saja berubah selagi kartu contoh digambar
     qrScanImg.src=qrSampleDataUrl;
     qrScanPreviewWrap.style.display='block';
     if(qrScanCaption)qrScanCaption.textContent='Contoh tampilan kartu QR peserta';
   }catch(e){ console.error('gagal render contoh QR:',e); }
 }
+/* Kalau ukuran layar berubah lintas breakpoint mobile/desktop selagi panel login QR
+   masih terbuka & belum ada upload asli, sesuaikan ulang tampilannya. */
+mqMobileQr.addEventListener('change',()=>{
+  const lp=$('#guestLoginPanel');
+  if(lp&&lp.style.display!=='none')showSampleQrPreview();
+});
 if(qrLoginFileInput){
   qrLoginFileInput.addEventListener('change',async e=>{
     const file=e.target.files&&e.target.files[0];
@@ -1681,17 +1708,21 @@ if(qrLoginFileInput){
     if(!file)return;
     qrRealFileUploaded=true;
     const origHTML=btnQrLogin?btnQrLogin.innerHTML:null;
-    if(btnQrLogin){btnQrLogin.disabled=true;btnQrLogin.innerHTML='⏳ Membaca QR…';}
+    if(btnQrLogin){btnQrLogin.classList.add('qr-btn-loading');btnQrLogin.disabled=true;btnQrLogin.innerHTML='⏳ Membaca QR…';}
     if(qrLoginStatus)qrLoginStatus.textContent='';
     if(qrScanCaption)qrScanCaption.textContent='';
     const scanStartedAt=Date.now();
     // Tampilkan foto/gambar QR yang baru diunggah + animasi garis scan di atasnya,
     // supaya user tahu sistem sedang benar-benar memproses gambar yang mereka pilih.
-    if(qrScanPreviewWrap&&qrScanImg){
+    // Kotak preview ini cuma dipakai di layout mobile — di desktop cukup teks tombol
+    // "Membaca QR…" saja, tanpa kartu/gambar apa pun yang muncul di bawah tombol.
+    if(isMobileQrViewport()&&qrScanPreviewWrap&&qrScanImg){
       if(qrScanPreviewUrl)URL.revokeObjectURL(qrScanPreviewUrl);
       qrScanPreviewUrl=URL.createObjectURL(file);
       qrScanImg.src=qrScanPreviewUrl;
       qrScanPreviewWrap.style.display='block';
+    }else if(qrScanPreviewWrap){
+      qrScanPreviewWrap.style.display='none';
     }
     try{
       const text=await decodeQrFromFile(file);
@@ -1712,7 +1743,7 @@ if(qrLoginFileInput){
       qrRealFileUploaded=false;
       showSampleQrPreview();
     }finally{
-      if(btnQrLogin){btnQrLogin.disabled=false;btnQrLogin.innerHTML=origHTML;}
+      if(btnQrLogin){btnQrLogin.classList.remove('qr-btn-loading');btnQrLogin.disabled=false;btnQrLogin.innerHTML=origHTML;}
     }
   });
 }
