@@ -281,7 +281,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .portal .wrap{position:relative;z-index:1}
 .pstate{display:none}.pstate.on{display:block;animation:fadeIn .5s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.gate{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:48px;box-shadow:none}
+.gate{display:grid;grid-template-columns:1fr;gap:44px;background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:48px;box-shadow:none}
 .gate h3{font:800 1.7rem var(--disp);color:var(--navy);margin-bottom:12px}
 .gate p{color:var(--mut);margin-bottom:26px}
 .glist{list-style:none;margin-bottom:28px}
@@ -292,10 +292,16 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .gbtn:hover{transform:translateY(-3px);box-shadow:none}
 .gbtn.g{background:var(--navy);color:#fff}
 .gsvg{width:22px;height:22px}
-.gate-side{background:var(--navy);border-radius:16px;padding:34px;color:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
-.gate-side::after{content:"🛂";position:absolute;font-size:9rem;right:-24px;bottom:-30px;opacity:.12;transform:rotate(-12deg)}
-.gate-side b{font:800 1.2rem var(--disp);color:var(--gold);display:block;margin-bottom:10px}
-.gate-side p{color:#b7c8de;font-size:.92rem}
+.qr-scanbox{position:relative;width:220px;max-width:100%;margin:0 auto;border-radius:14px;overflow:hidden;background:#0B1F3A;box-shadow:0 8px 28px rgba(11,31,58,.18)}
+.qr-scanbox img{display:block;width:100%;height:auto;filter:brightness(.97)}
+.qr-scanline{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,rgba(190,129,70,0) 0%,var(--gold) 50%,rgba(190,129,70,0) 100%);box-shadow:0 0 10px 2px rgba(190,129,70,.7);animation:qrscan 3.2s ease-in-out infinite}
+@keyframes qrscan{0%{top:4%}50%{top:94%}100%{top:4%}}
+.qr-scancorners{position:absolute;inset:0;pointer-events:none}
+.qr-scancorners i{position:absolute;width:22px;height:22px;border:3px solid var(--gold);opacity:.9}
+.qr-scancorners i:nth-child(1){top:8px;left:8px;border-right:none;border-bottom:none;border-top-left-radius:4px}
+.qr-scancorners i:nth-child(2){top:8px;right:8px;border-left:none;border-bottom:none;border-top-right-radius:4px}
+.qr-scancorners i:nth-child(3){bottom:8px;left:8px;border-right:none;border-top:none;border-bottom-left-radius:4px}
+.qr-scancorners i:nth-child(4){bottom:8px;right:8px;border-left:none;border-top:none;border-bottom-right-radius:4px}
 .onb{width:100%;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:44px;box-shadow:none}
 .frm{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
 .frm .full{grid-column:1/-1}
@@ -743,13 +749,15 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
               <button type="button" class="btn b-pri" id="btnQrLogin" style="width:100%;justify-content:center" onclick="$('#qrLoginFile').click()">📷 Scan / Upload QR Peserta</button>
               <input type="file" id="qrLoginFile" accept="image/*" style="display:none">
             </div>
+            <div id="qrScanPreviewWrap" style="display:none;margin-top:18px">
+              <div id="qrScanBox" class="qr-scanbox">
+                <img id="qrScanImg" alt="QR yang diunggah">
+                <div class="qr-scanline"></div>
+                <div class="qr-scancorners"><i></i><i></i><i></i><i></i></div>
+              </div>
+            </div>
             <p class="meta" id="qrLoginStatus" style="margin-top:10px"></p>
           </div>
-        </div>
-        <div class="gate-side">
-          <b>“Sekali unggah, terpantau sampai terbang.”</b>
-          <p>Setelah berkas lengkap, sistem otomatis menerbitkan QR peserta. Scan dari aplikasi mobile untuk melihat timeline verifikasi secara real-time.</p>
-          <div style="margin-top:22px;font-size:2.6rem;letter-spacing:8px">📄 → 📱 → 🛫</div>
         </div>
       </div>
     </div>
@@ -1363,6 +1371,8 @@ async function loginWithQrToken(token){
   if(error)toast('Login QR gagal: '+error.message,'err');
 }
 const qrLoginFileInput=$('#qrLoginFile'), qrLoginStatus=$('#qrLoginStatus'), btnQrLogin=$('#btnQrLogin');
+const qrScanPreviewWrap=$('#qrScanPreviewWrap'), qrScanImg=$('#qrScanImg');
+let qrScanPreviewUrl=null;
 if(qrLoginFileInput){
   qrLoginFileInput.addEventListener('change',async e=>{
     const file=e.target.files&&e.target.files[0];
@@ -1371,14 +1381,24 @@ if(qrLoginFileInput){
     const origHTML=btnQrLogin?btnQrLogin.innerHTML:null;
     if(btnQrLogin){btnQrLogin.disabled=true;btnQrLogin.innerHTML='⏳ Membaca QR…';}
     if(qrLoginStatus)qrLoginStatus.textContent='';
+    // Tampilkan foto/gambar QR yang baru diunggah + animasi garis scan di atasnya,
+    // supaya user tahu sistem sedang benar-benar memproses gambar yang mereka pilih.
+    if(qrScanPreviewWrap&&qrScanImg){
+      if(qrScanPreviewUrl)URL.revokeObjectURL(qrScanPreviewUrl);
+      qrScanPreviewUrl=URL.createObjectURL(file);
+      qrScanImg.src=qrScanPreviewUrl;
+      qrScanPreviewWrap.style.display='block';
+    }
     try{
       const text=await decodeQrFromFile(file);
       const token=extractQrTokenFromText(text);
       if(!token)throw new Error('Gambar ini bukan QR peserta PT. Juara yang valid');
       await loginWithQrToken(token);
+      if(qrScanPreviewWrap)qrScanPreviewWrap.style.display='none';
     }catch(err){
       console.error('decode QR gagal:',err);
       toast(err.message||'Gagal membaca QR','err');
+      if(qrScanPreviewWrap)qrScanPreviewWrap.style.display='none';
     }finally{
       if(btnQrLogin){btnQrLogin.disabled=false;btnQrLogin.innerHTML=origHTML;}
     }
