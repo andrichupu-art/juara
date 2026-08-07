@@ -859,6 +859,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
               <input type="file" id="qrLoginFile" accept="image/*" style="display:none">
             </div>
             <div id="qrScanPreviewWrap" style="display:none;margin-top:18px">
+              <p class="meta" id="qrScanCaption" style="text-align:center;margin-bottom:8px"></p>
               <div id="qrScanBox" class="qr-scanbox">
                 <img id="qrScanImg" alt="QR yang diunggah">
                 <div class="qr-scanline"></div>
@@ -901,7 +902,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     </div>
 
     <!-- STATE: DASHBOARD -->
-    <div class="pstate" id="stDash" style="margin-top:44px">
+    <div class="pstate" id="stDash" style="margin-top:64px">
       <div class="dash-top rv in">
         <div class="ava" id="dAva">G</div>
         <div><h3 id="dNama">—</h3><div class="meta" id="dMeta">—</div><div class="meta" id="dAccount">—</div></div>
@@ -1307,6 +1308,7 @@ function showGuestMode(mode){
   const rp=$('#guestRegisterPanel'); if(rp)rp.style.display=isReg?'':'none';
   const lp=$('#guestLoginPanel'); if(lp)lp.style.display=isReg?'none':'';
   showTab('portal');
+  if(!isReg) showSampleQrPreview();
 }
 function clearAuthState(){
   authEpoch++; loadingUserId=null; USER=null; PART=null; DOCLIST={}; qrShown=false; CUR_DB=null;
@@ -1587,16 +1589,101 @@ async function loginWithQrToken(token){
   if(error)toast('Login QR gagal: '+error.message,'err');
 }
 const qrLoginFileInput=$('#qrLoginFile'), qrLoginStatus=$('#qrLoginStatus'), btnQrLogin=$('#btnQrLogin');
-const qrScanPreviewWrap=$('#qrScanPreviewWrap'), qrScanImg=$('#qrScanImg');
+const qrScanPreviewWrap=$('#qrScanPreviewWrap'), qrScanImg=$('#qrScanImg'), qrScanCaption=$('#qrScanCaption');
 let qrScanPreviewUrl=null;
+let qrRealFileUploaded=false;   // true begitu user benar-benar memilih file QR sendiri
+let qrSampleDataUrl=null;       // cache hasil generate kartu contoh biar tak digambar ulang tiap kali panel dibuka
+
+/* Kartu contoh boarding-pass (data dummy) yang ditampilkan otomatis di panel "Login peserta"
+   sebelum user mengunggah QR asli — murni ilustrasi tampilan, bukan hasil scan sungguhan.
+   Dibuat dari helper canvas yang sama dengan kartu asli (drawCardHeader/drawInfoCell/dst)
+   supaya gayanya konsisten, tapi payload QR-nya cuma teks "CONTOH" (tidak bisa dipakai login). */
+async function buildSampleCardDataURL(){
+  try{ await document.fonts.load('800 46px Sora'); await document.fonts.load('700 26px "Plus Jakarta Sans"'); await document.fonts.ready; }catch(e){}
+  const logoImg=await loadJuaraLogoImage();
+  const kode='CONTOH-QR', nama='Nama Peserta', negara='—';
+  const tanggal=new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric'}).format(new Date());
+  const CW=1000, headerH=340, CH=1780;
+  const cv=document.createElement('canvas'); cv.width=CW; cv.height=CH;
+  const ctx=cv.getContext('2d');
+  ctx.save(); roundRectPath(ctx,0,0,CW,CH,44); ctx.clip();
+  ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,CW,CH);
+  drawCardHeader(ctx,CW,headerH,logoImg);
+  drawPerforation(ctx,CW,headerH);
+  let y=headerH+70;
+  ctx.fillStyle='#13314D'; ctx.font='800 18px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('B O A R D I N G   P A S S   P E S E R T A',64,y);
+  y+=54;
+  ctx.fillStyle='#101B2C'; ctx.font='800 50px Sora, sans-serif';
+  ctx.fillText(nama,64,y);
+  y+=36;
+  ctx.fillStyle='#5A6B82'; ctx.font='600 22px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('Program Penempatan Pekerja ke Luar Negeri',64,y);
+  y+=46;
+  const gap=20, cellH=110, cellW=(CW-128-gap*2)/3;
+  drawInfoCell(ctx,64,y,cellW,cellH,'KODE PESERTA',kode);
+  drawInfoCell(ctx,64+cellW+gap,y,cellW,cellH,'NEGARA TUJUAN',negara);
+  drawInfoCell(ctx,64+(cellW+gap)*2,y,cellW,cellH,'TANGGAL CETAK',tanggal);
+  y+=cellH+56;
+  const qrBox=640, qrX=(CW-qrBox)/2;
+  roundRectPath(ctx,qrX,y,qrBox,qrBox,22); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.strokeStyle='rgba(19,49,77,.08)'; ctx.lineWidth=1; ctx.stroke();
+  try{
+    const qr=qrcode(0,'M'); qr.addData('CONTOH'); qr.make();
+    const n=qr.getModuleCount(), padm=2, inner=qrBox-48, gridN=n+padm*2;
+    const modCv=document.createElement('canvas'); modCv.width=gridN; modCv.height=gridN;
+    const modCtx=modCv.getContext('2d');
+    modCtx.fillStyle='#fff'; modCtx.fillRect(0,0,gridN,gridN);
+    modCtx.fillStyle='#0B1F3A';
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++) if(qr.isDark(r,c)) modCtx.fillRect(c+padm,r+padm,1,1);
+    const drawSize=Math.floor(inner/gridN)*gridN || inner, off=(qrBox-drawSize)/2;
+    ctx.imageSmoothingEnabled=false; ctx.globalAlpha=.4;
+    ctx.drawImage(modCv,0,0,gridN,gridN,qrX+off,y+off,drawSize,drawSize);
+    ctx.globalAlpha=1; ctx.imageSmoothingEnabled=true;
+  }catch(e){}
+  ctx.fillStyle='rgba(255,255,255,.78)'; roundRectPath(ctx,qrX,y,qrBox,qrBox,22); ctx.fill();
+  ctx.fillStyle='#1B3A66'; ctx.font='800 24px "Plus Jakarta Sans", sans-serif'; ctx.textAlign='center';
+  wrapCenteredText(ctx,'📷 Contoh tampilan kartu QR',qrX+qrBox/2,y+qrBox/2,qrBox-100,32);
+  ctx.textAlign='left';
+  ctx.strokeStyle='#BE8146'; ctx.lineWidth=5; ctx.lineCap='round';
+  const cl=34, inset=-10;
+  const corners=[[qrX+inset,y+inset,1,1],[qrX+qrBox-inset,y+inset,-1,1],[qrX+inset,y+qrBox-inset,1,-1],[qrX+qrBox-inset,y+qrBox-inset,-1,-1]];
+  corners.forEach(([cx,cy,dx,dy])=>{ ctx.beginPath(); ctx.moveTo(cx,cy+cl*dy); ctx.lineTo(cx,cy); ctx.lineTo(cx+cl*dx,cy); ctx.stroke(); });
+  y+=qrBox+38;
+  ctx.textAlign='center'; ctx.fillStyle='#BE8146'; ctx.font='800 17px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('— · PT. JUARA · RESMI · —',CW/2,y);
+  y+=50;
+  ctx.strokeStyle='#D9E3EF'; ctx.lineWidth=2; ctx.setLineDash([8,8]);
+  ctx.beginPath(); ctx.moveTo(64,y); ctx.lineTo(CW-64,y); ctx.stroke(); ctx.setLineDash([]);
+  y+=44;
+  ctx.fillStyle='#5A6B82'; ctx.font='500 22px "Plus Jakarta Sans", sans-serif';
+  wrapCenteredText(ctx,'Ini contoh tampilan. Tekan tombol di atas untuk unggah QR peserta asli kamu.',CW/2,y,CW-160,34);
+  ctx.textAlign='left';
+  ctx.restore();
+  ctx.strokeStyle='#1B3A66'; ctx.lineWidth=2; roundRectPath(ctx,1,1,CW-2,CH-2,44); ctx.stroke();
+  return cv.toDataURL('image/png');
+}
+async function showSampleQrPreview(){
+  if(qrRealFileUploaded)return; // user sudah upload QR asli, jangan timpa dengan contoh
+  if(!qrScanPreviewWrap||!qrScanImg)return;
+  try{
+    if(!qrSampleDataUrl)qrSampleDataUrl=await buildSampleCardDataURL();
+    if(qrRealFileUploaded)return; // bisa saja user sempat upload selagi kartu contoh digambar
+    qrScanImg.src=qrSampleDataUrl;
+    qrScanPreviewWrap.style.display='block';
+    if(qrScanCaption)qrScanCaption.textContent='Contoh tampilan kartu QR peserta';
+  }catch(e){ console.error('gagal render contoh QR:',e); }
+}
 if(qrLoginFileInput){
   qrLoginFileInput.addEventListener('change',async e=>{
     const file=e.target.files&&e.target.files[0];
     e.target.value=''; // supaya bisa pilih file yang sama lagi kalau perlu diulang
     if(!file)return;
+    qrRealFileUploaded=true;
     const origHTML=btnQrLogin?btnQrLogin.innerHTML:null;
     if(btnQrLogin){btnQrLogin.disabled=true;btnQrLogin.innerHTML='⏳ Membaca QR…';}
     if(qrLoginStatus)qrLoginStatus.textContent='';
+    if(qrScanCaption)qrScanCaption.textContent='';
     const scanStartedAt=Date.now();
     // Tampilkan foto/gambar QR yang baru diunggah + animasi garis scan di atasnya,
     // supaya user tahu sistem sedang benar-benar memproses gambar yang mereka pilih.
@@ -1621,7 +1708,9 @@ if(qrLoginFileInput){
     }catch(err){
       console.error('decode QR gagal:',err);
       toast(err.message||'Gagal membaca QR','err');
-      if(qrScanPreviewWrap)qrScanPreviewWrap.style.display='none';
+      // Gagal membaca — balik ke kartu contoh lagi supaya panel tidak kosong melompong
+      qrRealFileUploaded=false;
+      showSampleQrPreview();
     }finally{
       if(btnQrLogin){btnQrLogin.disabled=false;btnQrLogin.innerHTML=origHTML;}
     }
