@@ -1700,13 +1700,27 @@ async function buildIDCardBlob(){
   ctx.strokeStyle='rgba(19,49,77,.08)'; ctx.lineWidth=1; ctx.stroke();
   try{
     const qr=qrcode(0,'H'); qr.addData(img_payload_for_card(kode)); qr.make();
-    const n=qr.getModuleCount(), pad=2, inner=qrBox-48, sc=inner/(n+pad*2), off=(qrBox-(n+pad*2)*sc)/2;
-    ctx.fillStyle='#0B1F3A';
-    for(let r=0;r<n;r++)for(let c=0;c<n;c++) if(qr.isDark(r,c)) ctx.fillRect(qrX+off+(c+pad)*sc,y+off+(r+pad)*sc,sc+0.6,sc+0.6);
+    const n=qr.getModuleCount(), pad=2, inner=qrBox-48;
+    const gridN=n+pad*2;
+    /* Render 1 pixel per modul dulu di canvas terpisah (tanpa anti-aliasing/fraksi sama sekali),
+       baru diperbesar ke ukuran akhir dengan imageSmoothingEnabled=false. Ini menggantikan trik lama
+       "sc+0.6" (menggambar tiap modul sedikit lebih besar dari selnya untuk menutup celah moire) —
+       trik itu justru membuat modul-modul gelap yang bersebelahan saling menimpa/menyatu, merusak
+       grid QR sehingga scanner (zbar/jsQR/dll) gagal decode sama sekali, terutama untuk payload URL
+       panjang (versi/modul QR tinggi & rapat). Pendekatan scale-up 1px/modul ini tetap tajam & rapi
+       di layar tanpa merusak data QR-nya. */
+    const modCv=document.createElement('canvas'); modCv.width=gridN; modCv.height=gridN;
+    const modCtx=modCv.getContext('2d');
+    modCtx.fillStyle='#fff'; modCtx.fillRect(0,0,gridN,gridN);
+    modCtx.fillStyle='#0B1F3A';
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++) if(qr.isDark(r,c)) modCtx.fillRect(c+pad,r+pad,1,1);
+    const drawSize=Math.floor(inner/gridN)*gridN || inner, off=(qrBox-drawSize)/2;
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(modCv,0,0,gridN,gridN,qrX+off,y+off,drawSize,drawSize);
+    ctx.imageSmoothingEnabled=true;
     /* Logo tengah SENGAJA dihapus dari kode QR (bukan cuma dikecilkan). Sudah diuji & terbukti:
-       kombinasi logo tengah + efek anti-moire (sc+0.6 di atas) bisa membuat QR gagal dibaca
-       scanner sama sekali, terutama untuk payload URL panjang (QR versi tinggi/rapat) —
-       inilah penyebab bug "QR tidak terbaca" saat login. Branding cukup lewat header kartu. */
+       logo tengah menimpa kode QR bisa membuat QR gagal dibaca scanner sama sekali, terutama
+       untuk payload URL panjang (QR versi tinggi/rapat). Branding cukup lewat header kartu. */
   }catch(e){}
   /* bingkai sudut emas */
   ctx.strokeStyle='#BE8146'; ctx.lineWidth=5; ctx.lineCap='round';
