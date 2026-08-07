@@ -2229,8 +2229,15 @@ if('serviceWorker' in navigator){
         });
       });
     }).catch(err=>console.warn('SW gagal daftar:',err));
+    // Hanya reload kalau ini benar-benar UPDATE versi baru (sudah ada controller sebelumnya).
+    // Pada aktivasi pertama kali (belum pernah ada controller), jangan reload — ini yang
+    // menyebabkan splash/menu sempat "berkedip" muncul dua kali saat kunjungan pertama.
+    let hadController=!!navigator.serviceWorker.controller;
     let reloaded=false;
-    navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(reloaded)return; reloaded=true; location.reload(); });
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(!hadController){ hadController=true; return; }
+      if(reloaded)return; reloaded=true; location.reload();
+    });
   });
 }
 function showUpdateBanner(reg){
