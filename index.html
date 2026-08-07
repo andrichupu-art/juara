@@ -1280,11 +1280,15 @@ async function loadParticipant(uid,request,isFreshLogin=false){
     // Satu-satunya jalur OAuth Google di situs ini adalah tombol "Daftar dengan Google".
     // Kalau baru saja kembali dari proses itu (isFreshLogin) dan ternyata datanya sudah
     // ada di participants_v2, artinya akun/email ini memang sudah pernah terdaftar
-    // sebelumnya — beri tahu penggunanya, lalu tetap masukkan ke dashboard mereka
-    // (itu sekaligus jadi "login langsung"-nya).
+    // sebelumnya. Jangan biarkan masuk lewat sesi Google ini — sign out dulu, lalu
+    // arahkan ke panel login (QR), bukan ke dashboard.
     if(isFreshLogin){
       const email=USER?.email||USER?.user_metadata?.email||'Akun ini';
-      toast(email+' sudah terdaftar sebelumnya. Kamu langsung masuk ke akunmu ya 👍','ok');
+      toast(email+' sudah terdaftar. Silakan login pakai QR peserta kamu ya.','err');
+      await sb.auth.signOut({scope:'local'});
+      clearAuthState();
+      showGuestMode('login');
+      return;
     }
     await loadDocsAndStage(PART.id,request);
     if(request===authEpoch&&USER?.id===uid)renderDash();
