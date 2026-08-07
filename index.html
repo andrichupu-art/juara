@@ -422,7 +422,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .tk-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 
 /* Baris header portal: judul kiri, tombol ikon QR di kanan atas (sejajar judul) */
-.portal-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.portal-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:26px}
 
 /* Tombol pemicu: ikon QR saja, bulat, kecil, tidak makan tempat */
 .tk-trigger-wrap{flex:0 0 auto;margin-top:2px}
@@ -686,7 +686,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
       <button class="btn b-ghost sm" id="installBtn" onclick="installPWA()" style="display:none;border-color:#fff;color:#fff">⬇ Pasang App</button>
       <button class="btn b-pri sm" id="daftarWrap" onclick="showGuestMode('register')">Daftar Sekarang <span class="pl">✈</span></button>
       <button class="btn b-ghost sm" id="loginBtn" onclick="showGuestMode('login')" style="border-color:#fff;color:#fff">Login</button>
-      <button class="btn b-pri sm" id="authBtn" onclick="authBtnClick()" style="display:none">👤 Portal Saya</button>
+      <button class="btn b-pri sm" id="authBtn" onclick="authBtnClick()" style="display:none"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.4-5.6 7.5-5.6s6.1 2 7.5 5.6"/></svg> Portal Saya</button>
       <button class="btn b-ghost sm" id="logoutBtn" onclick="logout()" style="display:none;border-color:#fff;color:#fff">Keluar ⏻</button>
       <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
     </div>
