@@ -147,14 +147,14 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .tabpanel.active{display:block;animation:tabIn .35s ease}
 @keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 /* slide transisi ala Android ViewPager: panel lama geser keluar, panel baru geser masuk dari arah berlawanan */
-.tabpanel.tab-out-l{display:block;animation:tabOutL .22s ease forwards}
-.tabpanel.tab-out-r{display:block;animation:tabOutR .22s ease forwards}
-@keyframes tabOutL{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-28px)}}
-@keyframes tabOutR{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(28px)}}
-.tabpanel.active.tab-in-l{animation:tabInL .28s cubic-bezier(.22,.61,.36,1)}
-.tabpanel.active.tab-in-r{animation:tabInR .28s cubic-bezier(.22,.61,.36,1)}
-@keyframes tabInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
-@keyframes tabInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+.tabpanel.tab-out-l{display:block;animation:tabOutL .24s ease forwards}
+.tabpanel.tab-out-r{display:block;animation:tabOutR .24s ease forwards}
+@keyframes tabOutL{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-46px)}}
+@keyframes tabOutR{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(46px)}}
+.tabpanel.active.tab-in-l{animation:tabInL .32s cubic-bezier(.22,.61,.36,1)}
+.tabpanel.active.tab-in-r{animation:tabInR .32s cubic-bezier(.22,.61,.36,1)}
+@keyframes tabInL{from{opacity:0;transform:translateX(-46px)}to{opacity:1;transform:translateX(0)}}
+@keyframes tabInR{from{opacity:0;transform:translateX(46px)}to{opacity:1;transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){
   .tabpanel.tab-out-l,.tabpanel.tab-out-r,.tabpanel.active.tab-in-l,.tabpanel.active.tab-in-r{animation:none}
 }
@@ -1234,7 +1234,7 @@ function showTab(id){
     setTimeout(()=>{
       cur.classList.remove('tab-out-l','tab-out-r');
       applyTab(id,dir);
-    },210);
+    },230);
   }else{
     applyTab(id,dir);
   }
