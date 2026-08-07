@@ -1325,15 +1325,29 @@ function decodeQrFromFile(file){
     reader.onload=()=>{
       img.onerror=()=>reject(new Error('File bukan gambar yang valid'));
       img.onload=()=>{
-        const cv=document.createElement('canvas');
-        const maxSide=1600; // cukup besar untuk QR padat, tapi tidak berat di HP lama
-        const scale=Math.min(1,maxSide/Math.max(img.width,img.height));
-        cv.width=Math.round(img.width*scale); cv.height=Math.round(img.height*scale);
-        const ctx=cv.getContext('2d'); ctx.drawImage(img,0,0,cv.width,cv.height);
-        const imgData=ctx.getImageData(0,0,cv.width,cv.height);
-        const res=window.jsQR?jsQR(imgData.data,cv.width,cv.height):null;
-        if(!res||!res.data){reject(new Error('QR tidak terbaca dari gambar itu. Pastikan foto jelas & tidak buram.'));return;}
-        resolve(res.data);
+        if(!window.jsQR){reject(new Error('Komponen pembaca QR belum siap, coba muat ulang halaman.'));return;}
+        // Coba beberapa ukuran render. Beberapa browser (terutama Safari) menghaluskan
+        // (smoothing) gambar saat drawImage() memperkecil ukuran, sehingga tepi kotak
+        // QR jadi buram dan jsQR gagal mendeteksi meski fotonya sendiri jelas. Jadi kita:
+        // 1) matikan image smoothing, dan 2) coba beberapa ukuran (native, besar, sedang, kecil)
+        // sebelum benar-benar menyerah.
+        const natMax=Math.max(img.width,img.height);
+        const sizesToTry=Array.from(new Set([natMax,2000,1600,1000,700].filter(s=>s<=natMax||s===natMax)));
+        let result=null;
+        for(const maxSide of sizesToTry){
+          const scale=Math.min(1,maxSide/natMax);
+          const w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
+          const cv=document.createElement('canvas');
+          cv.width=w; cv.height=h;
+          const ctx=cv.getContext('2d',{willReadFrequently:true});
+          ctx.imageSmoothingEnabled=false;
+          ctx.drawImage(img,0,0,w,h);
+          const imgData=ctx.getImageData(0,0,w,h);
+          const res=jsQR(imgData.data,w,h,{inversionAttempts:'attemptBoth'});
+          if(res&&res.data){result=res.data;break;}
+        }
+        if(!result){reject(new Error('QR tidak terbaca dari gambar itu. Pastikan foto jelas & tidak buram.'));return;}
+        resolve(result);
       };
       img.src=reader.result;
     };
