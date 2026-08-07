@@ -543,7 +543,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .modal h3{font:800 1.35rem var(--disp);color:var(--navy);margin-bottom:6px}
 .modal p{color:var(--mut);font-size:.9rem;margin-bottom:20px}
 @media(max-width:960px){
-  html,body{height:auto;min-height:100vh;min-height:100dvh;}
+  html,body{height:auto;min-height:100%;}
   .tabpanel.active{min-height:1px;flex-shrink:0;}
   .hero-g,.gate,.cek-grid,.dash-grid,.elig-box,.ticket{grid-template-columns:1fr}
   .stats .wrap{grid-template-columns:repeat(2,1fr)}
@@ -1083,6 +1083,35 @@ function showTab(id){
   history.replaceState(null,'','#'+id);
   window.scrollTo({top:0,behavior:'smooth'});
   $$('.tabpanel.active .rv:not(.in)').forEach(el=>{obs.observe(el);});
+  adjustCtaFill();
+}
+// Membuat section .cta (gelombang biru) selalu menempel di bawah layar kalau konten
+// di atasnya lebih pendek dari tinggi layar — TANPA mengubah tinggi body/html
+// (itu yang sebelumnya bikin scroll terkunci di sebagian browser mobile).
+// Caranya: ukur posisi .cta secara nyata (px), lalu kalau ternyata halaman lebih
+// pendek dari layar, kasih min-height ke .cta SAJA supaya dia yang melar.
+const CTA_FILL_TABS=['home','destinasi','alur','elig','testi','portal'];
+function adjustCtaFill(){
+  const cta=$('.cta'); if(!cta)return;
+  cta.style.minHeight='';
+  const activeTab=$('.tabpanel.active');
+  const tabId=activeTab?activeTab.id:'';
+  if(!CTA_FILL_TABS.includes(tabId))return;
+  requestAnimationFrame(()=>{
+    const rect=cta.getBoundingClientRect();
+    const scrollY=window.scrollY||window.pageYOffset||0;
+    const ctaTopAbs=rect.top+scrollY;
+    const need=window.innerHeight-ctaTopAbs;
+    if(need>rect.height)cta.style.minHeight=need+'px';
+  });
+}
+let ctaFillRO;
+function initCtaFillObserver(){
+  if(ctaFillRO||typeof ResizeObserver==='undefined')return;
+  ctaFillRO=new ResizeObserver(()=>adjustCtaFill());
+  $$('.tabpanel').forEach(tp=>ctaFillRO.observe(tp));
+  window.addEventListener('resize',adjustCtaFill);
+  window.addEventListener('orientationchange',adjustCtaFill);
 }
 document.addEventListener('click',e=>{
   const a=e.target.closest('a[href^="#"]'); if(!a)return;
@@ -1147,7 +1176,8 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
 
 /* ================= AUTH ================= */
 function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');
-  const qt=document.getElementById('qrTicket'); if(qt) qt.style.display=(s==='#stDash')?'':'none';}
+  const qt=document.getElementById('qrTicket'); if(qt) qt.style.display=(s==='#stDash')?'':'none';
+  adjustCtaFill();}
 function authBtnClick(){ showTab('portal'); }
 let guestMode='register';
 function showGuestMode(mode){
@@ -1984,6 +2014,8 @@ renderDest();
 // Sesi tidak pernah disimpan di localStorage (persistSession:false), jadi cukup
 // pakai isIncomingAuthReturn() yang sama dipakai di initTab() & onAuthStateChange.
 setState(pendingAuthReturn?'#stAuthLoading':'#stGuest');
+initCtaFillObserver();
+adjustCtaFill();
 
 /* jam board hidup */
 setInterval(()=>{const el=document.querySelector('.board-f span:last-child');
