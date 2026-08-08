@@ -416,7 +416,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .ava{width:56px;height:56px;border-radius:14px;background:var(--orange);display:grid;place-items:center;font:800 1.4rem var(--disp);color:#fff;box-shadow:none}
 .dash-top h3{font:800 1.3rem var(--disp)}
 .dash-top .meta{font:600 .8rem var(--mono);color:#9db4d0;letter-spacing:.06em}
-.dash-top .kode{margin-left:auto;text-align:right}
+.dash-top .kode{text-align:right}
 .dash-top .kode b{font:800 1.25rem var(--mono);color:var(--gold);letter-spacing:.12em}
 .dash-top .kode span{display:block;font-size:.68rem;letter-spacing:.2em;color:#9db4d0}
 .dash-top .kode-mark{height:38px;width:auto;display:block;object-fit:contain}
@@ -1095,8 +1095,10 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
       <div class="dash-top rv in">
         <div class="ava" id="dAva">G</div>
         <div><h3 id="dNama">—</h3><div class="meta" id="dMeta">—</div><div class="meta" id="dAccount">—</div></div>
-        <div class="kode"><span>KODE PESERTA</span><b id="dKode">—</b></div>
-        <span class="logo-shine kode-mark" style="--shine-mask:url('loogojuara 2.svg')"><img src="loogojuara 2.svg" alt="PT. JUARA"></span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+          <div class="kode"><span>KODE PESERTA</span><b id="dKode">—</b></div>
+          <span class="logo-shine kode-mark" style="--shine-mask:url('loogojuara 2.svg')"><img src="loogojuara 2.svg" alt="PT. JUARA"></span>
+        </div>
       </div>
 
       <div class="dash-grid">
