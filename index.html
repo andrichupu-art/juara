@@ -2361,7 +2361,18 @@ async function uploadDoc(k,file,card){
 async function viewDoc(k){ const d=DOCLIST[k]; if(!d)return;
   const db=CUR_DB||sb;
   if(d.data||memURL[k])return window.open(d.data||memURL[k],'_blank');
-  if(d.storage_path&&db){ const {data}=await db.storage.from('juara-v2-documents').createSignedUrl(d.storage_path,300); if(data)return window.open(data.signedUrl,'_blank'); }
+  // PENTING: window.open harus dipanggil di sini, MASIH dalam gesture klik asli,
+  // sebelum ada 'await' apa pun — sama seperti pola di downloadQR(). Kalau dipanggil
+  // setelah await (mis. setelah createSignedUrl selesai), sejumlah browser (terutama
+  // Safari iOS) tidak lagi menganggapnya respons langsung ke klik pengguna, sehingga
+  // popup diblokir atau malah tab UTAMA yang dinavigasi ke sana (app terasa "pindah
+  // halaman"/reload padahal sesi login tetap tersimpan).
+  const popup=window.open('','_blank');
+  if(d.storage_path&&db){
+    const {data}=await db.storage.from('juara-v2-documents').createSignedUrl(d.storage_path,300);
+    if(data){ if(popup)popup.location.href=data.signedUrl; else window.open(data.signedUrl,'_blank'); return; }
+  }
+  if(popup)popup.close();
   toast('Pratinjau tidak tersedia pada mode ini',''); }
 
 let _docsReqSeq=0;
