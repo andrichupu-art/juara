@@ -357,7 +357,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 /* Sesudah diklik, selagi menunggu dialog galeri/kamera OS benar-benar terbuka
    (kadang perlu sepersekian detik, apalagi di HP) — kasih tahu user kalau tombolnya
    sudah "kena" dan sistem sedang memprosesnya, bukan diam tanpa respon. */
-#btnQrLogin.qr-btn-opening{background:var(--navy2);border-color:var(--navy2);opacity:.92;pointer-events:none;transform:scale(.98)}
+#btnQrLogin.qr-btn-opening{background:var(--navy2);border-color:var(--navy2);opacity:.55;filter:grayscale(.35) saturate(.7);pointer-events:none;transform:scale(.98);cursor:not-allowed}
 .qr-btn-spinner{width:15px;height:15px;border:2.4px solid rgba(255,255,255,.35);border-top-color:#fff;
   border-radius:50%;display:inline-block;vertical-align:-3px;animation:qrBtnSpin .7s linear infinite}
 @keyframes qrBtnSpin{to{transform:rotate(360deg)}}
