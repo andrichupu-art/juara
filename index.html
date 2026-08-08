@@ -2573,6 +2573,9 @@ function initSelectEnterOpen(){
       if(e.key==='Enter'){
         e.preventDefault(); // cegah submit form / tooltip validasi browser
         overlay?commit(hlIndex):openOverlay();
+      }else if(e.key===' '){
+        e.preventDefault(); // cegah popup native browser terbuka (space juga memicunya)
+        overlay?commit(hlIndex):openOverlay();
       }else if(e.key==='Escape'){
         if(overlay)closeOverlay();
       }else if(e.key==='ArrowDown'){
@@ -2589,6 +2592,13 @@ function initSelectEnterOpen(){
         query+=e.key;
         applyFilter();
       }
+    });
+    // cegah popup native saat diklik mouse juga, supaya tampilannya SELALU pakai overlay custom
+    // (konsisten baik dibuka lewat klik maupun keyboard)
+    sel.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      sel.focus();
+      overlay?closeOverlay():openOverlay();
     });
     // beri jeda sedikit sebelum menutup saat blur, supaya event mousedown pada opsi sempat diproses dulu
     sel.addEventListener('blur',()=>{ setTimeout(closeOverlay,120); });
