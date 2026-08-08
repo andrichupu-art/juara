@@ -388,6 +388,9 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .frm .full{grid-column:1/-1}
 .fld label{display:block;font:800 .72rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:7px}
 .fld input,.fld select,.fld textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font:600 .95rem var(--body);background:var(--paper);transition:.2s}
+.fld input::placeholder,.fld textarea::placeholder{color:var(--mut);opacity:.55;font-weight:500}
+.fld select:invalid{color:var(--mut);opacity:.7}
+.fld select option{color:var(--ink)}
 .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:none}
 .fld select.sel-open{background:#fff;border-color:var(--orange);z-index:20;position:relative;box-shadow:0 10px 24px rgba(0,0,0,.12)}
 .sel-overlay{position:fixed;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 14px 34px rgba(0,0,0,.16);z-index:9999;font:600 .95rem var(--body)}
