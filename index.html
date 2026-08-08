@@ -380,10 +380,10 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
   border-radius:50%;display:inline-block;vertical-align:-3px;animation:qrBtnSpin .7s linear infinite}
 @keyframes qrBtnSpin{to{transform:rotate(360deg)}}
 .onb{width:100%;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:44px;box-shadow:none;position:relative;overflow:hidden}
-.onb-watermark{position:absolute;top:0;right:0;width:190px;height:auto;opacity:.06;pointer-events:none;z-index:0}
+.onb-watermark{position:absolute;top:-40px;right:-50px;width:340px;height:auto;opacity:.07;pointer-events:none;z-index:0;transform:rotate(-12deg)}
 .onb-watermark svg{width:100%;height:auto;display:block}
 .onb>*:not(.onb-watermark){position:relative;z-index:1}
-@media (max-width:640px){.onb-watermark{width:130px}}
+@media (max-width:640px){.onb-watermark{width:220px;top:-24px;right:-30px}}
 .frm{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
 .frm .full{grid-column:1/-1}
 .fld label{display:block;font:800 .72rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:7px}
