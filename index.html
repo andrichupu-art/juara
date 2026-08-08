@@ -352,6 +352,15 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
   background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.9) 50%,rgba(255,255,255,0) 100%);
   animation:qrBtnSweep 1.3s ease-in-out infinite}
 @keyframes qrBtnSweep{0%{left:-38%}100%{left:100%}}
+/* Sebelum diklik: efek tekan singkat biar tombol terasa "hidup" saat disentuh */
+#btnQrLogin:active{transform:scale(.97)}
+/* Sesudah diklik, selagi menunggu dialog galeri/kamera OS benar-benar terbuka
+   (kadang perlu sepersekian detik, apalagi di HP) — kasih tahu user kalau tombolnya
+   sudah "kena" dan sistem sedang memprosesnya, bukan diam tanpa respon. */
+#btnQrLogin.qr-btn-opening{background:var(--navy2);border-color:var(--navy2);opacity:.92;pointer-events:none;transform:scale(.98)}
+.qr-btn-spinner{width:15px;height:15px;border:2.4px solid rgba(255,255,255,.35);border-top-color:#fff;
+  border-radius:50%;display:inline-block;vertical-align:-3px;animation:qrBtnSpin .7s linear infinite}
+@keyframes qrBtnSpin{to{transform:rotate(360deg)}}
 .onb{width:100%;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:44px;box-shadow:none}
 .frm{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
 .frm .full{grid-column:1/-1}
@@ -892,7 +901,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 
           <div id="guestLoginPanel" style="display:none">
             <div class="gbtns">
-              <button type="button" class="btn b-pri" id="btnQrLogin" style="width:100%;justify-content:center" onclick="$('#qrLoginFile').click()">📷 Scan / Upload QR Peserta</button>
+              <button type="button" class="btn b-pri" id="btnQrLogin" style="width:100%;justify-content:center" onclick="openQrPicker()">📷 Scan / Upload QR Peserta</button>
               <input type="file" id="qrLoginFile" accept="image/*" style="display:none">
             </div>
             <div id="qrScanPreviewWrap" style="display:none;margin-top:18px">
@@ -1703,6 +1712,39 @@ async function loginWithQrToken(token){
 }
 const qrLoginFileInput=$('#qrLoginFile'), qrLoginStatus=$('#qrLoginStatus'), btnQrLogin=$('#btnQrLogin');
 const qrScanPreviewWrap=$('#qrScanPreviewWrap'), qrScanImg=$('#qrScanImg'), qrScanCaption=$('#qrScanCaption');
+// Simpan HTML asli tombol sekali di awal — jadi patokan tetap tiap kali mau
+// dikembalikan ke tampilan normal, tak peduli urutan event focus/change yang kepicu.
+const QR_BTN_DEFAULT_HTML=btnQrLogin?btnQrLogin.innerHTML:'';
+/* Sebelum tombol diklik: tampilannya normal (📷 Scan / Upload QR Peserta).
+   Begitu diklik, langsung ganti ke state "Membuka…" (ikon spinner + tombol sedikit
+   redup/mengecil & tak bisa diklik lagi) supaya user tahu tombolnya "kena" — soalnya
+   dialog galeri/kamera OS kadang butuh sepersekian detik buat benar-benar muncul,
+   dan tanpa feedback ini user bisa mengira tombolnya tidak merespon lalu klik berkali-kali.
+   State ini otomatis dibalikin ke semula begitu window kembali fokus (dialog OS ditutup,
+   baik karena user memilih file maupun membatalkannya). */
+let qrPickerOpening=false, qrPickerFallbackTimer=null;
+function openQrPicker(){
+  if(!qrLoginFileInput||qrPickerOpening||(btnQrLogin&&btnQrLogin.disabled))return;
+  qrPickerOpening=true;
+  if(btnQrLogin&&!btnQrLogin.classList.contains('qr-btn-loading')){
+    btnQrLogin.classList.add('qr-btn-opening');
+    btnQrLogin.innerHTML='<span class="qr-btn-spinner"></span> Membuka…';
+  }
+  qrLoginFileInput.click(); // harus dipanggil sinkron di dalam user-gesture ini
+  const restoreQrBtn=()=>{
+    window.removeEventListener('focus',restoreQrBtn);
+    clearTimeout(qrPickerFallbackTimer);
+    qrPickerOpening=false;
+    if(!btnQrLogin)return;
+    btnQrLogin.classList.remove('qr-btn-opening');
+    // Kalau file sudah kepilih & proses baca QR sudah mulai (state qr-btn-loading),
+    // biarkan state itu yang pegang kendali — jangan ditimpa balik ke teks semula.
+    if(!btnQrLogin.classList.contains('qr-btn-loading'))btnQrLogin.innerHTML=QR_BTN_DEFAULT_HTML;
+  };
+  window.addEventListener('focus',restoreQrBtn);
+  // Jaga-jaga kalau event focus tak sempat kepicu di sebagian browser/webview mobile.
+  qrPickerFallbackTimer=setTimeout(restoreQrBtn,6000);
+}
 let qrScanPreviewUrl=null;
 let qrRealFileUploaded=false;   // true begitu user benar-benar memilih file QR sendiri
 let qrSampleDataUrl=null;       // cache hasil generate kartu contoh biar tak digambar ulang tiap kali panel dibuka
@@ -1810,8 +1852,7 @@ if(qrLoginFileInput){
     e.target.value=''; // supaya bisa pilih file yang sama lagi kalau perlu diulang
     if(!file)return;
     qrRealFileUploaded=true;
-    const origHTML=btnQrLogin?btnQrLogin.innerHTML:null;
-    if(btnQrLogin){btnQrLogin.classList.add('qr-btn-loading');btnQrLogin.disabled=true;btnQrLogin.innerHTML='⏳ Membaca QR…';}
+    if(btnQrLogin){btnQrLogin.classList.remove('qr-btn-opening');btnQrLogin.classList.add('qr-btn-loading');btnQrLogin.disabled=true;btnQrLogin.innerHTML='⏳ Membaca QR…';}
     if(qrLoginStatus)qrLoginStatus.textContent='';
     if(qrScanCaption)qrScanCaption.textContent='';
     const scanStartedAt=Date.now();
@@ -1846,7 +1887,7 @@ if(qrLoginFileInput){
       qrRealFileUploaded=false;
       showSampleQrPreview();
     }finally{
-      if(btnQrLogin){btnQrLogin.classList.remove('qr-btn-loading');btnQrLogin.disabled=false;btnQrLogin.innerHTML=origHTML;}
+      if(btnQrLogin){btnQrLogin.classList.remove('qr-btn-loading');btnQrLogin.disabled=false;btnQrLogin.innerHTML=QR_BTN_DEFAULT_HTML;}
     }
   });
 }
