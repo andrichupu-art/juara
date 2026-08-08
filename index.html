@@ -359,6 +359,10 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .fld input,.fld select,.fld textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font:600 .95rem var(--body);background:var(--paper);transition:.2s}
 .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:none}
 .fld select.sel-open{background:#fff;border-color:var(--orange);z-index:20;position:relative;box-shadow:0 10px 24px rgba(0,0,0,.12)}
+.sel-overlay{position:fixed;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 14px 34px rgba(0,0,0,.16);z-index:9999;max-height:280px;overflow-y:auto;font:600 .95rem var(--body)}
+.sel-overlay-opt{padding:10px 12px;border-radius:8px;color:var(--navy);cursor:pointer;transition:.12s}
+.sel-overlay-opt.hl{background:var(--navy);color:#fff}
+.sel-overlay-opt.current:not(.hl){background:var(--paper)}
 .fld textarea{resize:vertical;min-height:78px;font-family:inherit}
 .fld select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23142848' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");background-repeat:no-repeat;background-position:right 14px center;background-size:16px;padding-right:38px}
 .fld-sec{grid-column:1/-1;font:800 .78rem var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin:6px 0 -4px;padding-top:14px;border-top:1px dashed var(--line)}
@@ -2454,43 +2458,96 @@ function initTitleCaseFields(){
 }
 document.addEventListener('DOMContentLoaded',initTitleCaseFields);
 
-/* ================= ENTER MEMBUKA DROPDOWN <select> (cross-browser, termasuk Safari) =================
-   Catatan: HTMLSelectElement.showPicker() TIDAK didukung Safari, dan Safari juga memblokir
-   event klik/keydown palsu (synthetic) untuk membuka popup native <select> karena alasan keamanan.
-   Jadi kita pakai trik yang sah di semua browser: sesaat mengubah select jadi tampilan daftar
-   (listbox) lewat atribut "size", lalu kembalikan ke tampilan dropdown normal setelah dipilih/ditutup. */
+/* ================= ENTER MEMBUKA DROPDOWN <select> (overlay custom, tanak geser layout) =================
+   Kenapa tidak pakai select.size (trik sebelumnya)?
+   1) Mengubah "size" beneran menambah tinggi elemen di alur halaman -> mendorong konten di bawahnya.
+   2) Pada <select size>1>, tombol panah LANGSUNG mengubah nilai terpilih (highlight = terpilih),
+      tidak ada mode "sorot dulu, baru Enter untuk konfirmasi".
+   Solusinya: bikin daftar opsi sendiri (div melayang / overlay, position:fixed) yang tidak ikut
+   alur dokumen (tidak menggeser elemen lain), dengan status "highlight" terpisah dari nilai asli
+   -> panah atas/bawah cuma menyorot, Enter baru mengonfirmasi & mengisi nilai select aslinya.
+   Klik mouse tetap memakai popup native browser seperti biasa (tidak diubah). */
 function initSelectEnterOpen(){
   document.querySelectorAll('select').forEach(sel=>{
     if(sel.multiple) return; // lewati select multi-pilih, perilakunya beda
-    const origSize=sel.getAttribute('size')||'1';
-    // dicari ulang tiap buka/tutup (bukan disimpan sekali), karena beberapa select
-    // (mis. Asal Sekolah) mengganti seluruh isi opsinya lewat innerHTML setelah data dimuat
-    const getPlaceholder=()=> sel.querySelector('option[value=""],option:disabled');
-    const isOpen=()=> Number(sel.size)>1;
-    const openList=()=>{
-      const n=sel.options.length;
-      if(n<2)return;
-      const placeholder=getPlaceholder();
-      if(placeholder)placeholder.hidden=true; // sembunyikan teks placeholder saat daftar terbuka
-      sel.size=Math.max(2,Math.min(placeholder?n-1:n,8)); // maksimal 8 baris terlihat, sisanya scroll
-      sel.classList.add('sel-open');
-    };
-    const closeList=()=>{
-      sel.size=origSize;
+    let overlay=null, items=[], hlIndex=-1;
+
+    const onScroll=()=>closeOverlay();
+    const onResize=()=>closeOverlay();
+
+    function closeOverlay(){
+      if(overlay){overlay.remove();overlay=null;items=[];hlIndex=-1;}
       sel.classList.remove('sel-open');
-      const placeholder=getPlaceholder();
-      if(placeholder)placeholder.hidden=false; // tampilkan lagi placeholder saat tidak fokus/tertutup
-    };
+      document.removeEventListener('scroll',onScroll,true);
+      window.removeEventListener('resize',onResize);
+    }
+
+    function positionOverlay(){
+      if(!overlay)return;
+      const r=sel.getBoundingClientRect();
+      overlay.style.left=r.left+'px';
+      overlay.style.top=(r.bottom+6)+'px';
+      overlay.style.width=r.width+'px';
+    }
+
+    function commit(idx){
+      const it=items[idx]; if(!it)return;
+      if(sel.value!==it.dataset.value){
+        sel.value=it.dataset.value;
+        sel.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+      closeOverlay();
+      sel.focus();
+    }
+
+    function moveHighlight(dir){
+      if(!overlay||!items.length)return;
+      items[hlIndex]?.classList.remove('hl');
+      hlIndex=(hlIndex+dir+items.length)%items.length;
+      items[hlIndex].classList.add('hl');
+      items[hlIndex].scrollIntoView({block:'nearest'});
+    }
+
+    function openOverlay(){
+      const opts=[...sel.options].filter(o=>!o.disabled); // placeholder (disabled) otomatis tidak ikut
+      if(opts.length<1)return;
+      overlay=document.createElement('div');
+      overlay.className='sel-overlay';
+      items=opts.map(o=>{
+        const it=document.createElement('div');
+        it.className='sel-overlay-opt';
+        it.textContent=o.textContent;
+        it.dataset.value=o.value;
+        if(o.value===sel.value)it.classList.add('current');
+        it.addEventListener('mousedown',e=>{ e.preventDefault(); commit(items.indexOf(it)); });
+        overlay.appendChild(it);
+        return it;
+      });
+      document.body.appendChild(overlay);
+      positionOverlay();
+      hlIndex=Math.max(0,items.findIndex(it=>it.classList.contains('current')));
+      items[hlIndex]?.classList.add('hl');
+      items[hlIndex]?.scrollIntoView({block:'nearest'});
+      sel.classList.add('sel-open');
+      document.addEventListener('scroll',onScroll,true);
+      window.addEventListener('resize',onResize);
+    }
+
     sel.addEventListener('keydown',e=>{
       if(e.key==='Enter'){
         e.preventDefault(); // cegah submit form / tooltip validasi browser
-        isOpen()?closeList():openList();
-      }else if(e.key==='Escape'&&isOpen()){
-        closeList();
+        overlay?commit(hlIndex):openOverlay();
+      }else if(e.key==='Escape'){
+        if(overlay)closeOverlay();
+      }else if(e.key==='ArrowDown'){
+        e.preventDefault();
+        overlay?moveHighlight(1):openOverlay();
+      }else if(e.key==='ArrowUp'){
+        if(overlay){ e.preventDefault(); moveHighlight(-1); }
       }
     });
-    sel.addEventListener('blur',()=>{ if(isOpen())closeList(); });
-    sel.addEventListener('change',()=>{ if(isOpen())closeList(); }); // pilih opsi lalu otomatis menutup
+    // beri jeda sedikit sebelum menutup saat blur, supaya event mousedown pada opsi sempat diproses dulu
+    sel.addEventListener('blur',()=>{ setTimeout(closeOverlay,120); });
   });
 }
 document.addEventListener('DOMContentLoaded',initSelectEnterOpen);
