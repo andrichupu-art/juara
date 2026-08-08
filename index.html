@@ -2463,16 +2463,23 @@ function initSelectEnterOpen(){
   document.querySelectorAll('select').forEach(sel=>{
     if(sel.multiple) return; // lewati select multi-pilih, perilakunya beda
     const origSize=sel.getAttribute('size')||'1';
+    // dicari ulang tiap buka/tutup (bukan disimpan sekali), karena beberapa select
+    // (mis. Asal Sekolah) mengganti seluruh isi opsinya lewat innerHTML setelah data dimuat
+    const getPlaceholder=()=> sel.querySelector('option[value=""],option:disabled');
     const isOpen=()=> Number(sel.size)>1;
     const openList=()=>{
       const n=sel.options.length;
       if(n<2)return;
-      sel.size=Math.max(2,Math.min(n,8)); // maksimal 8 baris terlihat, sisanya scroll
+      const placeholder=getPlaceholder();
+      if(placeholder)placeholder.hidden=true; // sembunyikan teks placeholder saat daftar terbuka
+      sel.size=Math.max(2,Math.min(placeholder?n-1:n,8)); // maksimal 8 baris terlihat, sisanya scroll
       sel.classList.add('sel-open');
     };
     const closeList=()=>{
       sel.size=origSize;
       sel.classList.remove('sel-open');
+      const placeholder=getPlaceholder();
+      if(placeholder)placeholder.hidden=false; // tampilkan lagi placeholder saat tidak fokus/tertutup
     };
     sel.addEventListener('keydown',e=>{
       if(e.key==='Enter'){
@@ -2483,6 +2490,7 @@ function initSelectEnterOpen(){
       }
     });
     sel.addEventListener('blur',()=>{ if(isOpen())closeList(); });
+    sel.addEventListener('change',()=>{ if(isOpen())closeList(); }); // pilih opsi lalu otomatis menutup
   });
 }
 document.addEventListener('DOMContentLoaded',initSelectEnterOpen);
