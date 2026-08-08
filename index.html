@@ -1446,7 +1446,18 @@ function setAuthUI(loggedIn){
   });
 }
 
-sb.auth.onAuthStateChange((ev,ses)=>{
+/* PENTING: sb/sbQr bisa saja undefined kalau CDN Supabase gagal/telat dimuat
+   (try/catch di atas cuma mencatat error, tidak melempar). Kalau blok di bawah
+   ini dipanggil tanpa dijaga dan sb/sbQr ternyata undefined, exception yang
+   muncul akan MENGHENTIKAN seluruh sisa eksekusi script top-level — termasuk
+   deklarasi variabel & pemasangan event listener tombol "Scan/Upload QR"
+   yang letaknya lebih bawah (baris ~1690+). Efeknya: tombol kelihatan normal
+   dan file-picker tetap bisa kebuka (itu perilaku native <input type=file>,
+   tidak butuh JS), tapi begitu user pilih file, TIDAK ADA APA-APA YANG TERJADI
+   karena listener 'change'-nya tidak pernah terpasang. Makanya di sini wajib
+   dijaga dengan if(sb)/if(sbQr) supaya kegagalan Supabase tidak menjalar dan
+   mematikan fitur lain yang sebenarnya tidak bergantung padanya. */
+if(sb) sb.auth.onAuthStateChange((ev,ses)=>{
   if(ev==='SIGNED_OUT'||!ses?.user){
     loginInProgress=false;
     // Supabase kadang mengirim event "belum ada sesi" LEBIH DULU sebelum proses
@@ -1463,10 +1474,14 @@ sb.auth.onAuthStateChange((ev,ses)=>{
   pendingAuthReturn=false; if(pendingAuthTimer){clearTimeout(pendingAuthTimer);pendingAuthTimer=null;}
   CUR_DB=sb; activateSession(ses.user);
 });
-sbQr.auth.onAuthStateChange((ev,ses)=>{
+if(sbQr) sbQr.auth.onAuthStateChange((ev,ses)=>{
   if(ev==='SIGNED_OUT'||!ses?.user){if(CUR_DB===sbQr){loginInProgress=false;clearAuthState();}return;}
   if(QR_LOGIN_TOKEN&&ses.user.is_anonymous){CUR_DB=sbQr; activateQrSession(ses.user,QR_LOGIN_TOKEN);}
 });
+if(!sb||!sbQr){
+  console.error('sb/sbQr tidak siap — kemungkinan CDN Supabase gagal dimuat. Fitur login/QR dinonaktifkan sampai halaman dimuat ulang.');
+  toast('Gagal terhubung ke server. Coba muat ulang halaman (refresh) ya 🙏','err');
+}
 async function activateSession(u){
   // Abaikan event ganda dari Supabase untuk akun yang sudah sedang dimuat.
   if(USER?.id===u.id&&loadingUserId===u.id)return;
@@ -1618,6 +1633,7 @@ async function recoverByNikWa(){
 }
 async function beginQrLogin(){
   if(!QR_LOGIN_TOKEN)return;
+  if(!sbQr)return; // Supabase belum siap (lihat catatan di dekat sb.auth.onAuthStateChange di atas)
   const {data:{session}}=await sbQr.auth.getSession();
   if(session?.user?.is_anonymous)return activateQrSession(session.user,QR_LOGIN_TOKEN);
   await sbQr.auth.signOut({scope:'local'});
@@ -1678,6 +1694,7 @@ function decodeQrFromFile(file){
 }
 async function loginWithQrToken(token){
   if(!token){toast('QR tidak dikenali, coba foto/upload ulang','err');return;}
+  if(!sbQr)throw new Error('Gagal terhubung ke server. Coba muat ulang halaman (refresh) ya 🙏');
   QR_LOGIN_TOKEN=token;
   await sbQr.auth.signOut({scope:'local'});
   clearAuthState();
