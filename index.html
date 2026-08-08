@@ -405,6 +405,9 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .fld textarea{resize:vertical;min-height:78px;font-family:inherit}
 .fld select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23142848' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");background-repeat:no-repeat;background-position:right 14px center;background-size:16px;padding-right:38px}
 .fld-sec{grid-column:1/-1;font:800 .78rem var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin:6px 0 -4px;padding-top:14px;border-top:1px dashed var(--line)}
+.fld-card{grid-column:1/-1;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:26px 24px}
+.fld-card .fld-sec{border-top:none;padding-top:0;margin:0 0 16px}
+.fld-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .fld-sec:first-child{border-top:none;padding-top:0;margin-top:0}
 /* Field di panel recovery (NIK & WhatsApp) tidak dibungkus .frm, jadi jaraknya disamakan manual di sini */
 #recoverPanel .fld{margin-bottom:16px}
@@ -715,6 +718,8 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
   .stats .wrap{grid-template-columns:repeat(2,1fr)}
   .stat:nth-child(3){border-left:0}
   .frm{grid-template-columns:1fr}
+  .fld-card-grid{grid-template-columns:1fr}
+  .fld-card{padding:18px 16px;border-radius:14px}
   .gate,.onb{padding:30px}
   .search{margin-left:0;width:100%}.search input{width:100%}
   .f-grid{grid-template-columns:1fr 1fr}
@@ -1018,7 +1023,9 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <h3 style="font:800 1.6rem var(--disp);color:var(--navy);margin-top:14px">Halo <span id="obNama" style="color:var(--orange)"></span>! Lengkapi data dirimu ✈️</h3>
         <p class="meta" id="obAccount" style="margin-top:8px"></p>
         <form class="frm" id="frmOnb">
+          <div class="fld-card">
           <div class="fld-sec">Data Pribadi</div>
+          <div class="fld-card-grid">
           <div class="fld"><label>Nama Lengkap (sesuai KTP)</label><input id="fNama" required placeholder="Masukkan nama lengkap"></div>
           <div class="fld"><label>NIK (16 digit)</label><input id="fNik" required inputmode="numeric" maxlength="16" placeholder="Masukkan NIK"></div>
           <div class="fld"><label>Jenis Kelamin</label>
@@ -1071,8 +1078,12 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
             <label>Tulis Nama Sekolah</label>
             <input id="fAsalSekolahLain" placeholder="Masukkan nama sekolah">
           </div>
+          </div>
+          </div>
 
+          <div class="fld-card">
           <div class="fld-sec">Kontak &amp; Domisili</div>
+          <div class="fld-card-grid">
           <div class="fld"><label>No. WhatsApp Aktif</label><input id="fWa" required inputmode="tel" placeholder="Masukkan No. WhatsApp"></div>
           <div class="fld"><label>Provinsi</label>
             <select id="fProvinsi" required>
@@ -1081,6 +1092,8 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           </div>
           <div class="fld"><label>Kota/Kabupaten Domisili</label><input id="fKota" required placeholder="Masukkan kota/kabupaten"></div>
           <div class="fld full"><label>Alamat Lengkap (sesuai KTP)</label><textarea id="fAlamat" required placeholder="Masukkan alamat lengkap"></textarea></div>
+          </div>
+          </div>
 
           <div class="full" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;justify-content:flex-end">
             <button class="btn b-pri" type="submit" id="btnDaftar">Buat Kode Peserta <span class="pl">✈</span></button>
