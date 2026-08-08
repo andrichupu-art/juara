@@ -65,6 +65,18 @@ img{max-width:100%} a{color:inherit;text-decoration:none} button{font-family:inh
 ::selection{background:var(--orange);color:#fff}
 .wrap{width:min(1180px,92%);margin:0 auto}
 section{scroll-margin-top:104px}
+/* DESKTOP: kursor jadi "tangan" (grab) di area background di luar card/form,
+   biar user tahu bisa klik-tahan-geser buat scroll naik/turun. Begitu kursor
+   masuk ke dalam card/form (.wrap membungkus semua card & konten interaktif,
+   .modal .box buat popup, .mnav buat bottom-nav mobile), balik ke kursor normal.
+   Cuma aktif di perangkat yang beneran ada mouse (hover:hover + pointer:fine),
+   jadi tidak ganggu scroll-sentuh alami di HP/tablet. */
+@media (hover:hover) and (pointer:fine){
+  body{cursor:grab}
+  .wrap,.modal .box{cursor:auto}
+  body.is-dragging-bg{cursor:grabbing;user-select:none}
+  body.is-dragging-bg *{cursor:grabbing!important}
+}
 
 /* ============ BUTTONS & CHIPS ============ */
 .btn{display:inline-flex;align-items:center;gap:9px;font:700 .95rem var(--body);
@@ -1246,6 +1258,37 @@ const APP_DEEP_LINK = 'https://juara.page.link/portal'; // deep-link aplikasi mo
 /* ================= KONSTANTA ================= */
 const STAGES=['Berkas Diterima','Verifikasi Dokumen','Pelatihan & Pembekalan','Matching Perusahaan','Proses Visa & MCU','Tiket & Keberangkatan'];
 const STAGES_D=['Semua berkas masuk sistem & kode peserta terbit.','Tim legalitas memeriksa keabsahan dokumen (1–3 hari kerja).','Kelas bahasa, budaya kerja, dan sertifikasi kompetensi.','Dipertemukan dengan pengguna jasa resmi & tanda kontrak.','Pengajuan visa kerja dan medical check-up tahap akhir.','Tiket diterbitkan — pendampingan hingga tiba di negara tujuan.'];
+
+/* ================= DESKTOP: DRAG-TO-SCROLL DI AREA BACKGROUND =================
+   Klik-tahan di area background (di luar card/.wrap/.modal .box) lalu geser
+   mouse ke atas/bawah buat scroll halaman, mirip Google Maps. Kursor otomatis
+   berubah jadi tangan (lihat CSS body{cursor:grab}) di area itu, dan balik ke
+   kursor grabbing selagi lagi ditarik. Cuma aktif untuk mouse asli (bukan
+   sentuhan HP), supaya tidak bentrok dengan scroll-sentuh alami di mobile. */
+(function(){
+  const DRAG_EXCLUDE_SEL='.wrap, .modal .box, .mnav';
+  const mq=window.matchMedia('(hover:hover) and (pointer:fine)');
+  let dragging=false, startX=0, startY=0, startScrollX=0, startScrollY=0;
+  document.addEventListener('mousedown',e=>{
+    if(!mq.matches||e.button!==0)return;
+    if(e.target.closest(DRAG_EXCLUDE_SEL))return; // di dalam card/form/modal — biarkan interaksi normal
+    dragging=true;
+    startX=e.clientX; startY=e.clientY;
+    startScrollX=window.scrollX; startScrollY=window.scrollY;
+    document.body.classList.add('is-dragging-bg');
+  });
+  window.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    e.preventDefault();
+    window.scrollTo(startScrollX-(e.clientX-startX), startScrollY-(e.clientY-startY));
+  });
+  const stopDrag=()=>{ if(!dragging)return; dragging=false; document.body.classList.remove('is-dragging-bg'); };
+  window.addEventListener('mouseup',stopDrag);
+  window.addEventListener('mouseleave',stopDrag);
+  // Cegah drag gambar/link bawaan browser ganggu proses geser background.
+  document.addEventListener('dragstart',e=>{ if(dragging)e.preventDefault(); });
+})();
+
 const DOCS=[
  {k:'ktp',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.4"/><circle cx="7.7" cy="11.3" r="2.1"/><path d="M4.8 16.4c.5-1.5 1.7-2.4 2.9-2.4s2.4.9 2.9 2.4"/><path d="M13 9.4h6.2M13 12.4h6.2M13 15.4h3.6"/></svg>',t:'KTP',d:'Scan warna e-KTP, kedua sisi jelas.',req:true},
  {k:'kk',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="2.6"/><path d="M4 19c.6-2.8 2.5-4.4 5-4.4s4.4 1.6 5 4.4"/><circle cx="17.2" cy="7.4" r="2"/><path d="M15 12.4c2.1.1 3.6 1.5 4.1 3.7"/></svg>',t:'Kartu Keluarga',d:'Scan halaman penuh Kartu Keluarga.',req:true},
