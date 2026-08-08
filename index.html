@@ -410,7 +410,9 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .doc:hover{border-color:var(--sky)}
 .doc.ok{border-color:var(--green);background:linear-gradient(0deg,rgba(23,178,106,.04),rgba(23,178,106,.04))}
 .doc .ic{width:46px;height:46px;border-radius:11px;background:var(--paper);display:grid;place-items:center;font-size:1.3rem;border:1px solid var(--line)}
+.doc .ic svg{width:24px;height:24px;stroke:var(--navy);transition:.25s}
 .doc.ok .ic{background:rgba(23,178,106,.12);border-color:rgba(23,178,106,.3)}
+.doc.ok .ic svg{stroke:var(--green)}
 .doc h5{font:700 .96rem var(--body);color:var(--navy);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .req{font:800 .58rem var(--body);letter-spacing:.1em;padding:2px 7px;border-radius:4px;background:rgba(229,72,77,.12);color:var(--red)}
 .opt{font:800 .58rem var(--body);letter-spacing:.1em;padding:2px 7px;border-radius:4px;background:rgba(90,107,130,.12);color:var(--mut)}
@@ -668,6 +670,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
   .dash-top .kode span{font-size:.6rem}
   .doc{padding:13px;gap:10px}
   .doc .ic{width:38px;height:38px;font-size:1.05rem;position:relative}
+  .doc .ic svg{width:20px;height:20px}
   .doc .fname{display:none}
   .doc.ok .ic::after{content:'✓';position:absolute;top:-6px;right:-6px;width:17px;height:17px;border-radius:50%;background:var(--green);color:#fff;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #fff}
 }
@@ -1201,13 +1204,13 @@ const APP_DEEP_LINK = 'https://juara.page.link/portal'; // deep-link aplikasi mo
 const STAGES=['Berkas Diterima','Verifikasi Dokumen','Pelatihan & Pembekalan','Matching Perusahaan','Proses Visa & MCU','Tiket & Keberangkatan'];
 const STAGES_D=['Semua berkas masuk sistem & kode peserta terbit.','Tim legalitas memeriksa keabsahan dokumen (1–3 hari kerja).','Kelas bahasa, budaya kerja, dan sertifikasi kompetensi.','Dipertemukan dengan pengguna jasa resmi & tanda kontrak.','Pengajuan visa kerja dan medical check-up tahap akhir.','Tiket diterbitkan — pendampingan hingga tiba di negara tujuan.'];
 const DOCS=[
- {k:'ktp',ic:'🪪',t:'KTP',d:'Scan warna e-KTP, kedua sisi jelas.',req:true},
- {k:'kk',ic:'👨‍👩‍👧',t:'Kartu Keluarga',d:'Scan halaman penuh Kartu Keluarga.',req:true},
- {k:'paspor',ic:'🛂',t:'Paspor',d:'Halaman biodata. Belum punya? Lampirkan bukti pengajuan.',req:true},
- {k:'ijazah',ic:'🎓',t:'Ijazah Terakhir',d:'Minimal SMA/SMK sederajat (legalisir bila ada).',req:true},
- {k:'sertifikat',ic:'📜',t:'Sertifikat Kompetensi',d:'Sertifikat pelatihan / bahasa (opsional, menambah nilai).',req:false},
- {k:'medis',ic:'🩺',t:'Medical Check-Up',d:'Hasil MCU dari RS/klinik panel resmi (≤ 3 bulan).',req:true},
- {k:'foto',ic:'📸',t:'Pas Foto 4×6',d:'Latar merah, pakaian formal, tanpa kacamata.',req:true}
+ {k:'ktp',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.4"/><circle cx="7.7" cy="11.3" r="2.1"/><path d="M4.8 16.4c.5-1.5 1.7-2.4 2.9-2.4s2.4.9 2.9 2.4"/><path d="M13 9.4h6.2M13 12.4h6.2M13 15.4h3.6"/></svg>',t:'KTP',d:'Scan warna e-KTP, kedua sisi jelas.',req:true},
+ {k:'kk',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="2.6"/><path d="M4 19c.6-2.8 2.5-4.4 5-4.4s4.4 1.6 5 4.4"/><circle cx="17.2" cy="7.4" r="2"/><path d="M15 12.4c2.1.1 3.6 1.5 4.1 3.7"/></svg>',t:'Kartu Keluarga',d:'Scan halaman penuh Kartu Keluarga.',req:true},
+ {k:'paspor',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.6" width="14" height="18.8" rx="2.2"/><circle cx="12" cy="9.4" r="3"/><path d="M9.4 9.4h5.2M12 6.4v6"/><path d="M8.4 16.4h7.2M9.4 19h5.2"/></svg>',t:'Paspor',d:'Halaman biodata. Belum punya? Lampirkan bukti pengajuan.',req:true},
+ {k:'ijazah',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.6 12 5.2l9.5 4.4L12 14 2.5 9.6Z"/><path d="M6.4 11.6v4.2c0 1.4 2.5 2.6 5.6 2.6s5.6-1.2 5.6-2.6v-4.2"/><path d="M21.5 9.6v5.4"/></svg>',t:'Ijazah Terakhir',d:'Minimal SMA/SMK sederajat (legalisir bila ada).',req:true},
+ {k:'sertifikat',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14.5" height="12.4" rx="1.8"/><path d="M5.6 6.4h9.3M5.6 9h9.3M5.6 11.6h5.6"/><circle cx="17.6" cy="16.2" r="3.1"/><path d="M16 18.9 15 22l2.6-1.5L20.2 22l-1-3.1"/></svg>',t:'Sertifikat Kompetensi',d:'Sertifikat pelatihan / bahasa (opsional, menambah nilai).',req:false},
+ {k:'medis',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v5.4a4.4 4.4 0 0 0 8.8 0V3"/><path d="M9.4 12.8v2.7c0 3 2.3 5.4 5.1 5.4s5.1-2.4 5.1-5.4v-2"/><circle cx="19.6" cy="9.6" r="2.1"/></svg>',t:'Medical Check-Up',d:'Hasil MCU dari RS/klinik panel resmi (≤ 3 bulan).',req:true},
+ {k:'foto',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.4a1.8 1.8 0 0 1 1.8-1.8h2l1.3-2h5.8l1.3 2h2A1.8 1.8 0 0 1 20 8.4v9.4A1.8 1.8 0 0 1 18.2 19.6H5.8A1.8 1.8 0 0 1 4 17.8Z"/><circle cx="12" cy="13" r="3.4"/></svg>',t:'Pas Foto 4×6',d:'Latar merah, pakaian formal, tanpa kacamata.',req:true}
 ];
 const DEST=[
  {f:'🇹🇷',n:'Turki',r:'eropa',prog:'Work Permit',jobs:'Almena City Hotel',gaji:'Rp 15–20 Jt',kontrak:'1 thn + perpanjangan',kuota:141,isi:56},
