@@ -2426,6 +2426,33 @@ function initCsel(){
 }
 document.addEventListener('DOMContentLoaded',initCsel);
 
+/* ================= AUTO TITLE CASE (field nama/tempat) ================= */
+function toTitleCase(str){
+  // kata kecil yg tetap huruf kecil kecuali di awal kalimat (umum utk B. Indonesia)
+  const kecil=['dan','di','ke','dari','yang','untuk','pada','atau','dengan'];
+  return str.toLowerCase().replace(/[^\s\-\/.,']+/g,(w,offset,full)=>{
+    const isFirst = full.slice(0,offset).trim()==='';
+    if(kecil.includes(w) && !isFirst) return w;
+    return w.charAt(0).toUpperCase()+w.slice(1);
+  });
+}
+function applyTitleCase(el){
+  const start=el.selectionStart, end=el.selectionEnd, before=el.value;
+  const after=toTitleCase(before);
+  if(after!==before){
+    el.value=after;
+    try{ el.setSelectionRange(start,end); }catch(e){}
+  }
+}
+function initTitleCaseFields(){
+  const ids=['fNama','fTempatLahir','fAsalSekolahLain','fKota'];
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('input',()=>applyTitleCase(el));
+  });
+}
+document.addEventListener('DOMContentLoaded',initTitleCaseFields);
+
 /* ================= TESTIMONI CAROUSEL ================= */
 function testiSlide(dir){
   const vp=$('.testi-viewport'); const track=$('#testiTrack'); if(!vp||!track)return;
