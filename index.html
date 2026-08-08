@@ -2135,10 +2135,40 @@ function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.
   setState('#stDash');
   const nama=PART.nama||'-', kode=participantCode();
   $('#dAva').textContent=nama[0].toUpperCase(); $('#dNama').textContent=nama;
+  applyProfilePhoto();
   $('#dMeta').textContent=`${PART.jenis_kelamin?PART.jenis_kelamin+' · ':''}${PART.kota||'-'}${PART.provinsi?', '+PART.provinsi:''} · WA ${PART.telepon||'-'}${PART.asal_sekolah?' · '+PART.asal_sekolah:''}`;
   $('#dAccount').textContent=USER?.is_anonymous?'Akses melalui QR peserta':'Akun aktif: '+(USER?.email||USER?.user_metadata?.email||'—');
   $('#dKode').textContent=kode;
   renderDocs(); renderTL(getStage()); renderQR(); }
+
+/* ===== Otomatis pakai berkas "Pas Foto 4x6" sebagai foto profil (avatar) =====
+   Diambil dari dokumen tersimpan (bucket privat), ditampilkan via signed URL
+   di avatar dashboard (#dAva) & avatar modal Profil Saya (#profileAva).
+   Kalau belum ada pas foto, avatar tetap fallback ke huruf inisial nama. */
+let _avaPhotoPath=null;
+async function applyProfilePhoto(){
+  const targets=[$('#dAva'),$('#profileAva')].filter(Boolean);
+  const doc=DOCLIST['foto'];
+  const initial=(PART?.nama||'?')[0]?.toUpperCase()||'?';
+  if(!doc||!doc.storage_path){
+    _avaPhotoPath=null;
+    targets.forEach(el=>{el.style.backgroundImage='';el.style.backgroundSize='';el.style.backgroundPosition='';el.textContent=initial;});
+    return;
+  }
+  if(doc.storage_path===_avaPhotoPath){ targets.forEach(el=>{if(!el.style.backgroundImage)el.textContent=initial;}); return; }
+  const db=CUR_DB||sb;
+  try{
+    const {data,error}=await db.storage.from('juara-v2-documents').createSignedUrl(doc.storage_path,3600);
+    if(error||!data)return;
+    _avaPhotoPath=doc.storage_path;
+    targets.forEach(el=>{
+      el.style.backgroundImage=`url('${data.signedUrl}')`;
+      el.style.backgroundSize='cover';
+      el.style.backgroundPosition='center';
+      el.textContent='';
+    });
+  }catch(err){ console.error('applyProfilePhoto gagal:',err); }
+}
 
 /* ===== Modal PROFIL SAYA — menampilkan seluruh data yang diinput peserta
    saat pendaftaran akun, diambil langsung dari objek PART (hasil register_participant). */
@@ -2173,6 +2203,7 @@ function openProfileModal(){
     profileRow('Kode Peserta',participantCode())+
     profileRow('Akun',USER?.is_anonymous?'Akses melalui QR peserta':(USER?.email||USER?.user_metadata?.email||'—'));
   const m=$('#profileModal'); if(m)m.classList.add('on');
+  applyProfilePhoto();
 }
 function closeProfileModal(){ const m=$('#profileModal'); if(m)m.classList.remove('on'); }
 
@@ -2240,6 +2271,7 @@ async function uploadDoc(k,file,card){
     // Perbarui langsung, lalu sinkronkan semua jenis berkas dari server. Ini mencegah
     // kartu berkas sebelumnya kembali "Belum diunggah" setelah upload berikutnya.
     DOCLIST[k]={file_name:file.name,size:file.size,uploaded_at:uploadedAt,storage_path:path};
+    if(k==='foto')applyProfilePhoto();
     await loadDocs();
     toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
     const {pct,upReq,totReq}=renderDocs(); renderQR();
@@ -3131,9 +3163,7 @@ window.addEventListener('appinstalled',()=>{
 <div class="modal" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
   <div class="box" style="max-width:460px;text-align:left">
     <div style="text-align:center">
-      <div style="width:64px;height:64px;border-radius:50%;background:rgba(19,49,77,.08);border:1.5px solid rgba(19,49,77,.2);display:grid;place-items:center;margin:0 auto 16px">
-        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--navy)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.4-5.6 7.5-5.6s6.1 2 7.5 5.6"/></svg>
-      </div>
+      <div class="ava" id="profileAva" style="width:72px;height:72px;border-radius:50%;margin:0 auto 16px;font-size:1.7rem">P</div>
       <h3 style="text-align:center">Profil Saya</h3>
       <p style="text-align:center">Data yang kamu isi saat pendaftaran akun.</p>
     </div>
