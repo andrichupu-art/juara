@@ -2065,7 +2065,7 @@ async function uploadDoc(k,file,card){
     toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
     const {pct,upReq,totReq}=renderDocs(); renderQR();
     if(upReq===totReq&&!qrShown){qrShown=true;const trig=$('#qrTicketTrigger');if(trig){trig.querySelector('.tk-trigger').classList.add('glow');}
-      openDocsCompleteModal();}
+      openDataConsentModal();}
   }catch(err){ console.error('uploadDoc error:',err); toast('Ups, gagal mengunggah berkas. Coba lagi.','err'); resetUpBtn(); }
 }
 
@@ -2436,6 +2436,29 @@ async function handleFirstQrDownload(){
   }
 }
 
+
+/* ===== Popup persetujuan penggunaan data, muncul begitu berkas WAJIB terakhir
+   selesai diunggah — sebelum popup "data lengkap". Peserta wajib mencentang
+   & menekan setuju dulu; baru setelah itu popup kelengkapan berkas tampil. */
+function openDataConsentModal(){
+  const m=$('#dataConsentModal'); if(!m)return;
+  const cb=$('#dataConsentCheck'), btn=$('#btnDataConsentAgree');
+  if(cb)cb.checked=false;
+  if(btn)btn.disabled=true;
+  m.classList.add('on');
+}
+function closeDataConsentModal(){
+  const m=$('#dataConsentModal'); if(m)m.classList.remove('on');
+}
+function onDataConsentCheckChange(){
+  const cb=$('#dataConsentCheck'), btn=$('#btnDataConsentAgree');
+  if(btn)btn.disabled=!(cb&&cb.checked);
+}
+function agreeDataConsent(){
+  const cb=$('#dataConsentCheck'); if(!cb||!cb.checked)return;
+  closeDataConsentModal();
+  openDocsCompleteModal();
+}
 
 /* ===== Popup notifikasi saat dokumen WAJIB terakhir berhasil diunggah =====
    Muncul otomatis begitu upReq mencapai totReq (semua berkas wajib lengkap),
@@ -2824,14 +2847,36 @@ window.addEventListener('appinstalled',()=>{
   </div>
 </div>
 
+<!-- POPUP: PERSETUJUAN PENGGUNAAN DATA — tampil begitu berkas WAJIB terakhir
+     selesai diunggah, sebelum popup "data lengkap" -->
+<div class="modal" id="dataConsentModal">
+  <div class="box" style="max-width:440px;text-align:left">
+    <div style="text-align:center">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(46,155,214,.12);border:1.5px solid rgba(46,155,214,.3);display:grid;place-items:center;margin:0 auto 16px">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--sky)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h3 style="text-align:center">Persetujuan Penggunaan Data</h3>
+    </div>
+    <p style="text-align:center">Sebelum berkasmu diproses lebih lanjut, mohon baca &amp; setujui pernyataan berikut.</p>
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--navy);font-size:.85rem;line-height:1.6;margin-bottom:16px">
+      Dengan ini saya menyetujui bahwa seluruh data pribadi &amp; dokumen yang saya unggah — KTP, Kartu Keluarga, Paspor, Ijazah, hasil Medical Check-Up, dan berkas lainnya — akan digunakan <b>sebaik mungkin dan sesuai keperluan resmi</b> oleh <b>PT. JUARA</b> semata-mata untuk proses verifikasi, pelatihan, dan penempatan kerja saya. Data disimpan secara aman &amp; rahasia, tidak disebarluaskan ke pihak yang tidak berwenang.
+    </div>
+    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:18px">
+      <input type="checkbox" id="dataConsentCheck" onchange="onDataConsentCheckChange()" style="margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--orange)">
+      <span style="font-size:.85rem;color:var(--navy);font-weight:600">Saya sudah membaca &amp; menyetujui data saya digunakan sebaik mungkin oleh PT. JUARA.</span>
+    </label>
+    <button type="button" class="btn b-pri" id="btnDataConsentAgree" style="width:100%;justify-content:center" disabled onclick="agreeDataConsent()">Setuju &amp; Lanjutkan</button>
+  </div>
+</div>
+
 <!-- POPUP: SEMUA DOKUMEN WAJIB BERHASIL DIUNGGAH -->
 <div class="modal" id="docsCompleteModal" onclick="if(event.target===this)closeDocsCompleteModal()">
   <div class="box" style="max-width:400px;text-align:center">
     <div style="width:64px;height:64px;border-radius:50%;background:rgba(23,178,106,.12);border:1.5px solid rgba(23,178,106,.3);display:grid;place-items:center;margin:0 auto 16px">
       <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.6 9.2 18 20 6.2"/></svg>
     </div>
-    <h3>Semua Dokumen Wajib Lengkap!</h3>
-    <p>Kerja bagus 🎉 Berkas terakhirmu sudah berhasil diunggah. Seluruh dokumen wajib kini menunggu verifikasi tim kami, dan QR boarding pass kamu sudah aktif.</p>
+    <h3>SELAMAT DATA TELAH DIISI SEMUA</h3>
+    <p>Kerja bagus 🎉 Berkas terakhirmu sudah berhasil diunggah. Seluruh dokumen wajib kini menunggu verifikasi tim kami, dan QR boarding pass kamu sudah aktif. Jangan lupa cek berkala <b>Progres Penempatan</b> kamu di portal ini ya.</p>
     <button type="button" class="btn b-pri" style="width:100%;justify-content:center" onclick="docsCompleteModalSeeTicket()">✈ Lihat QR Boarding Pass</button>
     <button type="button" class="btn b-ghost" style="width:100%;justify-content:center;margin-top:10px" onclick="closeDocsCompleteModal()">Tutup</button>
   </div>
