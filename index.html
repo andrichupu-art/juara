@@ -359,7 +359,11 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .fld input,.fld select,.fld textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font:600 .95rem var(--body);background:var(--paper);transition:.2s}
 .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:none}
 .fld select.sel-open{background:#fff;border-color:var(--orange);z-index:20;position:relative;box-shadow:0 10px 24px rgba(0,0,0,.12)}
-.sel-overlay{position:fixed;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 14px 34px rgba(0,0,0,.16);z-index:9999;max-height:280px;overflow-y:auto;font:600 .95rem var(--body)}
+.sel-overlay{position:fixed;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 14px 34px rgba(0,0,0,.16);z-index:9999;font:600 .95rem var(--body)}
+.sel-overlay-search{padding:8px 10px;margin-bottom:4px;border-radius:8px;background:var(--paper);color:var(--navy);font:700 .78rem var(--body);letter-spacing:.02em}
+.sel-overlay-search.empty{color:var(--mut);font-weight:600}
+.sel-overlay-list{max-height:260px;overflow-y:auto}
+.sel-overlay-list.sel-overlay-empty::after{content:'Tidak ada yang cocok';display:block;padding:12px;color:var(--mut);font-weight:600;text-align:center}
 .sel-overlay-opt{padding:10px 12px;border-radius:8px;color:var(--navy);cursor:pointer;transition:.12s}
 .sel-overlay-opt.hl{background:var(--navy);color:#fff}
 .sel-overlay-opt.current:not(.hl){background:var(--paper)}
@@ -2458,7 +2462,7 @@ function initTitleCaseFields(){
 }
 document.addEventListener('DOMContentLoaded',initTitleCaseFields);
 
-/* ================= ENTER MEMBUKA DROPDOWN <select> (overlay custom, tanak geser layout) =================
+/* ================= ENTER MEMBUKA DROPDOWN <select> + FILTER KETIKAN (overlay custom) =================
    Kenapa tidak pakai select.size (trik sebelumnya)?
    1) Mengubah "size" beneran menambah tinggi elemen di alur halaman -> mendorong konten di bawahnya.
    2) Pada <select size>1>, tombol panah LANGSUNG mengubah nilai terpilih (highlight = terpilih),
@@ -2466,17 +2470,20 @@ document.addEventListener('DOMContentLoaded',initTitleCaseFields);
    Solusinya: bikin daftar opsi sendiri (div melayang / overlay, position:fixed) yang tidak ikut
    alur dokumen (tidak menggeser elemen lain), dengan status "highlight" terpisah dari nilai asli
    -> panah atas/bawah cuma menyorot, Enter baru mengonfirmasi & mengisi nilai select aslinya.
+   Ditambah: ketik huruf apa saja saat select fokus -> otomatis membuka & menyaring opsi yang
+   cocok (berguna untuk daftar panjang seperti Provinsi & Asal Sekolah).
    Klik mouse tetap memakai popup native browser seperti biasa (tidak diubah). */
 function initSelectEnterOpen(){
   document.querySelectorAll('select').forEach(sel=>{
     if(sel.multiple) return; // lewati select multi-pilih, perilakunya beda
-    let overlay=null, items=[], hlIndex=-1;
+    let overlay=null, searchEl=null, listEl=null, items=[], hlIndex=-1, query='';
 
     const onScroll=()=>closeOverlay();
-    const onResize=()=>closeOverlay();
+    const onResize=()=>positionOverlay();
 
     function closeOverlay(){
-      if(overlay){overlay.remove();overlay=null;items=[];hlIndex=-1;}
+      if(overlay){overlay.remove();overlay=null;listEl=null;searchEl=null;items=[];hlIndex=-1;}
+      query='';
       sel.classList.remove('sel-open');
       document.removeEventListener('scroll',onScroll,true);
       window.removeEventListener('resize',onResize);
@@ -2491,7 +2498,7 @@ function initSelectEnterOpen(){
     }
 
     function commit(idx){
-      const it=items[idx]; if(!it)return;
+      const it=items[idx]; if(!it||it.style.display==='none')return;
       if(sel.value!==it.dataset.value){
         sel.value=it.dataset.value;
         sel.dispatchEvent(new Event('change',{bubbles:true}));
@@ -2500,19 +2507,48 @@ function initSelectEnterOpen(){
       sel.focus();
     }
 
+    function visibleItems(){ return items.filter(it=>it.style.display!=='none'); }
+
     function moveHighlight(dir){
-      if(!overlay||!items.length)return;
+      const vis=visibleItems(); if(!vis.length)return;
+      let pos=vis.indexOf(items[hlIndex]);
       items[hlIndex]?.classList.remove('hl');
-      hlIndex=(hlIndex+dir+items.length)%items.length;
+      pos=(pos+dir+vis.length)%vis.length;
+      hlIndex=items.indexOf(vis[pos]);
       items[hlIndex].classList.add('hl');
       items[hlIndex].scrollIntoView({block:'nearest'});
+    }
+
+    // menyaring opsi sesuai teks yang diketik (cocok di mana saja dalam nama opsi, tanpa peduli besar/kecil huruf)
+    function applyFilter(){
+      if(searchEl)searchEl.textContent=query?('Cari: "'+query+'"'):'Ketik untuk mencari…';
+      if(searchEl)searchEl.classList.toggle('empty',!query);
+      const q=query.trim().toLowerCase();
+      let firstMatch=-1;
+      items.forEach((it,i)=>{
+        const match=!q||it.textContent.toLowerCase().includes(q);
+        it.style.display=match?'':'none';
+        if(match&&firstMatch===-1)firstMatch=i;
+      });
+      items[hlIndex]?.classList.remove('hl');
+      hlIndex=firstMatch;
+      if(hlIndex>-1){ items[hlIndex].classList.add('hl'); items[hlIndex].scrollIntoView({block:'nearest'}); }
+      if(listEl)listEl.classList.toggle('sel-overlay-empty',firstMatch===-1);
     }
 
     function openOverlay(){
       const opts=[...sel.options].filter(o=>!o.disabled); // placeholder (disabled) otomatis tidak ikut
       if(opts.length<1)return;
+      query='';
       overlay=document.createElement('div');
       overlay.className='sel-overlay';
+      searchEl=document.createElement('div');
+      searchEl.className='sel-overlay-search empty';
+      searchEl.textContent='Ketik untuk mencari…';
+      overlay.appendChild(searchEl);
+      listEl=document.createElement('div');
+      listEl.className='sel-overlay-list';
+      overlay.appendChild(listEl);
       items=opts.map(o=>{
         const it=document.createElement('div');
         it.className='sel-overlay-opt';
@@ -2520,7 +2556,7 @@ function initSelectEnterOpen(){
         it.dataset.value=o.value;
         if(o.value===sel.value)it.classList.add('current');
         it.addEventListener('mousedown',e=>{ e.preventDefault(); commit(items.indexOf(it)); });
-        overlay.appendChild(it);
+        listEl.appendChild(it);
         return it;
       });
       document.body.appendChild(overlay);
@@ -2544,6 +2580,14 @@ function initSelectEnterOpen(){
         overlay?moveHighlight(1):openOverlay();
       }else if(e.key==='ArrowUp'){
         if(overlay){ e.preventDefault(); moveHighlight(-1); }
+      }else if(e.key==='Backspace'){
+        if(overlay){ e.preventDefault(); query=query.slice(0,-1); applyFilter(); }
+      }else if(e.key.length===1 && !e.ctrlKey && !e.metaKey && !e.altKey){
+        // karakter biasa (huruf/angka/spasi) -> buka overlay (jika belum) & mulai/lanjutkan menyaring
+        e.preventDefault();
+        if(!overlay)openOverlay();
+        query+=e.key;
+        applyFilter();
       }
     });
     // beri jeda sedikit sebelum menutup saat blur, supaya event mousedown pada opsi sempat diproses dulu
