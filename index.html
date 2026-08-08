@@ -409,6 +409,19 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .doc{border:1.5px solid var(--line);border-radius:13px;padding:18px;margin-bottom:14px;display:grid;grid-template-columns:46px 1fr auto;gap:16px;align-items:center;transition:.25s;background:#fff}
 .doc:hover{border-color:var(--sky)}
 .doc.ok{border-color:var(--green);background:linear-gradient(0deg,rgba(23,178,106,.04),rgba(23,178,106,.04))}
+/* Terkunci: semua berkas WAJIB sudah lengkap, kartu ini jadi read-only —
+   warnanya diredupkan & tak ada tombol ubah, cuma bisa "Lihat". */
+.doc.locked{background:var(--paper);opacity:.72}
+.doc.locked:hover{border-color:var(--line)}
+.doc.locked .ic{filter:grayscale(.15)}
+/* Ditolak admin: satu-satunya kartu yang tetap "menyala"/aktif meski yang lain
+   sudah terkunci, supaya jelas kartu mana yang perlu diunggah ulang. */
+.doc.rejected{border-color:var(--red);background:linear-gradient(0deg,rgba(229,72,77,.05),rgba(229,72,77,.05));animation:docRejGlow 2s ease-in-out infinite}
+.doc.rejected .ic{background:rgba(229,72,77,.12);border-color:rgba(229,72,77,.3)}
+.doc.rejected .ic svg{stroke:var(--red)}
+@keyframes docRejGlow{0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.32)}50%{box-shadow:0 0 0 7px rgba(229,72,77,0)}}
+.lockbadge{font:800 .58rem var(--body);letter-spacing:.08em;padding:2px 7px;border-radius:4px;background:rgba(90,107,130,.12);color:var(--mut);white-space:nowrap}
+.lockbadge.rej{background:rgba(229,72,77,.14);color:var(--red)}
 .doc .ic{width:46px;height:46px;border-radius:11px;background:var(--paper);display:grid;place-items:center;font-size:1.3rem;border:1px solid var(--line)}
 .doc .ic svg{width:24px;height:24px;stroke:var(--navy);transition:.25s}
 .doc.ok .ic{background:rgba(23,178,106,.12);border-color:rgba(23,178,106,.3)}
@@ -423,6 +436,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .pill.wait{background:rgba(245,179,1,.16);color:#a97800}
 .pill.up{background:rgba(46,155,214,.14);color:var(--sky)}
 .pill.ok{background:rgba(23,178,106,.14);color:var(--green)}
+.pill.bad{background:rgba(229,72,77,.14);color:var(--red)}
 .mini{font:700 .76rem var(--body);padding:7px 14px;border-radius:8px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);transition:.2s}
 .mini:hover{background:var(--navy);color:#fff}
 .mini.or{border-color:var(--orange);color:var(--orange)} .mini.or:hover{background:var(--orange);color:#fff}
@@ -1990,27 +2004,39 @@ function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.
 function getStage(){ return window._stage??0; }
 
 function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
+  // Pass 1: hitung dulu berapa berkas WAJIB yang sudah terunggah, supaya kita tahu
+  // apakah pengisian sudah "selesai" sebelum menggambar kartu satu-satu di pass 2.
   let upReq=0,totReq=0;
-  DOCS.forEach(d=>{ const up=DOCLIST[d.k]; if(d.req){totReq++; if(up)upReq++;}
+  DOCS.forEach(d=>{ const up=DOCLIST[d.k]; if(d.req){totReq++; if(up)upReq++;} });
+  // Begitu semua berkas WAJIB sudah terunggah, seluruh kolom dikunci (read-only) —
+  // kecuali kartu yang admin tandai "ditolak", yang tetap aktif/menyala supaya
+  // peserta bisa langsung unggah ulang berkas yang perlu diperbaiki.
+  const allComplete=totReq>0&&upReq===totReq;
+  DOCS.forEach(d=>{ const up=DOCLIST[d.k];
     const docStatus=up?.status||'menunggu';
-    const statusText=docStatus==='terverifikasi'?'✓ Terverifikasi':docStatus==='ditolak'?'Perlu diperbaiki':'Menunggu verifikasi';
-    const statusClass=docStatus==='terverifikasi'?'ok':docStatus==='ditolak'?'wait':'wait';
-    const el=document.createElement('div'); el.className='doc drop rv in'+(up?' ok':'');
+    const isRejected=docStatus==='ditolak';
+    const locked=allComplete&&!isRejected;
+    const statusText=docStatus==='terverifikasi'?'✓ Terverifikasi':isRejected?'Perlu diperbaiki':'Menunggu verifikasi';
+    const statusClass=docStatus==='terverifikasi'?'ok':isRejected?'bad':'wait';
+    const el=document.createElement('div');
+    el.className='doc drop rv in'+(isRejected?' rejected':(up?' ok':''))+(locked?' locked':'');
     el.innerHTML=`<div class="ic">${d.ic}</div>
-      <div><h5>${d.t} <span class="${d.req?'req':'opt'}">${d.req?'WAJIB':'OPSIONAL'}</span></h5>
+      <div><h5>${d.t} <span class="${d.req?'req':'opt'}">${d.req?'WAJIB':'OPSIONAL'}</span>${locked?'<span class="lockbadge">🔒 Terkunci</span>':isRejected?'<span class="lockbadge rej">⚠ Perlu diunggah ulang</span>':''}</h5>
         <div class="sub">${d.d}</div>${up?`<div class="fname">✓ ${up.file_name} · ${fmtSz(up.size||0)} · ${fmtT(up.uploaded_at||Date.now())}</div>`:''}</div>
       <div class="act">${up
-        ?`<span class="pill ${statusClass}">${statusText}</span><div style="display:flex;gap:6px"><button class="mini" data-view="${d.k}">Lihat</button><button class="mini or" data-re="${d.k}">Ganti</button></div>`
-        :`<span class="pill wait">Belum diunggah</span><button class="mini or" data-up="${d.k}">⬆ Unggah</button>`}</div>
+        ?`<span class="pill ${statusClass}">${statusText}</span><div style="display:flex;gap:6px">${up?`<button class="mini" data-view="${d.k}">Lihat</button>`:''}${!locked?`<button class="mini or" data-re="${d.k}">Ganti</button>`:''}</div>`
+        :locked?`<span class="pill wait">Belum diunggah</span>`:`<span class="pill wait">Belum diunggah</span><button class="mini or" data-up="${d.k}">⬆ Unggah</button>`}</div>
       <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" id="fi-${d.k}">`;
     grid.appendChild(el);
-    el.querySelector('[data-up]')?.addEventListener('click',()=>$('#fi-'+d.k).click());
-    el.querySelector('[data-re]')?.addEventListener('click',()=>$('#fi-'+d.k).click());
     el.querySelector('[data-view]')?.addEventListener('click',()=>viewDoc(d.k));
-    const fi=el.querySelector('input'); fi.addEventListener('change',()=>fi.files[0]&&uploadDoc(d.k,fi.files[0],el));
-    ['dragover','dragenter'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.add('drag');}));
-    ['dragleave','drop'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.remove('drag');}));
-    el.addEventListener('drop',e=>{const f=e.dataTransfer.files[0]; if(f)uploadDoc(d.k,f,el);});
+    if(!locked){
+      el.querySelector('[data-up]')?.addEventListener('click',()=>$('#fi-'+d.k).click());
+      el.querySelector('[data-re]')?.addEventListener('click',()=>$('#fi-'+d.k).click());
+      const fi=el.querySelector('input'); fi.addEventListener('change',()=>fi.files[0]&&uploadDoc(d.k,fi.files[0],el));
+      ['dragover','dragenter'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.add('drag');}));
+      ['dragleave','drop'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.remove('drag');}));
+      el.addEventListener('drop',e=>{const f=e.dataTransfer.files[0]; if(f)uploadDoc(d.k,f,el);});
+    }
   });
   const pct=Math.round(upReq/totReq*100);
   $('#docCnt').textContent=`${Object.keys(DOCLIST).length}/${DOCS.length} terunggah`;
@@ -2038,8 +2064,8 @@ async function uploadDoc(k,file,card){
     await loadDocs();
     toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
     const {pct,upReq,totReq}=renderDocs(); renderQR();
-    if(upReq===totReq&&!qrShown){qrShown=true;const trig=$('#qrTicketTrigger');if(trig){trig.querySelector('.tk-trigger').classList.add('glow');trig.scrollIntoView({behavior:'smooth',block:'center'});}
-      toast('🎉 <b>Berkas lengkap!</b> QR boarding pass kamu telah aktif.','ok');}
+    if(upReq===totReq&&!qrShown){qrShown=true;const trig=$('#qrTicketTrigger');if(trig){trig.querySelector('.tk-trigger').classList.add('glow');}
+      openDocsCompleteModal();}
   }catch(err){ console.error('uploadDoc error:',err); toast('Ups, gagal mengunggah berkas. Coba lagi.','err'); resetUpBtn(); }
 }
 
@@ -2411,6 +2437,24 @@ async function handleFirstQrDownload(){
 }
 
 
+/* ===== Popup notifikasi saat dokumen WAJIB terakhir berhasil diunggah =====
+   Muncul otomatis begitu upReq mencapai totReq (semua berkas wajib lengkap),
+   sekali per sesi (dijaga oleh flag qrShown). Tombol utamanya langsung
+   membuka drawer tiket QR boarding pass yang baru saja aktif. */
+function openDocsCompleteModal(){
+  const m=$('#docsCompleteModal'); if(!m)return;
+  m.classList.add('on');
+}
+function closeDocsCompleteModal(){
+  const m=$('#docsCompleteModal'); if(m)m.classList.remove('on');
+}
+function docsCompleteModalSeeTicket(){
+  closeDocsCompleteModal();
+  const trig=$('#qrTicketTrigger');
+  if(trig){trig.scrollIntoView({behavior:'smooth',block:'center'});}
+  if(typeof openTicket==='function')openTicket(); else toggleTicket();
+}
+
 /* ================= CEK STATUS PUBLIK ================= */
 $('#cekForm').addEventListener('submit',async e=>{e.preventDefault();
   const kode=$('#inpKode').value.trim().toUpperCase(), box=$('#cekHasil');
@@ -2777,6 +2821,19 @@ window.addEventListener('appinstalled',()=>{
       ⚠️ <b>Simpan QR ini baik-baik.</b> QR ini adalah kunci akses masuk ke akun privasi kamu — jangan bagikan ke siapa pun. Setelah diunduh, kamu akan otomatis diarahkan ke halaman login untuk masuk memakai QR tersebut.
     </p>
     <button type="button" class="btn b-pri" id="btnQRDownModal" style="width:100%;justify-content:center;margin-top:6px" onclick="handleFirstQrDownload()">⬇ Unduh QR Sekarang</button>
+  </div>
+</div>
+
+<!-- POPUP: SEMUA DOKUMEN WAJIB BERHASIL DIUNGGAH -->
+<div class="modal" id="docsCompleteModal" onclick="if(event.target===this)closeDocsCompleteModal()">
+  <div class="box" style="max-width:400px;text-align:center">
+    <div style="width:64px;height:64px;border-radius:50%;background:rgba(23,178,106,.12);border:1.5px solid rgba(23,178,106,.3);display:grid;place-items:center;margin:0 auto 16px">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.6 9.2 18 20 6.2"/></svg>
+    </div>
+    <h3>Semua Dokumen Wajib Lengkap!</h3>
+    <p>Kerja bagus 🎉 Berkas terakhirmu sudah berhasil diunggah. Seluruh dokumen wajib kini menunggu verifikasi tim kami, dan QR boarding pass kamu sudah aktif.</p>
+    <button type="button" class="btn b-pri" style="width:100%;justify-content:center" onclick="docsCompleteModalSeeTicket()">✈ Lihat QR Boarding Pass</button>
+    <button type="button" class="btn b-ghost" style="width:100%;justify-content:center;margin-top:10px" onclick="closeDocsCompleteModal()">Tutup</button>
   </div>
 </div>
 
