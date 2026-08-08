@@ -2453,6 +2453,24 @@ function initTitleCaseFields(){
 }
 document.addEventListener('DOMContentLoaded',initTitleCaseFields);
 
+/* ================= ENTER MEMBUKA DROPDOWN <select> ================= */
+function initSelectEnterOpen(){
+  document.querySelectorAll('select').forEach(sel=>{
+    sel.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){
+        e.preventDefault(); // cegah submit form / munculnya tooltip validasi
+        if(typeof sel.showPicker==='function'){
+          try{ sel.showPicker(); return; }catch(err){/* fallback di bawah */}
+        }
+        // fallback untuk browser yang belum dukung showPicker()
+        const evt=new MouseEvent('mousedown',{bubbles:true,cancelable:true,view:window});
+        sel.dispatchEvent(evt);
+      }
+    });
+  });
+}
+document.addEventListener('DOMContentLoaded',initSelectEnterOpen);
+
 /* ================= TESTIMONI CAROUSEL ================= */
 function testiSlide(dir){
   const vp=$('.testi-viewport'); const track=$('#testiTrack'); if(!vp||!track)return;
