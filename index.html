@@ -1267,7 +1267,7 @@ const DEST=[
 ];
 
 /* ================= STATE ================= */
-let sb=null, sbQr=null, CUR_DB=null, USER=null, PART=null, DOCLIST={}, qrShown=false;
+let sb=null, sbQr=null, CUR_DB=null, USER=null, PART=null, DOCLIST={}, qrShown=false, docsAllComplete=false;
 let authEpoch=0, loadingUserId=null, loginInProgress=false;
 // Deteksi "baru kembali dari login Google" (dipakai di beberapa tempat: tab awal,
 // pstate awal, dan penjaga di bawah supaya tidak lompat ke halaman Guest sebelum waktunya).
@@ -1462,7 +1462,7 @@ function showGuestMode(mode){
   if(!isReg) showSampleQrPreview();
 }
 function clearAuthState(){
-  authEpoch++; loadingUserId=null; USER=null; PART=null; DOCLIST={}; qrShown=false; CUR_DB=null;
+  authEpoch++; loadingUserId=null; USER=null; PART=null; DOCLIST={}; qrShown=false; docsAllComplete=false; CUR_DB=null;
   pendingAuthReturn=false; if(pendingAuthTimer){clearTimeout(pendingAuthTimer);pendingAuthTimer=null;}
   setAuthUI(false); setState('#stGuest');
 }
@@ -1541,7 +1541,7 @@ async function activateSession(u){
   // Abaikan event ganda dari Supabase untuk akun yang sudah sedang dimuat.
   if(USER?.id===u.id&&loadingUserId===u.id)return;
   const request=++authEpoch;
-  CUR_DB=sb; loginInProgress=false; USER=u; PART=null; DOCLIST={}; qrShown=false; loadingUserId=u.id;
+  CUR_DB=sb; loginInProgress=false; USER=u; PART=null; DOCLIST={}; qrShown=false; docsAllComplete=false; loadingUserId=u.id;
   setAuthUI(true);
   const isFreshLogin=new URLSearchParams(location.search).get('fresh_login')==='1';
   const curTab=location.hash.replace('#','').split('&')[0];
@@ -1622,7 +1622,7 @@ async function loadParticipant(uid,request){
 async function activateQrSession(anonymousUser,token){
   if(loadingUserId===anonymousUser.id)return;
   const request=++authEpoch;
-  CUR_DB=sbQr; USER=anonymousUser; PART=null; DOCLIST={}; qrShown=false; loadingUserId=anonymousUser.id;
+  CUR_DB=sbQr; USER=anonymousUser; PART=null; DOCLIST={}; qrShown=false; docsAllComplete=false; loadingUserId=anonymousUser.id;
   setAuthUI(true); showTab('portal');
   const {data,error}=await sbQr.rpc('login_with_qr_v2',{p_qr_token:token});
   if(request!==authEpoch)return;
@@ -1663,7 +1663,7 @@ async function recoverByNikWa(){
     const {data:{session}}=await sbQr.auth.getSession();
     if(!session?.user)throw new Error('Gagal membuat sesi sementara');
     const request=++authEpoch;
-    CUR_DB=sbQr; USER=session.user; PART=null; DOCLIST={}; qrShown=false; loadingUserId=session.user.id;
+    CUR_DB=sbQr; USER=session.user; PART=null; DOCLIST={}; qrShown=false; docsAllComplete=false; loadingUserId=session.user.id;
     setAuthUI(true); showTab('portal');
     const {data,error}=await sbQr.rpc('login_recover_v2',{p_nik:nik,p_telepon:wa});
     if(request!==authEpoch)return;
@@ -2109,6 +2109,10 @@ function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
   const pct=Math.round(upReq/totReq*100);
   $('#docCnt').textContent=`${Object.keys(DOCLIST).length}/${DOCS.length} terunggah`;
   $('#ovPct').textContent=pct+'%'; $('#ovBar').style.width=pct+'%';
+  // Kalau berkas WAJIB memang sudah lengkap semua sejak sebelumnya (mis. peserta reload
+  // halaman setelah sesi lalu sudah 100%), tetap buka gerbang tombol "Pasang App" —
+  // TANPA memicu ulang modal konsen/WA (itu cuma sekali, dijaga oleh flag qrShown di uploadDoc).
+  if(totReq>0&&upReq===totReq){ docsAllComplete=true; revealInstallBtnIfReady(); }
   return {pct,upReq,totReq}; }
 
 async function uploadDoc(k,file,card){
@@ -2133,6 +2137,7 @@ async function uploadDoc(k,file,card){
     toast(`📄 <b>${def.t}</b> berhasil diunggah!`,'ok');
     const {pct,upReq,totReq}=renderDocs(); renderQR();
     if(upReq===totReq&&!qrShown){qrShown=true;const trig=$('#qrTicketTrigger');if(trig){trig.querySelector('.tk-trigger').classList.add('glow');}
+      docsAllComplete=true; revealInstallBtnIfReady();
       openDataConsentModal();}
   }catch(err){ console.error('uploadDoc error:',err); toast('Ups, gagal mengunggah berkas. Coba lagi.','err'); resetUpBtn(); }
 }
@@ -2537,6 +2542,33 @@ function agreeDataConsent(){
   openDocsCompleteModal();
 }
 
+/* ===== Kirim link install PWA via WhatsApp — dipicu SEKALI begitu peserta
+   menyetujui data (agreeDataConsent), yaitu tepat setelah berkas WAJIB terakhir
+   lengkap. Dibuka via wa.me dengan pesan sudah terisi; peserta tinggal tekan
+   kirim sendiri di WhatsApp-nya. Dipanggil langsung di dalam rangkaian klik
+   tombol "Setuju & Lanjutkan" (bukan lewat setTimeout/await) supaya masih
+   dianggap bagian dari user-gesture yang sama & tidak diblokir popup blocker. */
+let waInstallLinkSent=false;
+function buildInstallWaLink(){
+  let phone=(PART?.telepon||'').replace(/[^0-9]/g,'');
+  if(!phone)return null;
+  if(phone.startsWith('0'))phone='62'+phone.slice(1);
+  else if(phone.startsWith('62')){/* sudah format internasional */}
+  else if(!phone.startsWith('62'))phone='62'+phone;
+  const installUrl=location.origin+location.pathname;
+  const nama=(PART?.nama||'').split(' ')[0]||'';
+  const pesan=`Halo${nama?' '+nama:''}! 👋 Dokumenmu di Portal Pekerja PT. JUARA sudah lengkap semua ✅\n\nYuk pasang aplikasinya di HP biar lebih gampang cek progres kapan aja:\n${installUrl}\n\n(Buka link ini di HP → menu browser → "Tambahkan ke Layar Utama" / "Pasang Aplikasi")`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(pesan)}`;
+}
+function sendInstallLinkViaWhatsApp(){
+  if(waInstallLinkSent)return;
+  const link=buildInstallWaLink();
+  if(!link)return; // nomor WA peserta tidak tersedia, lewati diam-diam
+  waInstallLinkSent=true;
+  const waBtn=$('#waInstallLinkBtn'); if(waBtn){waBtn.href=link;waBtn.style.display='inline-flex';}
+  window.open(link,'_blank');
+}
+
 /* ===== Popup notifikasi saat dokumen WAJIB terakhir berhasil diunggah =====
    Muncul otomatis begitu upReq mencapai totReq (semua berkas wajib lengkap),
    sekali per sesi (dijaga oleh flag qrShown). Tombol utamanya langsung
@@ -2544,6 +2576,7 @@ function agreeDataConsent(){
 function openDocsCompleteModal(){
   const m=$('#docsCompleteModal'); if(!m)return;
   m.classList.add('on');
+  sendInstallLinkViaWhatsApp();
 }
 function closeDocsCompleteModal(){
   const m=$('#docsCompleteModal'); if(m)m.classList.remove('on');
@@ -2891,9 +2924,17 @@ function showUpdateBanner(reg){
 
 /* ================= PWA: PROMPT INSTALL ================= */
 let deferredPrompt=null;
+// Tombol "Pasang App" sengaja DIKUNCI (tidak dimunculkan) sampai peserta berhasil
+// mengunggah seluruh dokumen WAJIB (lihat docsAllComplete, di-set true di renderDocs()/
+// uploadDoc()). Baru boleh tampil kalau browser SUDAH kasih sinyal 'beforeinstallprompt'
+// DAN dokumen sudah lengkap — dua-duanya harus terpenuhi.
+function revealInstallBtnIfReady(){
+  if(!deferredPrompt||!docsAllComplete)return;
+  const b=$('#installBtn'); if(b)b.style.display='inline-flex';
+}
 window.addEventListener('beforeinstallprompt',(e)=>{
   e.preventDefault(); deferredPrompt=e;
-  const b=$('#installBtn'); if(b)b.style.display='inline-flex';
+  revealInstallBtnIfReady();
 });
 async function installPWA(){
   if(!deferredPrompt)return;
@@ -2954,6 +2995,7 @@ window.addEventListener('appinstalled',()=>{
     </div>
     <h3>SELAMAT DATA TELAH DIISI SEMUA</h3>
     <p>Kerja bagus 🎉 Berkas terakhirmu sudah berhasil diunggah. Seluruh dokumen wajib kini menunggu verifikasi tim kami. Jangan lupa cek berkala <b>Progres Penempatan</b> kamu di portal ini ya.</p>
+    <a href="#" id="waInstallLinkBtn" target="_blank" rel="noopener" class="btn b-navy" style="display:none;width:100%;justify-content:center;margin-bottom:10px">🟢 Buka WhatsApp untuk Kirim Link Install</a>
     <button type="button" class="btn b-pri" style="width:100%;justify-content:center" onclick="closeDocsCompleteModal()">Tutup</button>
   </div>
 </div>
