@@ -358,6 +358,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .fld label{display:block;font:800 .72rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:7px}
 .fld input,.fld select,.fld textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font:600 .95rem var(--body);background:var(--paper);transition:.2s}
 .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:none}
+.fld select.sel-open{background:#fff;border-color:var(--orange);z-index:20;position:relative;box-shadow:0 10px 24px rgba(0,0,0,.12)}
 .fld textarea{resize:vertical;min-height:78px;font-family:inherit}
 .fld select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23142848' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");background-repeat:no-repeat;background-position:right 14px center;background-size:16px;padding-right:38px}
 .fld-sec{grid-column:1/-1;font:800 .78rem var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin:6px 0 -4px;padding-top:14px;border-top:1px dashed var(--line)}
@@ -2453,20 +2454,35 @@ function initTitleCaseFields(){
 }
 document.addEventListener('DOMContentLoaded',initTitleCaseFields);
 
-/* ================= ENTER MEMBUKA DROPDOWN <select> ================= */
+/* ================= ENTER MEMBUKA DROPDOWN <select> (cross-browser, termasuk Safari) =================
+   Catatan: HTMLSelectElement.showPicker() TIDAK didukung Safari, dan Safari juga memblokir
+   event klik/keydown palsu (synthetic) untuk membuka popup native <select> karena alasan keamanan.
+   Jadi kita pakai trik yang sah di semua browser: sesaat mengubah select jadi tampilan daftar
+   (listbox) lewat atribut "size", lalu kembalikan ke tampilan dropdown normal setelah dipilih/ditutup. */
 function initSelectEnterOpen(){
   document.querySelectorAll('select').forEach(sel=>{
+    if(sel.multiple) return; // lewati select multi-pilih, perilakunya beda
+    const origSize=sel.getAttribute('size')||'1';
+    const isOpen=()=> Number(sel.size)>1;
+    const openList=()=>{
+      const n=sel.options.length;
+      if(n<2)return;
+      sel.size=Math.max(2,Math.min(n,8)); // maksimal 8 baris terlihat, sisanya scroll
+      sel.classList.add('sel-open');
+    };
+    const closeList=()=>{
+      sel.size=origSize;
+      sel.classList.remove('sel-open');
+    };
     sel.addEventListener('keydown',e=>{
       if(e.key==='Enter'){
-        e.preventDefault(); // cegah submit form / munculnya tooltip validasi
-        if(typeof sel.showPicker==='function'){
-          try{ sel.showPicker(); return; }catch(err){/* fallback di bawah */}
-        }
-        // fallback untuk browser yang belum dukung showPicker()
-        const evt=new MouseEvent('mousedown',{bubbles:true,cancelable:true,view:window});
-        sel.dispatchEvent(evt);
+        e.preventDefault(); // cegah submit form / tooltip validasi browser
+        isOpen()?closeList():openList();
+      }else if(e.key==='Escape'&&isOpen()){
+        closeList();
       }
     });
+    sel.addEventListener('blur',()=>{ if(isOpen())closeList(); });
   });
 }
 document.addEventListener('DOMContentLoaded',initSelectEnterOpen);
