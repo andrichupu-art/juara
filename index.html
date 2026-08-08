@@ -864,7 +864,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
       <h2 class="sec">Sudah mendaftar?<br>Cek statusmu di sini.</h2>
       <p class="sec-sub">Masukkan kode peserta (contoh: <b style="font-family:var(--mono)">JR-3FA85F64</b>) yang tertera di portal atau boarding pass QR kamu.</p>
       <form class="cek-form" id="cekForm">
-        <input id="inpKode" type="text" placeholder="JR-XXXXXXXX" autocomplete="off" style="text-transform:uppercase">
+        <input id="inpKode" type="text" autocomplete="off" style="text-transform:uppercase">
         <button class="btn b-navy" type="submit">Lacak <span class="pl">🔎</span></button>
       </form>
     </div>
@@ -976,8 +976,8 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
               <span id="recoverToggleText">Hilang QR</span>
             </a>
             <div id="recoverPanel" style="display:none;margin-top:14px">
-              <div class="fld"><label>NIK (16 digit)</label><input id="rNik" inputmode="numeric" maxlength="16" placeholder="3271xxxxxxxxxx"></div>
-              <div class="fld"><label>No. WhatsApp Terdaftar</label><input id="rWa" inputmode="tel" placeholder="08xxxxxxxxxx"></div>
+              <div class="fld"><label>NIK (16 digit)</label><input id="rNik" inputmode="numeric" maxlength="16"></div>
+              <div class="fld"><label>No. WhatsApp Terdaftar</label><input id="rWa" inputmode="tel"></div>
               <button type="button" class="btn b-pri" id="btnRecover" style="width:100%;justify-content:center;margin-top:6px" onclick="recoverByNikWa()">🔑 Masuk Tanpa QR</button>
               <p class="meta" id="recoverStatus" style="margin-top:10px"></p>
             </div>
@@ -1005,29 +1005,26 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <p class="meta" id="obAccount" style="margin-top:8px"></p>
         <form class="frm" id="frmOnb">
           <div class="fld-sec">Data Pribadi</div>
-          <div class="fld"><label>Nama Lengkap (sesuai KTP)</label><input id="fNama" required placeholder="cth: Siti Rahmawati"></div>
-          <div class="fld"><label>NIK (16 digit)</label><input id="fNik" required inputmode="numeric" maxlength="16" placeholder="3271xxxxxxxxxx"></div>
+          <div class="fld"><label>Nama Lengkap (sesuai KTP)</label><input id="fNama" required></div>
+          <div class="fld"><label>NIK (16 digit)</label><input id="fNik" required inputmode="numeric" maxlength="16"></div>
           <div class="fld"><label>Jenis Kelamin</label>
             <select id="fJk" required>
-              <option value="" disabled selected>Pilih jenis kelamin</option>
               <option value="Laki-laki">Laki-laki</option>
               <option value="Perempuan">Perempuan</option>
             </select>
           </div>
           <div class="fld"><label>Status Pernikahan</label>
             <select id="fStatus" required>
-              <option value="" disabled selected>Pilih status</option>
               <option value="Belum Menikah">Belum Menikah</option>
               <option value="Menikah">Menikah</option>
               <option value="Cerai Hidup">Cerai Hidup</option>
               <option value="Cerai Mati">Cerai Mati</option>
             </select>
           </div>
-          <div class="fld"><label>Tempat Lahir</label><input id="fTempatLahir" required placeholder="cth: Cianjur"></div>
+          <div class="fld"><label>Tempat Lahir</label><input id="fTempatLahir" required></div>
           <div class="fld"><label>Tanggal Lahir</label><input id="fTglLahir" required type="date"></div>
           <div class="fld"><label>Pendidikan Terakhir</label>
             <select id="fPendidikan" required>
-              <option value="" disabled selected>Pilih pendidikan</option>
               <option value="SD">SD</option>
               <option value="SMP">SMP</option>
               <option value="SMA/SMK">SMA/SMK</option>
@@ -1038,7 +1035,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           </div>
           <div class="fld"><label>Agama</label>
             <select id="fAgama" required>
-              <option value="" disabled selected>Pilih agama</option>
               <option value="Islam">Islam</option>
               <option value="Kristen">Kristen</option>
               <option value="Katolik">Katolik</option>
@@ -1055,18 +1051,17 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           </div>
           <div class="fld full" id="fAsalSekolahLainWrap" style="display:none">
             <label>Tulis Nama Sekolah</label>
-            <input id="fAsalSekolahLain" placeholder="cth: SMK Negeri 1 Cianjur">
+            <input id="fAsalSekolahLain">
           </div>
 
           <div class="fld-sec">Kontak &amp; Domisili</div>
-          <div class="fld"><label>No. WhatsApp Aktif</label><input id="fWa" required inputmode="tel" placeholder="08xxxxxxxxxx"></div>
+          <div class="fld"><label>No. WhatsApp Aktif</label><input id="fWa" required inputmode="tel"></div>
           <div class="fld"><label>Provinsi</label>
             <select id="fProvinsi" required>
-              <option value="" disabled selected>Pilih provinsi</option>
             </select>
           </div>
-          <div class="fld"><label>Kota/Kabupaten Domisili</label><input id="fKota" required placeholder="cth: Bandung"></div>
-          <div class="fld full"><label>Alamat Lengkap (sesuai KTP)</label><textarea id="fAlamat" required placeholder="cth: Jl. Merdeka No. 12, RT 03/RW 05, Kel. Sukamaju, Kec. Cianjur"></textarea></div>
+          <div class="fld"><label>Kota/Kabupaten Domisili</label><input id="fKota" required></div>
+          <div class="fld full"><label>Alamat Lengkap (sesuai KTP)</label><textarea id="fAlamat" required></textarea></div>
 
           <div class="full" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;justify-content:flex-end">
             <button class="btn b-pri" type="submit" id="btnDaftar">Buat Kode Peserta <span class="pl">✈</span></button>
@@ -1117,7 +1112,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <h2 class="sec rv">Cek <span style="background:linear-gradient(135deg,#EDBA67,#BE8146);-webkit-background-clip:text;background-clip:text;color:transparent">kelayakanmu</span> dalam 10 detik</h2>
     <div class="elig-box rv" style="margin-top:28px">
       <div class="frm" style="margin-top:0">
-        <div class="fld" id="fldUmur"><label>Usia Sekarang</label><input id="cUmur" type="number" min="17" max="60" placeholder="cth: 25"><div class="fld-err">⚠ Isi usia kamu dulu, ya</div></div>
+        <div class="fld" id="fldUmur"><label>Usia Sekarang</label><input id="cUmur" type="number" min="17" max="60"><div class="fld-err">⚠ Isi usia kamu dulu, ya</div></div>
         <div class="fld"><label>Pendidikan Terakhir</label>
           <div class="csel" id="cPend" data-value="sma" data-default="sma">
             <button type="button" class="csel-btn"><span class="csel-label">SMA / SMK</span><span class="csel-arrow">▾</span></button>
@@ -2054,7 +2049,7 @@ async function loadSekolahMitra(){
     if(error)throw error;
     list=(data||[]).map(r=>r.nama).filter(Boolean);
   }catch(err){ console.error('Gagal memuat sekolah_mitra:',err); }
-  sel.innerHTML='<option value="" disabled selected>Pilih sekolah</option>';
+  sel.innerHTML='';
   list.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
   const optLain=document.createElement('option');optLain.value=ASAL_SEKOLAH_LAINNYA;optLain.textContent='Sekolah lain (tidak ada di daftar)';sel.appendChild(optLain);
 }
