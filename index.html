@@ -356,8 +356,12 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .frm{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
 .frm .full{grid-column:1/-1}
 .fld label{display:block;font:800 .72rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:7px}
-.fld input,.fld select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font:600 .95rem var(--body);background:var(--paper);transition:.2s}
-.fld input:focus,.fld select:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:none}
+.fld input,.fld select,.fld textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font:600 .95rem var(--body);background:var(--paper);transition:.2s}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:none}
+.fld textarea{resize:vertical;min-height:78px;font-family:inherit}
+.fld select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23142848' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");background-repeat:no-repeat;background-position:right 14px center;background-size:16px;padding-right:38px}
+.fld-sec{grid-column:1/-1;font:800 .78rem var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin:6px 0 -4px;padding-top:14px;border-top:1px dashed var(--line)}
+.fld-sec:first-child{border-top:none;padding-top:0;margin-top:0}
 /* Field di panel recovery (NIK & WhatsApp) tidak dibungkus .frm, jadi jaraknya disamakan manual di sini */
 #recoverPanel .fld{margin-bottom:16px}
 #recoverPanel .fld:last-of-type{margin-bottom:0}
@@ -913,10 +917,70 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <h3 style="font:800 1.6rem var(--disp);color:var(--navy);margin-top:14px">Halo <span id="obNama" style="color:var(--orange)"></span>! Lengkapi data dirimu ✈️</h3>
         <p class="meta" id="obAccount" style="margin-top:8px"></p>
         <form class="frm" id="frmOnb">
+          <div class="fld-sec">Data Pribadi</div>
           <div class="fld"><label>Nama Lengkap (sesuai KTP)</label><input id="fNama" required placeholder="cth: Siti Rahmawati"></div>
           <div class="fld"><label>NIK (16 digit)</label><input id="fNik" required inputmode="numeric" maxlength="16" placeholder="3271xxxxxxxxxx"></div>
+          <div class="fld"><label>Jenis Kelamin</label>
+            <select id="fJk" required>
+              <option value="" disabled selected>Pilih jenis kelamin</option>
+              <option value="Laki-laki">Laki-laki</option>
+              <option value="Perempuan">Perempuan</option>
+            </select>
+          </div>
+          <div class="fld"><label>Status Pernikahan</label>
+            <select id="fStatus" required>
+              <option value="" disabled selected>Pilih status</option>
+              <option value="Belum Menikah">Belum Menikah</option>
+              <option value="Menikah">Menikah</option>
+              <option value="Cerai Hidup">Cerai Hidup</option>
+              <option value="Cerai Mati">Cerai Mati</option>
+            </select>
+          </div>
+          <div class="fld"><label>Tempat Lahir</label><input id="fTempatLahir" required placeholder="cth: Cianjur"></div>
+          <div class="fld"><label>Tanggal Lahir</label><input id="fTglLahir" required type="date"></div>
+          <div class="fld"><label>Pendidikan Terakhir</label>
+            <select id="fPendidikan" required>
+              <option value="" disabled selected>Pilih pendidikan</option>
+              <option value="SD">SD</option>
+              <option value="SMP">SMP</option>
+              <option value="SMA/SMK">SMA/SMK</option>
+              <option value="D3">D3</option>
+              <option value="S1">S1</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div class="fld"><label>Agama</label>
+            <select id="fAgama" required>
+              <option value="" disabled selected>Pilih agama</option>
+              <option value="Islam">Islam</option>
+              <option value="Kristen">Kristen</option>
+              <option value="Katolik">Katolik</option>
+              <option value="Hindu">Hindu</option>
+              <option value="Buddha">Buddha</option>
+              <option value="Konghucu">Konghucu</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div class="fld"><label>Asal Sekolah (mitra PT. Juara)</label>
+            <select id="fAsalSekolah" required>
+              <option value="" disabled selected>Memuat daftar sekolah…</option>
+            </select>
+          </div>
+          <div class="fld full" id="fAsalSekolahLainWrap" style="display:none">
+            <label>Tulis Nama Sekolah</label>
+            <input id="fAsalSekolahLain" placeholder="cth: SMK Negeri 1 Cianjur">
+          </div>
+
+          <div class="fld-sec">Kontak &amp; Domisili</div>
           <div class="fld"><label>No. WhatsApp Aktif</label><input id="fWa" required inputmode="tel" placeholder="08xxxxxxxxxx"></div>
-          <div class="fld"><label>Kota Domisili</label><input id="fKota" required placeholder="cth: Bandung"></div>
+          <div class="fld"><label>Provinsi</label>
+            <select id="fProvinsi" required>
+              <option value="" disabled selected>Pilih provinsi</option>
+            </select>
+          </div>
+          <div class="fld"><label>Kota/Kabupaten Domisili</label><input id="fKota" required placeholder="cth: Bandung"></div>
+          <div class="fld full"><label>Alamat Lengkap (sesuai KTP)</label><textarea id="fAlamat" required placeholder="cth: Jl. Merdeka No. 12, RT 03/RW 05, Kel. Sukamaju, Kec. Cianjur"></textarea></div>
+
           <div class="full" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;justify-content:flex-end">
             <button class="btn b-pri" type="submit" id="btnDaftar">Buat Kode Peserta <span class="pl">✈</span></button>
             <button class="btn b-ghost" type="button" onclick="logout()">Batalkan</button>
@@ -1761,9 +1825,53 @@ if(qrLoginFileInput){
   });
 }
 
+const PROVINSI_LIST=['Aceh','Sumatera Utara','Sumatera Barat','Riau','Kepulauan Riau','Jambi','Sumatera Selatan','Bangka Belitung','Bengkulu','Lampung','DKI Jakarta','Jawa Barat','Jawa Tengah','DI Yogyakarta','Jawa Timur','Banten','Bali','Nusa Tenggara Barat','Nusa Tenggara Timur','Kalimantan Barat','Kalimantan Tengah','Kalimantan Selatan','Kalimantan Timur','Kalimantan Utara','Sulawesi Utara','Gorontalo','Sulawesi Tengah','Sulawesi Barat','Sulawesi Selatan','Sulawesi Tenggara','Maluku','Maluku Utara','Papua','Papua Barat','Papua Barat Daya','Papua Tengah','Papua Pegunungan','Papua Selatan'];
+(function fillProvinsi(){
+  const sel=$('#fProvinsi'); if(!sel)return;
+  PROVINSI_LIST.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;sel.appendChild(o);});
+})();
+
+// Daftar sekolah mitra diinput lewat aplikasi admin (tabel sekolah_mitra),
+// di sini cuma tampilkan yang aktif=true, urut abjad. Kalau gagal/kosong,
+// tetap kasih opsi "Lainnya" supaya peserta bisa isi manual.
+const ASAL_SEKOLAH_LAINNYA='__lainnya__';
+async function loadSekolahMitra(){
+  const sel=$('#fAsalSekolah'); if(!sel)return;
+  sel.innerHTML='<option value="" disabled selected>Memuat daftar sekolah…</option>';
+  let list=[];
+  try{
+    const {data,error}=await sb.from('sekolah_mitra').select('nama').eq('aktif',true).order('nama',{ascending:true});
+    if(error)throw error;
+    list=(data||[]).map(r=>r.nama).filter(Boolean);
+  }catch(err){ console.error('Gagal memuat sekolah_mitra:',err); }
+  sel.innerHTML='<option value="" disabled selected>Pilih sekolah</option>';
+  list.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
+  const optLain=document.createElement('option');optLain.value=ASAL_SEKOLAH_LAINNYA;optLain.textContent='Sekolah lain (tidak ada di daftar)';sel.appendChild(optLain);
+}
+if(sb)loadSekolahMitra();
+$('#fAsalSekolah')?.addEventListener('change',e=>{
+  const wrap=$('#fAsalSekolahLainWrap'), input=$('#fAsalSekolahLain');
+  const isLain=e.target.value===ASAL_SEKOLAH_LAINNYA;
+  wrap.style.display=isLain?'':'none';
+  if(!isLain&&input)input.value='';
+});
+
 $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
   const nama=$('#fNama').value.trim(),nik=$('#fNik').value.trim(),wa=$('#fWa').value.trim(),kota=$('#fKota').value.trim();
+  const jk=$('#fJk').value,status=$('#fStatus').value,tempatLahir=$('#fTempatLahir').value.trim(),tglLahir=$('#fTglLahir').value;
+  const pendidikan=$('#fPendidikan').value,agama=$('#fAgama').value,provinsi=$('#fProvinsi').value,alamat=$('#fAlamat').value.trim();
+  const asalSekolahSel=$('#fAsalSekolah').value;
+  const asalSekolah=asalSekolahSel===ASAL_SEKOLAH_LAINNYA?$('#fAsalSekolahLain').value.trim():asalSekolahSel;
   if(!/^\d{16}$/.test(nik))return toast('NIK harus 16 digit angka','err');
+  if(!jk)return toast('Pilih jenis kelamin dulu','err');
+  if(!status)return toast('Pilih status pernikahan dulu','err');
+  if(!tempatLahir||!tglLahir)return toast('Tempat & tanggal lahir wajib diisi','err');
+  if(!pendidikan)return toast('Pilih pendidikan terakhir dulu','err');
+  if(!agama)return toast('Pilih agama dulu','err');
+  if(!provinsi)return toast('Pilih provinsi dulu','err');
+  if(!alamat)return toast('Alamat lengkap wajib diisi','err');
+  if(!asalSekolahSel)return toast('Pilih asal sekolah dulu','err');
+  if(!asalSekolah)return toast('Tulis nama sekolahmu dulu','err');
   const btn=$('#btnDaftar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Memproses…';
   const resetBtn=()=>{btn.disabled=false;btn.innerHTML='Buat Kode Peserta <span class="pl">✈</span>';};
   try{
@@ -1779,12 +1887,18 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
     // Pakai RPC (SECURITY DEFINER) supaya insert + return row dilakukan di server,
     // tanpa lewat SELECT policy client-side yang sebelumnya bikin error 42501
     // palsu (RETURNING clause ikut dicek RLS SELECT, bukan cuma INSERT).
-    const {data:pdata,error}=await withTimeout(sb.rpc('register_participant',{p_nama:nama,p_nik:nik,p_telepon:wa,p_kota:kota}),15000,'simpan data');
+    const {data:pdata,error}=await withTimeout(sb.rpc('register_participant',{
+      p_nama:nama,p_nik:nik,p_telepon:wa,p_kota:kota,
+      p_jenis_kelamin:jk,p_status_nikah:status,p_tempat_lahir:tempatLahir,p_tgl_lahir:tglLahir,
+      p_pendidikan:pendidikan,p_agama:agama,p_provinsi:provinsi,p_alamat:alamat,p_asal_sekolah:asalSekolah
+    }),15000,'simpan data');
     if(error){console.error('register_participant gagal:',error);toast('Gagal menyimpan: '+error.message,'err');resetBtn();return;}
     const row=Array.isArray(pdata)?pdata[0]:pdata;
     if(!row){toast('Gagal menyimpan: respons kosong dari server','err');resetBtn();return;}
     // Insert (termasuk progress awal) sudah dilakukan di server lewat RPC.
-    PART={id:row.id,nama:row.nama,nik:row.nik,telepon:row.telepon,kota:row.kota,qr_token:row.qr_token,kode_peserta:row.kode_peserta};
+    PART={id:row.id,nama:row.nama,nik:row.nik,telepon:row.telepon,kota:row.kota,qr_token:row.qr_token,kode_peserta:row.kode_peserta,
+      jenis_kelamin:row.jenis_kelamin,status_nikah:row.status_nikah,tempat_lahir:row.tempat_lahir,tgl_lahir:row.tgl_lahir,
+      pendidikan:row.pendidikan,agama:row.agama,provinsi:row.provinsi,alamat:row.alamat,asal_sekolah:row.asal_sekolah};
     await Promise.all([loadDocs(),loadStage()]);
     renderDash();
     resetBtn();
@@ -1798,7 +1912,7 @@ function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.
   setState('#stDash');
   const nama=PART.nama||'-', kode=participantCode();
   $('#dAva').textContent=nama[0].toUpperCase(); $('#dNama').textContent=nama;
-  $('#dMeta').textContent=`Kota: ${PART.kota||'-'} · WA ${PART.telepon||'-'}`;
+  $('#dMeta').textContent=`${PART.jenis_kelamin?PART.jenis_kelamin+' · ':''}${PART.kota||'-'}${PART.provinsi?', '+PART.provinsi:''} · WA ${PART.telepon||'-'}${PART.asal_sekolah?' · '+PART.asal_sekolah:''}`;
   $('#dAccount').textContent=USER?.is_anonymous?'Akses melalui QR peserta':'Akun aktif: '+(USER?.email||USER?.user_metadata?.email||'—');
   $('#dKode').textContent=kode;
   renderDocs(); renderTL(getStage()); renderQR(); }
