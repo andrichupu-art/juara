@@ -158,11 +158,6 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
   .mnav a.active{background:rgba(255,255,255,.14);color:var(--gold)}
   body{padding-bottom:58px}
 }
-/* Sembunyikan bottom-nav (6 ikon) di mobile — diminta user */
-@media(max-width:1080px){
-  .mnav{display:none!important}
-  body{padding-bottom:0!important}
-}
 @media(max-width:520px){
   #navActions{gap:6px}
   #navActions .btn.sm{padding:8px 11px;font-size:.76rem}
@@ -791,7 +786,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
       <button class="btn b-ghost sm" id="installBtn" onclick="installPWA()" style="display:none;border-color:#fff;color:#fff">⬇ Pasang App</button>
       <button class="btn b-pri sm" id="daftarWrap" onclick="showGuestMode('register')">Daftar Sekarang <span class="pl">✈</span></button>
       <button class="btn b-ghost sm" id="loginBtn" onclick="showGuestMode('login')" style="border-color:#fff;color:#fff">Login</button>
-      <button class="btn b-pri sm" id="authBtn" disabled style="display:none;pointer-events:none;cursor:default;opacity:.65"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.4-5.6 7.5-5.6s6.1 2 7.5 5.6"/></svg> Portal Saya</button>
+      <button class="btn b-pri sm" id="authBtn" style="display:none" onclick="openProfileModal()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.4-5.6 7.5-5.6s6.1 2 7.5 5.6"/></svg> Profil Saya</button>
       <button class="btn b-ghost sm" id="logoutBtn" onclick="logout()" style="display:none;border-color:#fff;color:#fff">Keluar ⏻</button>
       <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
     </div>
@@ -1527,7 +1522,6 @@ function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).cla
   const qtt=document.getElementById('qrTicketTrigger'); if(qtt) qtt.style.display=(s==='#stDash')?'':'none';
   if(s!=='#stDash') closeTicket();
   adjustCtaFill();}
-function authBtnClick(){ showTab('portal'); }
 let guestMode='register';
 function showGuestMode(mode){
   guestMode=(mode==='login')?'login':'register';
@@ -2146,6 +2140,42 @@ function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.
   $('#dKode').textContent=kode;
   renderDocs(); renderTL(getStage()); renderQR(); }
 
+/* ===== Modal PROFIL SAYA — menampilkan seluruh data yang diinput peserta
+   saat pendaftaran akun, diambil langsung dari objek PART (hasil register_participant). */
+function fmtTglLahir(iso){
+  if(!iso)return '-';
+  const d=new Date(iso+'T00:00:00'); if(isNaN(d))return iso;
+  return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+}
+function profileRow(label,value){
+  return `<div style="display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--line)">
+    <span style="color:var(--muted);font-size:.85rem">${label}</span>
+    <span style="color:var(--navy);font-weight:700;text-align:right">${(value===undefined||value===null||value==='')?'-':value}</span>
+  </div>`;
+}
+function openProfileModal(){
+  if(!PART){toast('Data profil belum tersedia','err');return;}
+  const body=$('#profileModalBody'); if(!body)return;
+  body.innerHTML=
+    profileRow('Nama Lengkap',PART.nama)+
+    profileRow('NIK',PART.nik)+
+    profileRow('Jenis Kelamin',PART.jenis_kelamin)+
+    profileRow('Status Pernikahan',PART.status_nikah)+
+    profileRow('Tempat Lahir',PART.tempat_lahir)+
+    profileRow('Tanggal Lahir',fmtTglLahir(PART.tgl_lahir))+
+    profileRow('Pendidikan Terakhir',PART.pendidikan)+
+    profileRow('Agama',PART.agama)+
+    profileRow('Asal Sekolah',PART.asal_sekolah)+
+    profileRow('No. WhatsApp',PART.telepon)+
+    profileRow('Provinsi',PART.provinsi)+
+    profileRow('Kota/Kabupaten Domisili',PART.kota)+
+    profileRow('Alamat Lengkap',PART.alamat)+
+    profileRow('Kode Peserta',participantCode())+
+    profileRow('Akun',USER?.is_anonymous?'Akses melalui QR peserta':(USER?.email||USER?.user_metadata?.email||'—'));
+  const m=$('#profileModal'); if(m)m.classList.add('on');
+}
+function closeProfileModal(){ const m=$('#profileModal'); if(m)m.classList.remove('on'); }
+
 function getStage(){ return window._stage??0; }
 
 function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
@@ -2619,33 +2649,6 @@ function agreeDataConsent(){
   openDocsCompleteModal();
 }
 
-/* ===== Kirim link install PWA via WhatsApp — dipicu SEKALI begitu peserta
-   menyetujui data (agreeDataConsent), yaitu tepat setelah berkas WAJIB terakhir
-   lengkap. Dibuka via wa.me dengan pesan sudah terisi; peserta tinggal tekan
-   kirim sendiri di WhatsApp-nya. Dipanggil langsung di dalam rangkaian klik
-   tombol "Setuju & Lanjutkan" (bukan lewat setTimeout/await) supaya masih
-   dianggap bagian dari user-gesture yang sama & tidak diblokir popup blocker. */
-let waInstallLinkSent=false;
-function buildInstallWaLink(){
-  let phone=(PART?.telepon||'').replace(/[^0-9]/g,'');
-  if(!phone)return null;
-  if(phone.startsWith('0'))phone='62'+phone.slice(1);
-  else if(phone.startsWith('62')){/* sudah format internasional */}
-  else if(!phone.startsWith('62'))phone='62'+phone;
-  const installUrl=location.origin+location.pathname;
-  const nama=(PART?.nama||'').split(' ')[0]||'';
-  const pesan=`Halo${nama?' '+nama:''}! 👋 Dokumenmu di Portal Pekerja PT. JUARA sudah lengkap semua ✅\n\nYuk pasang aplikasinya di HP biar lebih gampang cek progres kapan aja:\n${installUrl}\n\n(Buka link ini di HP → menu browser → "Tambahkan ke Layar Utama" / "Pasang Aplikasi")`;
-  return `https://wa.me/${phone}?text=${encodeURIComponent(pesan)}`;
-}
-function sendInstallLinkViaWhatsApp(){
-  if(waInstallLinkSent)return;
-  const link=buildInstallWaLink();
-  if(!link)return; // nomor WA peserta tidak tersedia, lewati diam-diam
-  waInstallLinkSent=true;
-  const waBtn=$('#waInstallLinkBtn'); if(waBtn){waBtn.href=link;waBtn.style.display='inline-flex';}
-  window.open(link,'_blank');
-}
-
 /* ===== Popup notifikasi saat dokumen WAJIB terakhir berhasil diunggah =====
    Muncul otomatis begitu upReq mencapai totReq (semua berkas wajib lengkap),
    sekali per sesi (dijaga oleh flag qrShown). Tombol utamanya langsung
@@ -2653,7 +2656,6 @@ function sendInstallLinkViaWhatsApp(){
 function openDocsCompleteModal(){
   const m=$('#docsCompleteModal'); if(!m)return;
   m.classList.add('on');
-  sendInstallLinkViaWhatsApp();
 }
 function closeDocsCompleteModal(){
   const m=$('#docsCompleteModal'); if(m)m.classList.remove('on');
@@ -3121,8 +3123,22 @@ window.addEventListener('appinstalled',()=>{
     </div>
     <h3>SELAMAT DATA TELAH DIISI SEMUA</h3>
     <p>Kerja bagus 🎉 Berkas terakhirmu sudah berhasil diunggah. Seluruh dokumen wajib kini menunggu verifikasi tim kami. Jangan lupa cek berkala <b>Progres Penempatan</b> kamu di portal ini ya.</p>
-    <a href="#" id="waInstallLinkBtn" target="_blank" rel="noopener" class="btn b-navy" style="display:none;width:100%;justify-content:center;margin-bottom:10px">🟢 Buka WhatsApp untuk Kirim Link Install</a>
     <button type="button" class="btn b-pri" style="width:100%;justify-content:center" onclick="closeDocsCompleteModal()">Tutup</button>
+  </div>
+</div>
+
+<!-- POPUP: PROFIL SAYA — seluruh data yang diinput peserta saat pendaftaran -->
+<div class="modal" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
+  <div class="box" style="max-width:460px;text-align:left">
+    <div style="text-align:center">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(19,49,77,.08);border:1.5px solid rgba(19,49,77,.2);display:grid;place-items:center;margin:0 auto 16px">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--navy)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.4-5.6 7.5-5.6s6.1 2 7.5 5.6"/></svg>
+      </div>
+      <h3 style="text-align:center">Profil Saya</h3>
+      <p style="text-align:center">Data yang kamu isi saat pendaftaran akun.</p>
+    </div>
+    <div id="profileModalBody" style="max-height:60vh;overflow-y:auto;margin-bottom:16px"></div>
+    <button type="button" class="btn b-pri" style="width:100%;justify-content:center" onclick="closeProfileModal()">Tutup</button>
   </div>
 </div>
 
