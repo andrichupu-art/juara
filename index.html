@@ -744,6 +744,18 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .consent-check input:checked ~ .consent-check-box svg{opacity:1}
 .consent-check-txt{font-size:.83rem;color:var(--navy);font-weight:600;line-height:1.5}
 @media(max-width:480px){.consent-head{padding:26px 22px 24px}.consent-body{padding:22px 20px 24px}}
+
+/* ============ PROFILE MODAL (grid ringkas) ============ */
+.profile-box{max-width:480px}
+.profile-sec{margin-bottom:16px}
+.profile-sec:last-child{margin-bottom:0}
+.profile-sec-lbl{font:800 .68rem var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pfield{background:#F7FAFD;border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:0}
+.pfield.full{grid-column:1/-1}
+.pfield-lbl{display:block;font:700 .66rem var(--body);color:var(--mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
+.pfield-val{display:block;font:700 .87rem var(--body);color:var(--navy);line-height:1.35;word-break:break-word}
+@media(max-width:420px){.profile-grid{grid-template-columns:1fr}.pfield.full{grid-column:auto}}
 @media(max-width:960px){
   html,body{height:auto;min-height:100%;}
   .tabpanel.active{min-height:1px;flex-shrink:0;}
@@ -2233,25 +2245,40 @@ function profileRow(label,value){
     <span style="color:var(--navy);font-weight:700;text-align:right">${(value===undefined||value===null||value==='')?'-':value}</span>
   </div>`;
 }
+function pfield(label,value,full){
+  const v=(value===undefined||value===null||value==='')?'—':value;
+  return `<div class="pfield${full?' full':''}"><span class="pfield-lbl">${label}</span><span class="pfield-val">${v}</span></div>`;
+}
+function psection(title,fieldsHtml){
+  return `<div class="profile-sec"><div class="profile-sec-lbl">${title}</div><div class="profile-grid">${fieldsHtml}</div></div>`;
+}
 function openProfileModal(){
   if(!PART){toast('Data profil belum tersedia','err');return;}
   const body=$('#profileModalBody'); if(!body)return;
   body.innerHTML=
-    profileRow('Nama Lengkap',PART.nama)+
-    profileRow('NIK',PART.nik)+
-    profileRow('Jenis Kelamin',PART.jenis_kelamin)+
-    profileRow('Status Pernikahan',PART.status_nikah)+
-    profileRow('Tempat Lahir',PART.tempat_lahir)+
-    profileRow('Tanggal Lahir',fmtTglLahir(PART.tgl_lahir))+
-    profileRow('Pendidikan Terakhir',PART.pendidikan)+
-    profileRow('Agama',PART.agama)+
-    profileRow('Asal Sekolah',PART.asal_sekolah)+
-    profileRow('No. WhatsApp',PART.telepon)+
-    profileRow('Provinsi',PART.provinsi)+
-    profileRow('Kota/Kabupaten Domisili',PART.kota)+
-    profileRow('Alamat Lengkap',PART.alamat)+
-    profileRow('Kode Peserta',participantCode())+
-    profileRow('Akun',USER?.is_anonymous?'Akses melalui QR peserta':(USER?.email||USER?.user_metadata?.email||'—'));
+    psection('Data Pribadi',
+      pfield('Nama Lengkap',PART.nama,true)+
+      pfield('NIK',PART.nik)+
+      pfield('Jenis Kelamin',PART.jenis_kelamin)+
+      pfield('Status Pernikahan',PART.status_nikah)+
+      pfield('Tempat Lahir',PART.tempat_lahir)+
+      pfield('Tanggal Lahir',fmtTglLahir(PART.tgl_lahir))
+    )+
+    psection('Pendidikan',
+      pfield('Pendidikan Terakhir',PART.pendidikan)+
+      pfield('Agama',PART.agama)+
+      pfield('Asal Sekolah',PART.asal_sekolah,true)
+    )+
+    psection('Kontak &amp; Domisili',
+      pfield('No. WhatsApp',PART.telepon)+
+      pfield('Provinsi',PART.provinsi)+
+      pfield('Kota/Kabupaten',PART.kota)+
+      pfield('Alamat Lengkap',PART.alamat,true)
+    )+
+    psection('Akun',
+      pfield('Kode Peserta',participantCode())+
+      pfield('Login via',USER?.is_anonymous?'Akses melalui QR peserta':(USER?.email||USER?.user_metadata?.email||'—'),true)
+    );
   const m=$('#profileModal'); if(m)m.classList.add('on');
   applyProfilePhoto();
 }
@@ -3248,13 +3275,13 @@ window.addEventListener('appinstalled',()=>{
 
 <!-- POPUP: PROFIL SAYA — seluruh data yang diinput peserta saat pendaftaran -->
 <div class="modal" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
-  <div class="box" style="max-width:460px;text-align:left">
-    <div style="text-align:center">
-      <div class="ava" id="profileAva" style="width:72px;height:72px;border-radius:50%;margin:0 auto 16px;font-size:1.7rem">P</div>
-      <h3 style="text-align:center">Profil Saya</h3>
-      <p style="text-align:center">Data yang kamu isi saat pendaftaran akun.</p>
+  <div class="box profile-box" style="text-align:left">
+    <div style="text-align:center;margin-bottom:14px">
+      <div class="ava" id="profileAva" style="width:56px;height:56px;border-radius:50%;margin:0 auto 10px;font-size:1.3rem">P</div>
+      <h3 style="text-align:center;margin-bottom:2px">Profil Saya</h3>
+      <p style="text-align:center;margin-bottom:0;font-size:.82rem">Data yang kamu isi saat pendaftaran akun.</p>
     </div>
-    <div id="profileModalBody" style="max-height:60vh;overflow-y:auto;margin-bottom:16px"></div>
+    <div id="profileModalBody" style="max-height:52vh;overflow-y:auto;margin-bottom:14px;padding-right:4px"></div>
     <button type="button" class="btn b-pri" style="width:100%;justify-content:center" onclick="closeProfileModal()">Tutup</button>
   </div>
 </div>
