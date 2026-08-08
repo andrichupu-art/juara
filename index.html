@@ -406,6 +406,22 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .ov-bar{height:14px;border-radius:99px;background:var(--paper);border:1.5px solid var(--line);overflow:hidden}
 .ov-bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(45deg,var(--orange) 0 10px,var(--gold) 10px 20px);transition:width 1s cubic-bezier(.2,.8,.2,1)}
 
+/* Bar progres di atas Progres Penempatan — nunjukin sedang berjalan/diproses,
+   bukan cuma statis, jadi ada kilau bergerak terus-menerus di dalam isi bar. */
+.tl-progress{margin-bottom:26px}
+.tl-progress-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.tl-progress-top span{font:800 .74rem var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--sky);display:flex;align-items:center;gap:6px}
+.tl-progress-top b{font:800 1.5rem var(--disp);color:var(--sky)}
+.tl-bar{height:14px;border-radius:99px;background:var(--paper);border:1.5px solid var(--line);overflow:hidden}
+.tl-bar i{display:block;height:100%;width:0;position:relative;overflow:hidden;
+  background:linear-gradient(90deg,var(--sky),var(--navy));transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.tl-bar i::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:40%;
+  background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.65) 50%,rgba(255,255,255,0) 100%);
+  animation:tlSweep 1.6s ease-in-out infinite}
+@keyframes tlSweep{0%{left:-40%}100%{left:120%}}
+.tl-bar i.done{background:var(--green)}
+.tl-bar i.done::after{display:none}
+
 .doc{border:1.5px solid var(--line);border-radius:13px;padding:18px;margin-bottom:14px;display:grid;grid-template-columns:46px 1fr auto;gap:16px;align-items:center;transition:.25s;background:#fff}
 .doc:hover{border-color:var(--sky)}
 .doc.ok{border-color:var(--green);background:linear-gradient(0deg,rgba(23,178,106,.04),rgba(23,178,106,.04))}
@@ -1045,7 +1061,11 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         </div>
 
         <div class="panel rv in">
-          <h4>🛰️ Timeline Penempatan <span class="cnt" id="stageLbl">Tahap 1/6</span></h4>
+          <h4>🛰️ Progres Penempatan <span class="cnt" id="stageLbl">Tahap 1/6</span></h4>
+          <div class="tl-progress">
+            <div class="tl-progress-top"><span id="tlProgLbl">⏳ Sedang diproses</span><b id="tlPct">0%</b></div>
+            <div class="tl-bar"><i id="tlBar"></i></div>
+          </div>
           <div id="tlWrap"></div>
         </div>
       </div>
@@ -2105,7 +2125,16 @@ async function loadStage(participantId=PART?.id,request=authEpoch){
 function tlHTML(t){ return '<ul class="tl">'+STAGES.map((s,i)=>{
   const cls=i<t?'done':i===t?'cur':'';
   return `<li class="${cls}"><span class="nd">${i<t?'✓':i+1}</span><div><h5>${s}</h5><p>${STAGES_D[i]}</p>${i<=t?`<span class="dt">${i===t?'● SEDANG BERJALAN':'✓ selesai'}</span>`:''}</div></li>`;}).join('')+'</ul>'; }
-function renderTL(t){ $('#tlWrap').innerHTML=tlHTML(t); $('#stageLbl').textContent=`Tahap ${Math.min(t+1,6)}/6 — ${STAGES[Math.min(t,5)]}`; }
+function renderTL(t){ $('#tlWrap').innerHTML=tlHTML(t); $('#stageLbl').textContent=`Tahap ${Math.min(t+1,6)}/6 — ${STAGES[Math.min(t,5)]}`;
+  // Progres bar di atas: tahap sebelum t dianggap tuntas, tahap t sendiri lagi
+  // berjalan (dihitung separuh), supaya isinya kelihatan bergerak maju tiap tahap naik.
+  const lastIdx=STAGES.length-1;
+  const pct=t>=lastIdx?100:Math.round(((t+0.5)/STAGES.length)*100);
+  const pctEl=$('#tlPct'), barEl=$('#tlBar'), lblEl=$('#tlProgLbl');
+  if(pctEl)pctEl.textContent=pct+'%';
+  if(barEl){barEl.style.width=pct+'%';barEl.classList.toggle('done',t>=lastIdx);}
+  if(lblEl)lblEl.textContent=t>=lastIdx?'✓ Tahap akhir':'⏳ Sedang diproses';
+}
 
 /* ================= QR TICKET ================= */
 function renderQR(){ if(!PART)return; const kode=participantCode();
