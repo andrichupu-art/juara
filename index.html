@@ -158,6 +158,11 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
   .mnav a.active{background:rgba(255,255,255,.14);color:var(--gold)}
   body{padding-bottom:58px}
 }
+/* Sembunyikan bottom-nav (6 ikon) di mobile — diminta user */
+@media(max-width:1080px){
+  .mnav{display:none!important}
+  body{padding-bottom:0!important}
+}
 @media(max-width:520px){
   #navActions{gap:6px}
   #navActions .btn.sm{padding:8px 11px;font-size:.76rem}
@@ -306,6 +311,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .cek-form{display:flex;gap:10px;margin-top:22px}
 .cek-form input{flex:1;border:2px solid var(--navy);border-radius:11px;padding:14px 18px;font:700 1rem var(--mono);letter-spacing:.1em;text-transform:uppercase}
 .cek-form input:focus{outline:none;box-shadow:none}
+.cek-scan-wrap{display:none;margin-top:22px}
 .cek-res{background:var(--paper);border:1.5px dashed var(--line);border-radius:16px;padding:30px;min-height:230px;display:grid;place-items:center;text-align:center;color:var(--mut)}
 .cek-res .ph{font-size:2.6rem;margin-bottom:8px}
 
@@ -709,6 +715,8 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
   html,body{height:auto;min-height:100%;}
   .tabpanel.active{min-height:1px;flex-shrink:0;}
   .hero-g,.gate,.cek-grid,.dash-grid,.elig-box,.ticket{grid-template-columns:1fr}
+  .cek-form{display:none}
+  .cek-scan-wrap{display:block}
   .stats .wrap{grid-template-columns:repeat(2,1fr)}
   .stat:nth-child(3){border-left:0}
   .frm{grid-template-columns:1fr}
@@ -870,6 +878,14 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <input id="inpKode" type="text" autocomplete="off" placeholder="Masukkan kode peserta" style="text-transform:uppercase">
         <button class="btn b-navy" type="submit">Lacak <span class="pl">🔎</span></button>
       </form>
+      <!-- Khusus mobile: input manual disembunyikan (lihat CSS .cek-form / .cek-scan-wrap),
+           diganti tombol scan yang langsung membuka kamera lewat capture="environment"
+           supaya user bisa pindai barcode/QR boarding pass langsung, tanpa ketik manual. -->
+      <div class="cek-scan-wrap">
+        <button type="button" class="btn b-navy" id="btnCekScan" style="width:100%;justify-content:center" onclick="openCekScanPicker()">📷 Scan Barcode / QR Kode Peserta</button>
+        <input type="file" id="cekScanFile" accept="image/*" capture="environment" style="display:none">
+        <p class="meta" id="cekScanStatus" style="margin-top:10px"></p>
+      </div>
     </div>
     <div class="cek-res rv" id="cekHasil">
       <div><div class="ph">🛰️</div><b style="color:var(--navy)">Radar Penempatan</b><br>Status 6 tahap perjalananmu akan muncul di panel ini.</div>
@@ -2650,21 +2666,70 @@ function docsCompleteModalSeeTicket(){
 }
 
 /* ================= CEK STATUS PUBLIK ================= */
-$('#cekForm').addEventListener('submit',async e=>{e.preventDefault();
-  const kode=$('#inpKode').value.trim().toUpperCase(), box=$('#cekHasil');
-  if(kode.length<6)return toast('Masukkan kode peserta yang valid','err');
+async function lacakKode(kode){
+  const box=$('#cekHasil');
   box.innerHTML='<div><div class="spin" style="border-color:rgba(11,31,58,.2);border-top-color:var(--navy);width:30px;height:30px;margin:0 auto"></div><p style="margin-top:12px">Melacak ke satelit… 🛰️</p></div>';
   let res=null;
   const {data,error}=await sb.rpc('cek_status_publik',{p_kode:kode});
   if(error)console.error('cek_status_publik gagal:',error);
   const row=Array.isArray(data)?data[0]:data;
   if(row)res={nama:row.nama,kota:row.kota,tahap:row.tahap??0,updated:row.updated_at};
-  if(!res){ box.innerHTML=`<div><div class="ph">🚫</div><b style="color:var(--navy)">Kode tidak ditemukan</b><br>Periksa kembali kode peserta kamu, atau hubungi hotline 0812 9000 1234.</div>`; return; }
+  if(!res){ box.innerHTML=`<div><div class="ph">🚫</div><b style="color:var(--navy)">Kode tidak ditemukan</b><br>Periksa kembali kode peserta kamu, atau hubungi hotline 0812 9000 1234.</div>`; return false; }
   box.innerHTML=`<div style="width:100%"><div style="text-align:left;margin-bottom:18px">
       <span class="tag">DITEMUKAN ✔</span>
       <h3 style="font:800 1.4rem var(--disp);color:var(--navy);margin-top:10px">${res.nama}</h3>
       <p style="font-size:.86rem;color:var(--mut)">Kota: <b style="color:var(--navy)">${res.kota}</b> · Kode: <b style="font-family:var(--mono)">${kode}</b> · Update: ${fmtT(res.updated||Date.now())}</p>
-    </div>${tlHTML(res.tahap)}</div>`; });
+    </div>${tlHTML(res.tahap)}</div>`;
+  return true;
+}
+$('#cekForm').addEventListener('submit',async e=>{e.preventDefault();
+  const kode=$('#inpKode').value.trim().toUpperCase();
+  if(kode.length<6)return toast('Masukkan kode peserta yang valid','err');
+  await lacakKode(kode);
+});
+
+/* Scan barcode/QR kode peserta (khusus mobile) — pakai jsQR yang sama dengan
+   login QR. capture="environment" bikin dialognya langsung buka kamera belakang,
+   bukan galeri, supaya user bisa arahkan HP ke boarding pass / kartu QR-nya. */
+function extractKodePesertaFromText(text){
+  if(!text)return null;
+  const raw=text.trim();
+  const direct=raw.match(/JR-[A-Za-z0-9]{4,}/i);
+  if(direct)return direct[0].toUpperCase();
+  const mKode=raw.match(/[?&]kode=([^&#]+)/i);
+  if(mKode)return decodeURIComponent(mKode[1]).toUpperCase();
+  const mQr=raw.match(/[?&]qr=([^&#]+)/i);
+  if(mQr)return decodeURIComponent(mQr[1]).toUpperCase();
+  if(/^[A-Za-z0-9_-]{6,}$/.test(raw))return raw.toUpperCase();
+  return null;
+}
+const cekScanFile=$('#cekScanFile'), btnCekScan=$('#btnCekScan'), cekScanStatus=$('#cekScanStatus');
+function openCekScanPicker(){
+  if(!cekScanFile||(btnCekScan&&btnCekScan.disabled))return;
+  cekScanFile.click();
+}
+if(cekScanFile){
+  cekScanFile.addEventListener('change',async e=>{
+    const file=e.target.files&&e.target.files[0];
+    e.target.value='';
+    if(!file)return;
+    if(btnCekScan){btnCekScan.disabled=true;btnCekScan.innerHTML='<span class="qr-btn-spinner"></span> Membaca QR…';}
+    if(cekScanStatus)cekScanStatus.textContent='';
+    try{
+      const text=await decodeQrFromFile(file);
+      const kode=extractKodePesertaFromText(text);
+      if(!kode)throw new Error('QR ini bukan kode peserta yang valid');
+      const inp=$('#inpKode'); if(inp)inp.value=kode;
+      const ok=await lacakKode(kode);
+      if(cekScanStatus)cekScanStatus.textContent=ok?'':'';
+    }catch(err){
+      console.error('decode QR (cek status) gagal:',err);
+      toast(err.message||'Gagal membaca QR','err');
+    }finally{
+      if(btnCekScan){btnCekScan.disabled=false;btnCekScan.innerHTML='📷 Scan Barcode / QR Kode Peserta';}
+    }
+  });
+}
 
 /* ================= ELIGIBILITAS ================= */
 function hitungElig(){
