@@ -2263,7 +2263,15 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
     // Insert (termasuk progress awal) sudah dilakukan di server lewat RPC.
     PART={id:row.id,nama:row.nama,nik:row.nik,telepon:row.telepon,kota:row.kota,qr_token:row.qr_token,kode_peserta:row.kode_peserta,
       jenis_kelamin:row.jenis_kelamin,status_nikah:row.status_nikah,tempat_lahir:row.tempat_lahir,tgl_lahir:row.tgl_lahir,
-      pendidikan:row.pendidikan,agama:row.agama,provinsi:row.provinsi,alamat:row.alamat,asal_sekolah:row.asal_sekolah};
+      pendidikan:row.pendidikan,agama:row.agama,provinsi:row.provinsi,alamat:row.alamat,asal_sekolah:row.asal_sekolah,
+      email:freshUser.email||freshUser.user_metadata?.email||null};
+    // register_participant (RPC di server) belum menyimpan kolom email, jadi susulkan lewat
+    // UPDATE biasa di sini (RLS-nya sama seperti simpan profil: hanya baris milik akun sendiri).
+    // Kegagalan di sini tidak menghentikan alur pendaftaran — email tetap tampil dari sesi Google saat ini.
+    if(PART.email){
+      sb.from('participants_v2').update({email:PART.email}).eq('id',row.id)
+        .then(({error})=>{ if(error)console.warn('Gagal menyimpan email peserta:',error.message); });
+    }
     await Promise.all([loadDocs(),loadStage()]);
     renderDash();
     resetBtn();
@@ -2416,6 +2424,7 @@ function openProfileModal(){
       <div class="fld-sec">Kontak &amp; Domisili</div>
       <div class="fld-card-grid">
         <div class="fld"><label>No. WhatsApp Aktif</label><input id="peWa" required inputmode="tel" placeholder="Masukkan No. WhatsApp" value="${escAttr(p.telepon)}"></div>
+        <div class="fld"><label>Email</label><input id="peEmail" disabled placeholder="—" value="${escAttr(p.email||USER?.email||USER?.user_metadata?.email||'')}"></div>
         <div class="fld"><label>Provinsi</label><select id="peProvinsi" required><option value="" disabled selected>Pilih provinsi</option></select></div>
         <div class="fld"><label>Kota/Kabupaten Domisili</label><input id="peKota" required placeholder="Masukkan kota/kabupaten" value="${escAttr(p.kota)}"></div>
         <div class="fld full"><label>Alamat Lengkap (sesuai KTP)</label><textarea id="peAlamat" required placeholder="Masukkan alamat lengkap">${escAttr(p.alamat)}</textarea></div>
