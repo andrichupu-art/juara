@@ -2510,7 +2510,7 @@ function closeProfileModal(){ const m=$('#profileModal'); if(m)m.classList.remov
 
 $('#frmProfileEdit')?.addEventListener('submit',async e=>{
   e.preventDefault();
-  if(!PART)return;
+  if(!PART){ toast('Sesi/data profil belum siap. Tutup lalu buka lagi Profil Saya, coba simpan ulang.','err'); return; }
   const nama=$('#peNama').value.trim(), wa=$('#peWa').value.trim(), kota=$('#peKota').value.trim();
   const jk=$('#peJk').value, status=$('#peStatus').value, tempatLahir=$('#peTempatLahir').value.trim(), tglLahir=$('#peTglLahir').value;
   const pendidikan=$('#pePendidikan').value, agama=$('#peAgama').value, provinsi=$('#peProvinsi').value, alamat=$('#peAlamat').value.trim();
