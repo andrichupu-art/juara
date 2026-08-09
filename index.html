@@ -747,31 +747,31 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .modal p{color:var(--mut);font-size:.9rem;margin-bottom:20px}
 
 /* ============ CONSENT MODAL (boarding-pass style) ============ */
-.consent-box{max-width:440px;padding:0;overflow:hidden;text-align:left;border-radius:22px}
-.consent-head{position:relative;background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:30px 34px 26px;text-align:center;overflow:hidden}
+.consent-box{max-width:440px;padding:0;overflow:hidden;text-align:left;border-radius:22px;max-height:calc(100vh - 40px);display:flex;flex-direction:column}
+.consent-head{position:relative;flex:none;background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:22px 34px 18px;text-align:center;overflow:hidden}
 .consent-head::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.09) 1.2px,transparent 1.2px);background-size:16px 16px;opacity:.6}
 .consent-perf{position:absolute;left:0;right:0;bottom:-11px;height:22px;background:radial-gradient(circle,#fff 9px,transparent 9.5px) repeat-x;background-size:24px 22px;background-position:12px 0}
 .consent-stamp{position:relative;z-index:1;width:52px;height:52px;margin:0 auto 14px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px dashed rgba(255,255,255,.55);display:grid;place-items:center}
 .consent-eyebrow{position:relative;z-index:1;font:800 .68rem var(--body);letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
 .consent-head h3{position:relative;z-index:1;color:#fff;margin-bottom:8px}
 .consent-head p{position:relative;z-index:1;color:rgba(255,255,255,.68);font-size:.85rem;margin:0}
-.consent-body{padding:26px 30px 28px}
+.consent-body{padding:18px 30px 20px;overflow-y:auto;min-height:0}
 
-.consent-docs{margin-bottom:18px}
+.consent-docs{margin-bottom:14px}
 .consent-docs-lbl{font:800 .68rem var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:9px}
 .consent-doc-row{display:flex;flex-wrap:wrap;gap:8px}
 .cdoc{font:700 .78rem var(--body);color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:100px;padding:6px 13px}
 
-.consent-points{display:flex;flex-direction:column;gap:12px;background:#F7FAFD;border:1px solid var(--line);border-radius:14px;padding:16px 16px;margin-bottom:16px}
+.consent-points{display:flex;flex-direction:column;gap:9px;background:#F7FAFD;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:12px}
 .cpoint{display:flex;align-items:flex-start;gap:11px}
 .cpoint-ico{flex:none;width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:.65rem;font-weight:800;display:grid;place-items:center;margin-top:1px}
 .cpoint b{display:block;font:800 .86rem var(--body);color:var(--navy);margin-bottom:1px}
 .cpoint p{margin:0;color:var(--mut);font-size:.78rem;line-height:1.45}
 
-.consent-lock{display:flex;align-items:center;gap:9px;font:600 .78rem var(--body);color:var(--navy);background:rgba(46,155,214,.08);border:1px solid rgba(46,155,214,.25);border-radius:10px;padding:10px 13px;margin-bottom:20px}
+.consent-lock{display:flex;align-items:center;gap:9px;font:600 .78rem var(--body);color:var(--navy);background:rgba(46,155,214,.08);border:1px solid rgba(46,155,214,.25);border-radius:10px;padding:10px 13px;margin-bottom:14px}
 .consent-lock svg{flex:none}
 
-.consent-check{position:relative;display:flex;align-items:flex-start;gap:11px;cursor:pointer;margin-bottom:20px;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);transition:.2s}
+.consent-check{position:relative;display:flex;align-items:flex-start;gap:11px;cursor:pointer;margin-bottom:14px;padding:11px 14px;border-radius:12px;border:1.5px solid var(--line);transition:.2s}
 .consent-check:has(input:checked){border-color:var(--gold);background:rgba(190,129,70,.06)}
 .consent-check input{position:absolute;opacity:0;width:1px;height:1px}
 .consent-check-box{flex:none;width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;margin-top:1px;transition:.2s}
@@ -3619,17 +3619,6 @@ window.addEventListener('appinstalled',()=>{
     </div>
 
     <div class="consent-body">
-
-      <div class="consent-docs">
-        <div class="consent-docs-lbl">Dokumen tercakup</div>
-        <div class="consent-doc-row">
-          <span class="cdoc">🪪 KTP</span>
-          <span class="cdoc">👪 Kartu Keluarga</span>
-          <span class="cdoc">🛂 Paspor</span>
-          <span class="cdoc">🎓 Ijazah</span>
-          <span class="cdoc">🩺 Medical Check-Up</span>
-        </div>
-      </div>
 
       <div class="consent-points">
         <div class="cpoint">
