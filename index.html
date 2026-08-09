@@ -443,7 +443,9 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .panel h4 .cnt{margin-left:auto;font:700 .74rem var(--body);color:var(--mut);background:var(--paper);padding:5px 12px;border-radius:100px;border:1px solid var(--line)}
 /* Badge tahap di panel Progres Penempatan teksnya lebih panjang (mis. "Tahap 2/6 —
    Verifikasi Dokumen"), jadi dikecilkan & dirapatkan supaya tak menumpuk 2 baris tebal. */
-#stageLbl{font-size:.66rem;line-height:1.35;padding:6px 13px;text-align:right;white-space:normal;max-width:340px}
+#stageLbl{font-size:.7rem;line-height:1.35;padding:6px 13px;text-align:left;white-space:normal;max-width:none}
+.panel h4.h4-stack{flex-wrap:wrap;row-gap:10px}
+.panel h4.h4-stack #stageLbl{margin-left:0;width:100%}
 @media(max-width:520px){
   .panel h4{flex-wrap:wrap;row-gap:10px}
   #stageLbl{margin-left:0;width:100%;max-width:100%;text-align:left}
@@ -1236,7 +1238,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         </div>
 
         <div class="panel rv in">
-          <h4>🛰️ Progres Penempatan <span class="cnt" id="stageLbl">Tahap 1/6</span></h4>
+          <h4 class="h4-stack">🛰️ Progres Penempatan <span class="cnt" id="stageLbl">Tahap 1/6</span></h4>
           <div class="tl-progress">
             <div class="tl-progress-top"><span id="tlProgLbl">⏳ Sedang diproses</span><b id="tlPct">0%</b></div>
             <div class="tl-bar"><i id="tlBar"></i></div>
