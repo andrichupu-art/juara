@@ -2995,10 +2995,10 @@ function openUploadPaymentPicker(){
   const fi=$('#paymentProofFileInput'); if(fi){ fi.value=''; fi.click(); }
 }
 // Ambil kandidat nominal (format ribuan, mis. "1.500.000" atau "850,000.00") dari teks
-// hasil OCR. Prioritas: angka yang persis mengikuti kata kunci nominal di struk
-// (JUMLAH/TOTAL/NOMINAL/AMOUNT/TRANSFER) — supaya nomor rekening/no.urut/tanggal
-// tidak ketuker jadi nominal. Kalau tidak ada kata kunci yang cocok, baru fallback
-// ke angka berformat-ribuan terbesar di seluruh teks.
+// hasil OCR. Prioritas 3 tingkat supaya tidak ketuker sama nomor rekening/no.urut/tanggal:
+// 1) angka yang persis mengikuti kata kunci nominal (JUMLAH/TOTAL/NOMINAL/AMOUNT/TRANSFER)
+// 2) angka yang didahului "RP" (lebih pendek jadi lebih jarang salah-baca OCR daripada kata "JUMLAH")
+// 3) fallback: angka berformat-ribuan terbesar di seluruh teks
 function extractAmountFromText(text){
   const t=text||'';
   const parseAmount=(m)=>{
@@ -3014,22 +3014,63 @@ function extractAmountFromText(text){
   const keywordRe=new RegExp('(?:JUMLAH|TOTAL|NOMINAL|AMOUNT|TRANSFER)[^\\d\\n]{0,20}(?:Rp\\.?\\s*)?('+numPattern+')','gi');
   const keywordHits=[...t.matchAll(keywordRe)].map(m=>parseAmount(m[1])).filter(n=>Number.isFinite(n)&&n>=1000);
   if(keywordHits.length)return keywordHits[0];
+  const rpRe=new RegExp('RP\\.?\\s*('+numPattern+')','gi');
+  const rpHits=[...t.matchAll(rpRe)].map(m=>parseAmount(m[1])).filter(n=>Number.isFinite(n)&&n>=1000);
+  if(rpHits.length)return rpHits[0];
   const matches=t.match(new RegExp('(?:Rp\\.?\\s*)?'+numPattern,'g'))||[];
   const nums=matches.map(parseAmount).filter(n=>Number.isFinite(n)&&n>=1000);
   return nums.length?Math.max(...nums):null;
 }
-// Preprocessing gambar sebelum OCR: grayscale + auto-contrast + upscale untuk
-// foto kecil/gelap. Foto struk dari HP seringkali kontrasnya rendah dan resolusi
-// efektif teksnya kecil — ini biasanya paling berpengaruh menaikkan akurasi OCR
-// dibanding hanya mengganti setting Tesseract.
-function preprocessForOcr(file){
+// Blur kotak 3x3 ringan — membantu menyatukan titik-titik terputus pada font
+// dot-matrix printer thermal (struk ATM/EDC), yang sering bikin Tesseract salah baca.
+function boxBlur3(gray,w,h){
+  const out=new Float32Array(w*h);
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      let sum=0,count=0;
+      for(let dy=-1;dy<=1;dy++){
+        const yy=y+dy; if(yy<0||yy>=h)continue;
+        for(let dx=-1;dx<=1;dx++){
+          const xx=x+dx; if(xx<0||xx>=w)continue;
+          sum+=gray[yy*w+xx];count++;
+        }
+      }
+      out[y*w+x]=sum/count;
+    }
+  }
+  return out;
+}
+// Threshold Otsu — cari titik pemisah hitam/putih paling optimal secara statistik
+// dari histogram grayscale, dipakai untuk binarize (jauh lebih akurat untuk OCR
+// struk dibanding threshold tetap).
+function otsuThreshold(gray){
+  const hist=new Array(256).fill(0);
+  for(let p=0;p<gray.length;p++)hist[Math.max(0,Math.min(255,Math.round(gray[p])))]++;
+  const total=gray.length;
+  let sum=0; for(let v=0;v<256;v++)sum+=v*hist[v];
+  let sumB=0,wB=0,maxVar=0,threshold=127;
+  for(let v=0;v<256;v++){
+    wB+=hist[v]; if(wB===0)continue;
+    const wF=total-wB; if(wF===0)break;
+    sumB+=v*hist[v];
+    const mB=sumB/wB, mF=(sum-sumB)/wF;
+    const varBetween=wB*wF*(mB-mF)*(mB-mF);
+    if(varBetween>maxVar){maxVar=varBetween;threshold=v;}
+  }
+  return threshold;
+}
+// Preprocessing gambar sebelum OCR: grayscale + (opsional) blur ringan + auto-contrast
+// + upscale untuk foto kecil/gelap + (opsional) binarize pakai Otsu. Foto struk dari HP
+// seringkali kontrasnya rendah dan resolusi efektif teksnya kecil — preprocessing ini
+// biasanya paling berpengaruh menaikkan akurasi OCR dibanding cuma ganti setting Tesseract.
+function preprocessForOcr(file,{binarize=true}={}){
   return new Promise((resolve,reject)=>{
     const img=new Image();
     img.onload=()=>{
       try{
         const MAX_DIM=1800;
         let scale=1;
-        if(img.width<1000)scale=Math.min(2.2,MAX_DIM/img.width);
+        if(img.width<1000)scale=Math.min(2.4,MAX_DIM/img.width);
         else if(img.width>MAX_DIM)scale=MAX_DIM/img.width;
         const w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
         const canvas=document.createElement('canvas');
@@ -3039,17 +3080,18 @@ function preprocessForOcr(file){
         ctx.drawImage(img,0,0,w,h);
         const imgData=ctx.getImageData(0,0,w,h);
         const d=imgData.data;
+        let gray=new Float32Array(w*h);
+        for(let i=0,p=0;i<d.length;i+=4,p++)gray[p]=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+        if(binarize)gray=boxBlur3(gray,w,h);
         let min=255,max=0;
-        const gray=new Float32Array(w*h);
-        for(let i=0,p=0;i<d.length;i+=4,p++){
-          const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-          gray[p]=g;if(g<min)min=g;if(g>max)max=g;
-        }
+        for(let p=0;p<gray.length;p++){ if(gray[p]<min)min=gray[p]; if(gray[p]>max)max=gray[p]; }
         const range=Math.max(1,max-min);
-        for(let i=0,p=0;i<d.length;i+=4,p++){
-          const v=(gray[p]-min)*255/range;
-          d[i]=d[i+1]=d[i+2]=v;
+        for(let p=0;p<gray.length;p++)gray[p]=(gray[p]-min)*255/range;
+        if(binarize){
+          const th=otsuThreshold(gray);
+          for(let p=0;p<gray.length;p++)gray[p]=gray[p]>th?255:0;
         }
+        for(let i=0,p=0;i<d.length;i+=4,p++)d[i]=d[i+1]=d[i+2]=gray[p];
         ctx.putImageData(imgData,0,0);
         canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('canvas toBlob gagal')),'image/png');
       }catch(err){reject(err);}
@@ -3058,20 +3100,36 @@ function preprocessForOcr(file){
     img.src=URL.createObjectURL(file);
   });
 }
-async function ocrPaymentReceipt(file){
-  let ocrInput=file;
-  try{ ocrInput=await preprocessForOcr(file); }
-  catch(prepErr){ console.warn('Preprocessing OCR gagal, pakai file asli:',prepErr); }
-  // PSM 6 ("blok teks seragam, baris-baris sejajar") umumnya lebih akurat untuk
-  // struk dibanding mode auto default, yang kadang salah mengira layout kolom.
+async function tesseractRecognizeText(image,psm){
   const worker=await Tesseract.createWorker('eng');
   try{
-    await worker.setParameters({tessedit_pageseg_mode:'6'});
-    const {data}=await worker.recognize(ocrInput);
+    // PSM 6 = "blok teks seragam, baris-baris sejajar" (cocok untuk struk).
+    // PSM 3 = auto, dipakai sebagai cadangan terakhir di gambar aslinya.
+    await worker.setParameters({tessedit_pageseg_mode:String(psm)});
+    const {data}=await worker.recognize(image);
     return data?.text||'';
   } finally {
     await worker.terminate();
   }
+}
+// Coba beberapa kombinasi preprocessing + mode Tesseract secara berurutan, pakai
+// hasil pertama yang berhasil menemukan nominal. Ini menaikkan peluang berhasil
+// dibanding cuma 1x coba, terutama untuk foto struk yang miring/buram/kontras rendah.
+async function ocrPaymentReceipt(file){
+  const attempts=[
+    {label:'binarized-psm6', build:()=>preprocessForOcr(file,{binarize:true}), psm:6},
+    {label:'grayscale-psm6', build:()=>preprocessForOcr(file,{binarize:false}), psm:6},
+    {label:'original-psm3', build:()=>Promise.resolve(file), psm:3},
+  ];
+  for(const attempt of attempts){
+    try{
+      const image=await attempt.build();
+      const text=await tesseractRecognizeText(image,attempt.psm);
+      const amount=extractAmountFromText(text);
+      if(amount)return amount;
+    }catch(err){ console.warn('OCR pass gagal ('+attempt.label+'):',err); }
+  }
+  return null;
 }
 async function handlePaymentProofFile(file){
   if(file.size>5*1048576)return toast('File maksimal 5 MB','err');
@@ -3082,8 +3140,7 @@ async function handlePaymentProofFile(file){
   let ocrAmount=null;
   if(/\.(jpe?g|png)$/i.test(file.name)&&window.Tesseract){
     try{
-      const text=await ocrPaymentReceipt(file);
-      ocrAmount=extractAmountFromText(text);
+      ocrAmount=await ocrPaymentReceipt(file);
     }catch(err){ console.warn('OCR gagal:',err); }
   }
   if(PMT_CTX)PMT_CTX.ocrAmount=ocrAmount;
