@@ -2548,16 +2548,37 @@ $('#frmProfileEdit')?.addEventListener('submit',async e=>{
     pendidikan,agama,provinsi,alamat,asal_sekolah:asalSekolah
   };
   try{
-    const db=CUR_DB||sb;
-    // PENTING: pakai .select() supaya kita tahu berapa baris yang BENAR-BENAR ter-update.
-    // Tanpa ini, kalau RLS menolak UPDATE (mis. sesi anonim QR yang bukan pemilik baris),
-    // Supabase tidak melempar error sama sekali — dia cuma meng-update 0 baris dan tetap
-    // "sukses", sehingga UI salah menampilkan toast berhasil padahal data tidak berubah.
-    const {data:updated,error}=await withTimeout(db.from('participants_v2').update(payload).eq('id',PART.id).select('id'),15000,'simpan profil');
-    if(error){ console.error('update profil gagal:',error); toast('Gagal menyimpan: '+error.message,'err'); return; }
+    const isQrSession=CUR_DB===sbQr;
+    let updated;
+    if(isQrSession){
+      // Sesi QR pakai auth anonim yang bisa kadaluarsa/di-refresh sewaktu-waktu (termasuk
+      // tepat saat request ini dikirim), jadi JANGAN gantungkan izin simpan ke JWT sesi itu.
+      // Pakai RPC (SECURITY DEFINER) yang tervalidasi lewat qr_token milik peserta sendiri —
+      // sama seperti pola register_participant/login_with_qr_v2. Ini butuh fungsi SQL
+      // update_profile_by_qr_v2 sudah dibuat di Supabase (lihat catatan di chat).
+      const {data,error}=await withTimeout(sbQr.rpc('update_profile_by_qr_v2',{
+        p_qr_token:PART.qr_token,
+        p_nama:payload.nama,p_telepon:payload.telepon,p_kota:payload.kota,
+        p_jenis_kelamin:payload.jenis_kelamin,p_status_nikah:payload.status_nikah,
+        p_tempat_lahir:payload.tempat_lahir,p_tgl_lahir:payload.tgl_lahir,
+        p_pendidikan:payload.pendidikan,p_agama:payload.agama,p_provinsi:payload.provinsi,
+        p_alamat:payload.alamat,p_asal_sekolah:payload.asal_sekolah
+      }),15000,'simpan profil');
+      if(error){ console.error('update profil (RPC QR) gagal:',error); toast('Gagal menyimpan: '+error.message,'err'); return; }
+      updated=Array.isArray(data)?data:(data?[data]:[]);
+    }else{
+      const db=CUR_DB||sb;
+      // PENTING: pakai .select() supaya kita tahu berapa baris yang BENAR-BENAR ter-update.
+      // Tanpa ini, kalau RLS menolak UPDATE, Supabase tidak melempar error sama sekali —
+      // dia cuma meng-update 0 baris dan tetap "sukses", sehingga UI salah menampilkan
+      // toast berhasil padahal data tidak berubah.
+      const {data,error}=await withTimeout(db.from('participants_v2').update(payload).eq('id',PART.id).select('id'),15000,'simpan profil');
+      if(error){ console.error('update profil gagal:',error); toast('Gagal menyimpan: '+error.message,'err'); return; }
+      updated=data;
+    }
     if(!updated||!updated.length){
-      console.error('update profil: 0 baris ter-update (kemungkinan diblokir RLS untuk sesi ini)');
-      toast('Gagal menyimpan: sesi ini tidak punya izin memperbarui profil. Coba login ulang lewat email/Google, lalu simpan lagi.','err');
+      console.error('update profil: 0 baris ter-update (kemungkinan diblokir RLS/qr_token tidak cocok)');
+      toast('Gagal menyimpan: sesi ini tidak punya izin memperbarui profil. Coba login ulang lewat email/Google atau scan ulang QR, lalu simpan lagi.','err');
       return;
     }
     Object.assign(PART,payload);
