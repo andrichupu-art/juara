@@ -2515,7 +2515,7 @@ function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
     // atau catatan kalau berkas ini ditandai diproses kolektif oleh agensi.
     const infoHtml=isKolektif
       ?`<div class="kolektif-note">📋 Sedang diproses secara kolektif oleh agensi — kamu tak perlu mengunggah berkas ini sendiri.</div>`
-      :up?`<div class="fname" style="display:block">✓ ${up.file_name} · ${fmtSz(up.size||0)} · ${fmtT(up.uploaded_at||Date.now())}</div>`:'';
+      :'';
     // Tombol/aksi di kanan kartu, tergantung status berkas saat ini.
     let actHtml;
     if(up&&!isKolektif){
