@@ -1774,6 +1774,14 @@ if(sb) sb.auth.onAuthStateChange((ev,ses)=>{
 });
 if(sbQr) sbQr.auth.onAuthStateChange((ev,ses)=>{
   if(ev==='SIGNED_OUT'||!ses?.user){if(CUR_DB===sbQr){loginInProgress=false;clearAuthState();}return;}
+  // PENTING: sama seperti listener sb di atas — abaikan TOKEN_REFRESHED untuk user yang
+  // sesinya SUDAH aktif. Tanpa guard ini, setiap kali Supabase menyegarkan access token
+  // (termasuk yang otomatis terpicu tepat sebelum request seperti simpan Profil Saya),
+  // activateQrSession() terpanggil ULANG dengan QR_LOGIN_TOKEN yang SAMA. Kalau RPC
+  // login_with_qr_v2 di server bersifat sekali-pakai/merotasi token, panggilan ulang itu
+  // gagal -> dianggap "QR tidak valid" -> clearAuthState() -> peserta ke-logout mendadak,
+  // paling sering kelihatan pas menyimpan sesuatu (karena itu saat request berikutnya jalan).
+  if(ev==='TOKEN_REFRESHED'&&USER?.id===ses.user.id)return;
   if(QR_LOGIN_TOKEN&&ses.user.is_anonymous){CUR_DB=sbQr; activateQrSession(ses.user,QR_LOGIN_TOKEN);}
 });
 if(!sb||!sbQr){
