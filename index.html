@@ -825,7 +825,8 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 #profileModal .fld-card{padding:16px 14px;border-radius:14px}
 #profileModal .fld-sec{height:36px;font-size:.78rem;font-weight:600;letter-spacing:normal;text-transform:none}
 #profileModal .fld label{margin-bottom:5px;font-size:.72rem;font-weight:600;letter-spacing:normal;text-transform:none}
-#profileModal .fld input,#profileModal .fld select,#profileModal .fld textarea{padding:9px 12px;font-size:.85rem}
+#profileModal .fld input,#profileModal .fld textarea{padding:9px 12px;font-size:.85rem}
+#profileModal .fld select{padding:9px 34px 9px 12px;font-size:.85rem;background-position:right 12px center;background-size:14px}
 #profileModal .fld textarea{min-height:56px}
 #profileModal .profile-sec{margin-bottom:12px;margin-top:20px}
 #profileModal .fld-card+.fld-card{margin-top:14px}
@@ -2495,6 +2496,14 @@ function openProfileModal(){
   applyProfilePhoto();
 }
 function closeProfileModal(){ const m=$('#profileModal'); if(m)m.classList.remove('on'); }
+
+/* Enter di dalam <select> membuka dropdown (showPicker) alih-alih submit form */
+$('#frmProfileEdit')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter' && e.target.tagName==='SELECT'){
+    e.preventDefault();
+    if(typeof e.target.showPicker==='function'){ try{e.target.showPicker();}catch(_){} }
+  }
+});
 
 $('#frmProfileEdit')?.addEventListener('submit',async e=>{
   e.preventDefault();
