@@ -173,7 +173,18 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 /* ============ HERO ============ */
 .hero{position:relative;padding:28px 0 40px;overflow:hidden;z-index:0}
 .corner-flags{position:absolute;top:18px;right:clamp(16px,3vw,40px);z-index:2;display:flex;align-items:center;gap:8px;font-size:2.1rem;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.12))}
-.corner-flags span{display:inline-block}
+.corner-flags span{display:inline-block;transform-origin:22% 55%;animation:flagWave 2.6s ease-in-out infinite;will-change:transform}
+.corner-flags span:nth-child(2){animation-delay:.35s;animation-duration:2.9s}
+/* Emoji bendera cuma glyph datar (bukan gambar kain terpisah per helai), jadi
+   "berkibar" disimulasikan lewat rotate+skew osilasi kecil supaya kesannya
+   ketiup angin. transform-origin digeser ke kiri biar seolah terikat di tiang. */
+@keyframes flagWave{
+  0%,100%{transform:rotate(0deg) skewY(0deg) scaleX(1)}
+  22%{transform:rotate(-4deg) skewY(-6deg) scaleX(.97)}
+  50%{transform:rotate(3deg) skewY(5deg) scaleX(1.02)}
+  78%{transform:rotate(-3deg) skewY(-4deg) scaleX(.98)}
+}
+@media(prefers-reduced-motion:reduce){.corner-flags span{animation:none}}
 #destinasi{position:relative;overflow:hidden}
 .dest-watermark{position:absolute;right:clamp(-20px,-2vw,20px);top:clamp(-10px,0vw,10px);width:clamp(220px,22vw,360px);height:auto;display:block;z-index:-1;opacity:.12;pointer-events:none;user-select:none;-webkit-user-drag:none;user-drag:none}
 @media(max-width:900px){.dest-watermark{display:none}}
@@ -260,7 +271,8 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .dcard:hover{transform:translateY(-6px);box-shadow:none;border-color:var(--gold)}
 .dcard:hover::before{transform:scaleX(1)}
 .dtop{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.dtop .flag{font-size:1.3rem;filter:none}
+.dtop .flag{font-size:1.3rem;filter:none;display:inline-block;transform-origin:22% 55%;animation:flagWave 3s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.dtop .flag{animation:none}}
 .dtop h4{font:700 .68rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--navy)}
 .dtop .reg{margin-left:auto;font:700 .62rem var(--body);letter-spacing:.14em;color:var(--sky);border:1.5px solid var(--sky);padding:3px 9px;border-radius:5px}
 .dcard .jobs{font:800 1.2rem var(--disp);color:var(--navy);margin-bottom:2px;line-height:1.2}
@@ -619,7 +631,14 @@ body.tk-open .mnav{display:none!important}
 .pc .who .av{width:32px;height:32px;border-radius:50%;background:var(--navy);color:var(--gold);display:grid;place-items:center;font:800 .8rem var(--disp)}
 .pc .who b{font:800 .84rem var(--disp);color:var(--navy);display:block}
 .pc .who span{font-size:.72rem;color:var(--mut)}
-.pc .stmp{position:absolute;top:16px;right:16px;font-size:1.4rem;transform:rotate(8deg)}
+.pc .stmp{position:absolute;top:16px;right:16px;font-size:1.4rem;transform:rotate(8deg);display:inline-block;transform-origin:30% 55%;animation:flagWaveStmp 2.7s ease-in-out infinite;will-change:transform}
+@keyframes flagWaveStmp{
+  0%,100%{transform:rotate(8deg) skewY(0deg)}
+  25%{transform:rotate(11deg) skewY(-5deg)}
+  55%{transform:rotate(5deg) skewY(4deg)}
+  80%{transform:rotate(10deg) skewY(-3deg)}
+}
+@media(prefers-reduced-motion:reduce){.pc .stmp{animation:none}}
 
 /* ============ FAQ ============ */
 .faq-list{max-width:760px;margin:44px auto 0}
@@ -859,7 +878,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 </header>
 <nav class="mnav" id="mnav">
   <a href="#home" class="tab-link active" title="Beranda"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 5l8 7"/><path d="M6 10.5V19a1 1 0 0 0 1 1h4v-5h2v5h4a1 1 0 0 0 1-1v-8.5"/></svg></span><span class="lbl">Beranda</span></a><a href="#destinasi" class="tab-link" title="Destinasi"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-7.4 7-12.5A7 7 0 0 0 5 8.5C5 13.6 12 21 12 21Z"/><circle cx="12" cy="8.5" r="2.4"/></svg></span><span class="lbl">Destinasi</span></a><a href="#alur" class="tab-link" title="Alur"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15 9l-1.8 5.2L8 16l1.8-5.2Z"/></svg></span><span class="lbl">Alur</span></a>
-  <a href="#portal" class="tab-link auth-only" title="Portal Pekerja"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="8" width="17.6" height="11" rx="2"/><path d="M8.5 8V6.3a1.8 1.8 0 0 1 1.8-1.8h3.4a1.8 1.8 0 0 1 1.8 1.8V8"/><path d="M3.2 13h17.6"/></svg></span><span class="lbl">Portal Pekerja</span></a><a href="#elig" class="tab-link guest-only" title="Kelayakan"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.3l2.6 2.6 5-5.6"/></svg></span><span class="lbl">Kelayakan</span></a><a href="#testi" class="tab-link" title="Testimoni"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.7a8 8 0 0 1-8 8 8 8 0 0 1-3.6-.85L4 20l1.15-4.9A8 8 0 1 1 20.5 11.7Z"/></svg></span><span class="lbl">Testimoni</span></a><a href="#faq" class="tab-link" title="FAQ"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.4 2.4 0 1 1 3.5 2.1c-.9.55-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r="0.9" fill="currentColor" stroke="none"/></svg></span><span class="lbl">FAQ</span></a>
+  <a href="#portal" class="tab-link auth-only" title="Portal Pekerja"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="8" width="17.6" height="11" rx="2"/><path d="M8.5 8V6.3a1.8 1.8 0 0 1 1.8-1.8h3.4a1.8 1.8 0 0 1 1.8 1.8V8"/><path d="M3.2 13h17.6"/></svg></span><span class="lbl">Portal Pekerja</span></a><a href="#elig" class="tab-link guest-only" title="Kelayakan"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.3l2.6 2.6 5-5.6"/></svg></span><span class="lbl">Kelayakan</span></a><a href="#testi" class="tab-link guest-only" title="Testimoni"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.7a8 8 0 0 1-8 8 8 8 0 0 1-3.6-.85L4 20l1.15-4.9A8 8 0 1 1 20.5 11.7Z"/></svg></span><span class="lbl">Testimoni</span></a><a href="#faq" class="tab-link guest-only" title="FAQ"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.4 2.4 0 1 1 3.5 2.1c-.9.55-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r="0.9" fill="currentColor" stroke="none"/></svg></span><span class="lbl">FAQ</span></a>
 </nav>
 
 <!-- ===== TAB: BERANDA ===== -->
