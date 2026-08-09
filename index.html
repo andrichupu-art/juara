@@ -3540,15 +3540,13 @@ if('serviceWorker' in navigator){
         });
       });
     }).catch(err=>console.warn('SW gagal daftar:',err));
-    // Hanya reload kalau ini benar-benar UPDATE versi baru (sudah ada controller sebelumnya).
-    // Pada aktivasi pertama kali (belum pernah ada controller), jangan reload — ini yang
-    // menyebabkan splash/menu sempat "berkedip" muncul dua kali saat kunjungan pertama.
+    // PENTING: JANGAN location.reload() otomatis di sini. Reload paksa yang terjadi tepat
+    // saat peserta sedang mengisi/menyimpan form (mis. Profil Saya) akan MEMBUANG state JS
+    // (termasuk sesi QR di memori) — kelihatan persis seperti "logout mendadak & data tidak
+    // tersimpan" padahal penyebabnya cuma SW versi baru aktif di background. Cukup andalkan
+    // banner "🔄 Versi baru tersedia" (showUpdateBanner) di bawah — reload HANYA terjadi kalau
+    // peserta sendiri yang klik tombol "Muat Ulang".
     let hadController=!!navigator.serviceWorker.controller;
-    let reloaded=false;
-    navigator.serviceWorker.addEventListener('controllerchange',()=>{
-      if(!hadController){ hadController=true; return; }
-      if(reloaded)return; reloaded=true; location.reload();
-    });
   });
 }
 function showUpdateBanner(reg){
@@ -3678,7 +3676,7 @@ window.addEventListener('appinstalled',()=>{
 <!-- POPUP: PROFIL SAYA — data pendaftaran peserta, bisa dilengkapi/diedit langsung -->
 <div class="modal" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
   <div class="box profile-box profile-drawer" style="text-align:left">
-    <form id="frmProfileEdit" class="profile-drawer-form">
+    <form id="frmProfileEdit" class="profile-drawer-form" onsubmit="return false" action="javascript:void(0)">
       <div class="profile-drawer-head">
         <button type="button" class="profile-drawer-close" onclick="closeProfileModal()" aria-label="Tutup"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         <div class="ava" id="profileAva" style="width:44px;height:44px;border-radius:50%;font-size:1.05rem;flex:none">P</div>
