@@ -2494,16 +2494,11 @@ function openProfileModal(){
 
   const m=$('#profileModal'); if(m)m.classList.add('on');
   applyProfilePhoto();
+  // select di modal ini dibuat ulang (innerHTML) tiap kali dibuka, jadi perlu di-enhance ulang
+  // supaya Enter/ketik-untuk-cari tetap berfungsi (elemen lama sudah tidak ada di DOM)
+  initSelectEnterOpen();
 }
 function closeProfileModal(){ const m=$('#profileModal'); if(m)m.classList.remove('on'); }
-
-/* Enter di dalam <select> membuka dropdown (showPicker) alih-alih submit form */
-$('#frmProfileEdit')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter' && e.target.tagName==='SELECT'){
-    e.preventDefault();
-    if(typeof e.target.showPicker==='function'){ try{e.target.showPicker();}catch(_){} }
-  }
-});
 
 $('#frmProfileEdit')?.addEventListener('submit',async e=>{
   e.preventDefault();
@@ -3305,6 +3300,8 @@ document.addEventListener('DOMContentLoaded',initTitleCaseFields);
 function initSelectEnterOpen(){
   document.querySelectorAll('select').forEach(sel=>{
     if(sel.multiple) return; // lewati select multi-pilih, perilakunya beda
+    if(sel.dataset.selEnhanced) return; // sudah pernah di-enhance, jangan pasang listener dobel
+    sel.dataset.selEnhanced='1';
     let overlay=null, searchEl=null, listEl=null, items=[], hlIndex=-1, query='';
 
     const onScroll=()=>closeOverlay();
