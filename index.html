@@ -881,6 +881,51 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
   .doc .fname{display:none}
   .doc.ok .ic::after{content:'✓';position:absolute;top:-6px;right:-6px;width:17px;height:17px;border-radius:50%;background:var(--green);color:#fff;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #fff}
 }
+
+/* ============ TAGIHAN & INVOICE ============ */
+.panel.fin-panel{grid-column:1/-1}
+.fin-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.fin-sum-box{background:var(--paper);border:1.5px solid var(--line);border-radius:13px;padding:16px 18px}
+.fin-sum-box span{display:block;font:800 .68rem var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.fin-sum-box b{font:800 1.15rem var(--disp);color:var(--navy)}
+.fin-sum-box.accent b{color:var(--orange)}
+.fin-list{margin-bottom:18px}
+.fin-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font:600 .86rem var(--body)}
+.fin-row:last-child{border-bottom:none}
+.fin-row .fr-nama{color:var(--ink)}
+.fin-row .fr-nums{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.fin-row .fr-nums small{color:var(--mut);font-weight:600}
+.fin-empty{color:var(--mut);font:600 .86rem var(--body);padding:6px 0 18px}
+@media(max-width:640px){.fin-summary{grid-template-columns:1fr}}
+
+#invoiceModal .box{max-width:640px;text-align:left}
+.inv-box{background:#fff}
+.inv-head{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:3px solid var(--gold);padding-bottom:16px;margin-bottom:18px;gap:12px}
+.inv-head b{font:800 1.15rem var(--disp);color:var(--navy);display:block}
+.inv-head span{font:600 .8rem var(--body);color:var(--mut)}
+.inv-no{font:700 .82rem var(--mono);color:var(--navy);text-align:right}
+.inv-no small{display:block;font:600 .68rem var(--body);color:var(--mut);margin-top:2px}
+.inv-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:20px}
+.inv-meta div{font:600 .82rem var(--body);color:var(--ink)}
+.inv-meta div b{display:block;font:800 .64rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:3px}
+.inv-table{width:100%;border-collapse:collapse;margin-bottom:18px}
+.inv-table th{text-align:left;font:800 .64rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:0 8px 8px;border-bottom:2px solid var(--line)}
+.inv-table td{padding:10px 8px;font:600 .84rem var(--body);border-bottom:1px solid var(--line);vertical-align:middle}
+.inv-table th:not(:first-child),.inv-table td:not(:first-child){text-align:right}
+.inv-total-row td{border-bottom:none;padding-top:14px}
+.inv-total-row.grand td{border-top:2px solid var(--navy);padding-top:12px;font:800 .92rem var(--body);color:var(--navy)}
+.inv-status{margin:4px 0 18px;text-align:center}
+.inv-status .pill{font-size:.76rem;padding:8px 20px;border-radius:999px}
+.inv-foot{display:flex;justify-content:space-between;margin-top:30px;gap:20px}
+.inv-foot>div{flex:1;text-align:center}
+.inv-foot p{font:600 .82rem var(--body);color:var(--mut);margin-bottom:50px}
+.inv-line{border-top:1.5px solid var(--ink);width:80%;margin:0 auto}
+@media(max-width:520px){.inv-meta{grid-template-columns:1fr}}
+@media print{
+  body *{visibility:hidden}
+  #invoicePrintArea,#invoicePrintArea *{visibility:visible}
+  #invoicePrintArea{position:absolute;left:0;top:0;width:100%}
+}
 </style>
 </head>
 <body>
@@ -1283,6 +1328,17 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           </div>
           <div id="tlWrap"></div>
         </div>
+
+        <div class="panel rv in fin-panel" id="finPanel" style="display:none">
+          <h4>🧾 Tagihan &amp; Invoice Saya</h4>
+          <div class="fin-summary">
+            <div class="fin-sum-box"><span>Total Tagihan</span><b id="finTotalTagihan">Rp 0</b></div>
+            <div class="fin-sum-box"><span>Total Dibayar</span><b id="finTotalDibayar">Rp 0</b></div>
+            <div class="fin-sum-box accent"><span>Sisa Tagihan</span><b id="finTotalSisa">Rp 0</b></div>
+          </div>
+          <div class="fin-list" id="finList"></div>
+          <button type="button" class="btn b-pri sm" id="btnOpenInvoice" style="justify-content:center" onclick="openInvoiceModal()">🧾 Lihat Invoice Lengkap</button>
+        </div>
       </div>
 
     </div>
@@ -1505,6 +1561,7 @@ const DEST=[
 
 /* ================= STATE ================= */
 let sb=null, sbQr=null, CUR_DB=null, USER=null, PART=null, DOCLIST={}, qrShown=false, docsAllComplete=false;
+let FIN_CATS=[], FIN_BILLS=[], FIN_PAYMENTS=[];
 let authEpoch=0, loadingUserId=null, loginInProgress=false;
 // Deteksi "baru kembali dari login Google" (dipakai di beberapa tempat: tab awal,
 // pstate awal, dan penjaga di bawah supaya tidak lompat ke halaman Guest sebelum waktunya).
@@ -1826,7 +1883,7 @@ function withTimeout(promise,ms=15000,label='permintaan'){
 // ada error yang bisa dideteksi, solusinya bukan retry-saat-gagal, tapi baca ulang lagi
 // beberapa saat kemudian dan render ulang HANYA kalau jumlah dokumen memang berubah.
 async function loadDocsAndStage(pid,request){
-  await Promise.all([loadDocs(pid,request),loadStage(pid,request)]);
+  await Promise.all([loadDocs(pid,request),loadStage(pid,request),loadFinance(pid,request)]);
   scheduleDocsSelfHeal(pid,request);
 }
 function scheduleDocsSelfHeal(pid,request,delays=[900,1800,3000]){
@@ -2346,6 +2403,93 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
 
 /* ================= DASHBOARD RENDER ================= */
 function participantCode(){return PART?.id?'JR-'+PART.id.slice(0,8).toUpperCase():'—';}
+function formatRupiah(n){ return 'Rp '+Math.round(Number(n||0)).toLocaleString('id-ID'); }
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============ TAGIHAN & INVOICE ============ */
+function buildInvoiceData(){
+  if(!PART)return null;
+  const items=FIN_BILLS.map(bill=>{
+    const c=FIN_CATS.find(x=>x.id===bill.category_id);
+    const catNama=c?c.nama:'(kategori dihapus)';
+    const tagihan=c?Number(c.nominal_default||0):Number(bill?.nominal||0);
+    const dibayar=FIN_PAYMENTS.filter(pm=>pm.category_id===bill.category_id).reduce((s,pm)=>s+Number(pm.jumlah||0),0);
+    const sisa=Math.max(tagihan-dibayar,0);
+    let status;
+    if(tagihan<=0)status='Nominal Rp0';
+    else if(sisa<=0)status='Lunas';
+    else if(dibayar>0)status='Cicilan';
+    else status='Belum Bayar';
+    return {catNama,tagihan,dibayar,sisa,status};
+  });
+  const totalTagihan=items.reduce((s,it)=>s+it.tagihan,0);
+  const totalDibayar=items.reduce((s,it)=>s+it.dibayar,0);
+  const totalSisa=items.reduce((s,it)=>s+it.sisa,0);
+  const lunas=totalTagihan>0&&totalSisa<=0;
+  const invoiceNo='INV-'+(PART.id?PART.id.slice(0,8).toUpperCase():Date.now().toString(36).toUpperCase())+'-'+new Date().getFullYear();
+  const tglStr=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+  return {items,totalTagihan,totalDibayar,totalSisa,lunas,invoiceNo,tglStr};
+}
+function renderFinancePanel(){
+  const panel=$('#finPanel'); if(!panel)return;
+  const inv=buildInvoiceData();
+  if(!inv||!inv.items.length){ panel.style.display='none'; return; }
+  panel.style.display='';
+  $('#finTotalTagihan').textContent=formatRupiah(inv.totalTagihan);
+  $('#finTotalDibayar').textContent=formatRupiah(inv.totalDibayar);
+  $('#finTotalSisa').textContent=formatRupiah(inv.totalSisa);
+  $('#finList').innerHTML=inv.items.map(it=>{
+    const cls=it.status==='Lunas'?'ok':it.status==='Cicilan'?'up':it.status==='Belum Bayar'?'bad':'wait';
+    return `<div class="fin-row"><span class="fr-nama">${escapeHtml(it.catNama)}</span><span class="fr-nums"><small>Sisa</small> <b>${formatRupiah(it.sisa)}</b> <span class="pill ${cls}">${escapeHtml(it.status)}</span></span></div>`;
+  }).join('');
+}
+function invoiceHtml(inv){
+  const {items,totalTagihan,totalDibayar,totalSisa,lunas,invoiceNo,tglStr}=inv;
+  const rows=items.length?items.map(it=>`<tr>
+      <td>${escapeHtml(it.catNama)}</td>
+      <td>${formatRupiah(it.tagihan)}</td>
+      <td>${formatRupiah(it.dibayar)}</td>
+      <td>${formatRupiah(it.sisa)}</td>
+    </tr>`).join(''):`<tr><td colspan="4" style="text-align:center;color:var(--mut)">Belum ada tagihan tercatat.</td></tr>`;
+  return `
+    <div class="inv-box">
+      <div class="inv-head">
+        <div><b>PT. JUARA</b><span>Pejuang Devisa Negara</span></div>
+        <div class="inv-no">INVOICE<br>${escapeHtml(invoiceNo)}<small>${tglStr}</small></div>
+      </div>
+      <div class="inv-meta">
+        <div><b>Nama Peserta</b>${escapeHtml(PART?.nama||'-')}</div>
+        <div><b>Kode Peserta</b>${escapeHtml(participantCode())}</div>
+        <div><b>No. WhatsApp</b>${escapeHtml(PART?.telepon||'-')}</div>
+        <div><b>Kota</b>${escapeHtml(PART?.kota||'-')}</div>
+      </div>
+      <table class="inv-table">
+        <thead><tr><th>Kategori</th><th>Tagihan</th><th>Dibayar</th><th>Sisa</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tr class="inv-total-row"><td></td><td colspan="3" style="text-align:right;padding-top:14px">Total Tagihan&nbsp;&nbsp;<b>${formatRupiah(totalTagihan)}</b></td></tr>
+        <tr class="inv-total-row"><td></td><td colspan="3" style="text-align:right">Total Dibayar&nbsp;&nbsp;<b>${formatRupiah(totalDibayar)}</b></td></tr>
+        <tr class="inv-total-row grand"><td></td><td colspan="3" style="text-align:right">Sisa Tagihan&nbsp;&nbsp;${formatRupiah(totalSisa)}</td></tr>
+      </table>
+      <div class="inv-status"><span class="pill ${lunas?'ok':'bad'}">${lunas?'✓ LUNAS':'BELUM LUNAS'}</span></div>
+      <div class="inv-foot">
+        <div><p>Peserta</p><div class="inv-line"></div></div>
+        <div><p>PT. Juara</p><div class="inv-line"></div></div>
+      </div>
+    </div>`;
+}
+let INVOICE_ACTIVE=null;
+function openInvoiceModal(){
+  const inv=buildInvoiceData(); if(!inv)return;
+  INVOICE_ACTIVE=inv;
+  $('#invoiceArea').innerHTML=invoiceHtml(inv);
+  $('#invoiceModal').classList.add('on');
+}
+function closeInvoiceModal(){ $('#invoiceModal').classList.remove('on'); }
+function printInvoice(){
+  if(!INVOICE_ACTIVE)return;
+  $('#invoicePrintArea').innerHTML=invoiceHtml(INVOICE_ACTIVE);
+  window.print();
+}
 // Field data diri yang wajib ada (sama seperti wajib diisi saat pendaftaran).
 // Kalau ada peserta yang datanya kosong (misal dibuat manual lewat admin), field-field
 // ini yang dicek untuk munculin notifikasi "lengkapi profil" di dashboard.
@@ -2380,7 +2524,7 @@ function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.
   $('#dAccount').textContent=USER?.is_anonymous?'Akses melalui QR peserta':'Akun aktif: '+(USER?.email||USER?.user_metadata?.email||'—');
   $('#dKode').textContent=kode;
   renderProfileAlert();
-  renderDocs(); renderTL(getStage()); renderQR(); }
+  renderDocs(); renderTL(getStage()); renderQR(); renderFinancePanel(); }
 
 /* ===== Otomatis pakai berkas "Pas Foto 4x6" sebagai foto profil (avatar) =====
    Diambil dari dokumen tersimpan (bucket privat), ditampilkan via signed URL
@@ -2788,6 +2932,21 @@ async function loadStage(participantId=PART?.id,request=authEpoch){
   const {data,error}=await db.from('progress_v2').select('tahap').eq('participant_id',participantId).maybeSingle();
   if(error||request!==authEpoch||PART?.id!==participantId)return false;
   window._stage=data?.tahap??0;
+  return true;
+}
+async function loadFinance(participantId=PART?.id,request=authEpoch){
+  if(!participantId)return false;
+  const db=CUR_DB||sb;
+  const [catRes,billRes,payRes]=await Promise.all([
+    db.from('finance_categories_v2').select('*').order('urutan',{ascending:true}),
+    db.from('finance_bills_v2').select('*').eq('participant_id',participantId),
+    db.from('finance_payments_v2').select('*').eq('participant_id',participantId).order('tanggal',{ascending:false})
+  ]);
+  if(request!==authEpoch||PART?.id!==participantId)return false;
+  if(!catRes.error)FIN_CATS=catRes.data||[];
+  if(!billRes.error)FIN_BILLS=billRes.data||[];
+  if(!payRes.error)FIN_PAYMENTS=payRes.data||[];
+  if(catRes.error||billRes.error||payRes.error)console.warn('loadFinance sebagian gagal:',catRes.error||billRes.error||payRes.error);
   return true;
 }
 
@@ -3698,6 +3857,21 @@ window.addEventListener('appinstalled',()=>{
     <div id="docPreviewBody"></div>
   </div>
 </div>
+
+<!-- POPUP: INVOICE PESERTA — rekap tagihan & pembayaran, bisa dicetak/disimpan PDF. -->
+<div class="modal" id="invoiceModal" onclick="if(event.target===this)closeInvoiceModal()">
+  <div class="box">
+    <div class="doc-preview-headrow">
+      <h3 style="margin-bottom:0">🧾 Invoice Saya</h3>
+      <button type="button" class="doc-preview-close" onclick="closeInvoiceModal()" aria-label="Tutup">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg>
+      </button>
+    </div>
+    <div id="invoiceArea"></div>
+    <button type="button" class="btn b-navy" id="btnPrintInvoice" style="width:100%;justify-content:center;margin-top:18px" onclick="printInvoice()">🖨️ Cetak / Simpan PDF</button>
+  </div>
+</div>
+<div id="invoicePrintArea" style="position:fixed;left:-9999px;top:0;width:560px"></div>
 
 </body>
 </html>
