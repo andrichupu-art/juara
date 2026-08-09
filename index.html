@@ -2994,20 +2994,84 @@ async function loadFinance(participantId=PART?.id,request=authEpoch){
 function openUploadPaymentPicker(){
   const fi=$('#paymentProofFileInput'); if(fi){ fi.value=''; fi.click(); }
 }
-// Ambil kandidat nominal (format ribuan ala Indonesia, mis. "1.500.000") dari teks
-// hasil OCR, lalu ambil angka terbesar sebagai tebakan nominal transfer.
+// Ambil kandidat nominal (format ribuan, mis. "1.500.000" atau "850,000.00") dari teks
+// hasil OCR. Prioritas: angka yang persis mengikuti kata kunci nominal di struk
+// (JUMLAH/TOTAL/NOMINAL/AMOUNT/TRANSFER) — supaya nomor rekening/no.urut/tanggal
+// tidak ketuker jadi nominal. Kalau tidak ada kata kunci yang cocok, baru fallback
+// ke angka berformat-ribuan terbesar di seluruh teks.
 function extractAmountFromText(text){
-  const matches=(text||'').match(/(?:Rp\.?\s*)?\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{2})?/g)||[];
-  const nums=matches.map(m=>{
+  const t=text||'';
+  const parseAmount=(m)=>{
     let s=m.replace(/Rp\.?\s*/i,'').trim();
     const lastSep=Math.max(s.lastIndexOf('.'),s.lastIndexOf(','));
-    // Kalau pemisah terakhir diikuti persis 2 digit, anggap itu desimal (jarang di
-    // struk transfer tapi tetap dijaga) — selain itu semua pemisah dianggap ribuan.
+    // Kalau pemisah terakhir diikuti persis 2 digit, anggap itu desimal — selain
+    // itu semua pemisah (titik ataupun koma) dianggap pemisah ribuan.
     const isDecimal=lastSep>=0&&s.length-lastSep-1===2;
     s=isDecimal?s.slice(0,lastSep).replace(/[.,]/g,'')+'.'+s.slice(lastSep+1):s.replace(/[.,]/g,'');
     return Math.round(parseFloat(s));
-  }).filter(n=>Number.isFinite(n)&&n>=1000);
+  };
+  const numPattern='\\d{1,3}(?:[.,]\\d{3})+(?:[.,]\\d{2})?';
+  const keywordRe=new RegExp('(?:JUMLAH|TOTAL|NOMINAL|AMOUNT|TRANSFER)[^\\d\\n]{0,20}(?:Rp\\.?\\s*)?('+numPattern+')','gi');
+  const keywordHits=[...t.matchAll(keywordRe)].map(m=>parseAmount(m[1])).filter(n=>Number.isFinite(n)&&n>=1000);
+  if(keywordHits.length)return keywordHits[0];
+  const matches=t.match(new RegExp('(?:Rp\\.?\\s*)?'+numPattern,'g'))||[];
+  const nums=matches.map(parseAmount).filter(n=>Number.isFinite(n)&&n>=1000);
   return nums.length?Math.max(...nums):null;
+}
+// Preprocessing gambar sebelum OCR: grayscale + auto-contrast + upscale untuk
+// foto kecil/gelap. Foto struk dari HP seringkali kontrasnya rendah dan resolusi
+// efektif teksnya kecil — ini biasanya paling berpengaruh menaikkan akurasi OCR
+// dibanding hanya mengganti setting Tesseract.
+function preprocessForOcr(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const MAX_DIM=1800;
+        let scale=1;
+        if(img.width<1000)scale=Math.min(2.2,MAX_DIM/img.width);
+        else if(img.width>MAX_DIM)scale=MAX_DIM/img.width;
+        const w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+        ctx.drawImage(img,0,0,w,h);
+        const imgData=ctx.getImageData(0,0,w,h);
+        const d=imgData.data;
+        let min=255,max=0;
+        const gray=new Float32Array(w*h);
+        for(let i=0,p=0;i<d.length;i+=4,p++){
+          const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+          gray[p]=g;if(g<min)min=g;if(g>max)max=g;
+        }
+        const range=Math.max(1,max-min);
+        for(let i=0,p=0;i<d.length;i+=4,p++){
+          const v=(gray[p]-min)*255/range;
+          d[i]=d[i+1]=d[i+2]=v;
+        }
+        ctx.putImageData(imgData,0,0);
+        canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('canvas toBlob gagal')),'image/png');
+      }catch(err){reject(err);}
+    };
+    img.onerror=()=>reject(new Error('Gagal memuat gambar untuk preprocessing OCR'));
+    img.src=URL.createObjectURL(file);
+  });
+}
+async function ocrPaymentReceipt(file){
+  let ocrInput=file;
+  try{ ocrInput=await preprocessForOcr(file); }
+  catch(prepErr){ console.warn('Preprocessing OCR gagal, pakai file asli:',prepErr); }
+  // PSM 6 ("blok teks seragam, baris-baris sejajar") umumnya lebih akurat untuk
+  // struk dibanding mode auto default, yang kadang salah mengira layout kolom.
+  const worker=await Tesseract.createWorker('eng');
+  try{
+    await worker.setParameters({tessedit_pageseg_mode:'6'});
+    const {data}=await worker.recognize(ocrInput);
+    return data?.text||'';
+  } finally {
+    await worker.terminate();
+  }
 }
 async function handlePaymentProofFile(file){
   if(file.size>5*1048576)return toast('File maksimal 5 MB','err');
@@ -3018,8 +3082,8 @@ async function handlePaymentProofFile(file){
   let ocrAmount=null;
   if(/\.(jpe?g|png)$/i.test(file.name)&&window.Tesseract){
     try{
-      const {data}=await Tesseract.recognize(file,'eng');
-      ocrAmount=extractAmountFromText(data?.text||'');
+      const text=await ocrPaymentReceipt(file);
+      ocrAmount=extractAmountFromText(text);
     }catch(err){ console.warn('OCR gagal:',err); }
   }
   if(PMT_CTX)PMT_CTX.ocrAmount=ocrAmount;
