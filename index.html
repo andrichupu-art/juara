@@ -898,11 +898,6 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .fin-row .fr-nums small{color:var(--mut);font-weight:600}
 .fin-empty{color:var(--mut);font:600 .86rem var(--body);padding:6px 0 18px}
 @media(max-width:640px){.fin-summary{grid-template-columns:1fr}}
-.fin-row .fr-line{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.btn-upload-pay{display:inline-flex;align-items:center;gap:6px;font:700 .72rem var(--body);padding:7px 13px;border-radius:8px;background:var(--navy);color:#fff;border:none;cursor:pointer;white-space:nowrap}
-.btn-upload-pay:hover{opacity:.9}
-.btn-upload-pay:disabled{opacity:.55;cursor:not-allowed}
-.btn-upload-pay .spin{border-color:rgba(255,255,255,.35);border-top-color:#fff}
 
 /* ===== Modal konfirmasi upload bukti pembayaran (OCR nominal) ===== */
 #paymentProofModal .box{max-width:420px;text-align:left}
@@ -1358,7 +1353,11 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
             <div class="fin-sum-box accent"><span>Sisa Tagihan</span><b id="finTotalSisa">Rp 0</b></div>
           </div>
           <div class="fin-list" id="finList"></div>
-          <button type="button" class="btn b-pri sm" id="btnOpenInvoice" style="justify-content:center" onclick="openInvoiceModal()">🧾 Lihat Invoice Lengkap</button>
+          <div id="finPendingBanner" class="pmt-warn" style="display:none"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button type="button" class="btn b-navy sm" id="btnUploadPembayaran" style="display:none" onclick="openUploadPaymentPicker()">⬆ Upload Pembayaran (Cicilan)</button>
+            <button type="button" class="btn b-pri sm" id="btnOpenInvoice" style="justify-content:center" onclick="openInvoiceModal()">🧾 Lihat Invoice Lengkap</button>
+          </div>
         </div>
       </div>
 
@@ -2442,10 +2441,6 @@ function buildInvoiceData(){
     else if(sisa<=0)status='Lunas';
     else if(dibayar>0)status='Cicilan';
     else status='Belum Bayar';
-    // Kalau ada bukti pembayaran yang masih menunggu verifikasi admin untuk kategori
-    // ini, status itu diprioritaskan tampil (kecuali sudah lunas duluan).
-    const punyaProofMenunggu=FIN_PROOFS.some(p=>p.category_id===bill.category_id);
-    if(punyaProofMenunggu&&status!=='Lunas')status='Menunggu Verifikasi';
     return {catNama,categoryId:bill.category_id,tagihan,dibayar,sisa,status};
   });
   const totalTagihan=items.reduce((s,it)=>s+it.tagihan,0);
@@ -2466,10 +2461,21 @@ function renderFinancePanel(){
   $('#finTotalSisa').textContent=formatRupiah(inv.totalSisa);
   $('#finList').innerHTML=inv.items.map(it=>{
     const cls=it.status==='Lunas'?'ok':it.status==='Cicilan'?'up':it.status==='Belum Bayar'?'bad':'wait';
-    const bisaUpload=it.status!=='Lunas'&&it.status!=='Nominal Rp0'&&it.status!=='Menunggu Verifikasi';
-    const btnUpload=bisaUpload?`<button type="button" class="btn-upload-pay" onclick="openUploadPaymentPicker('${it.categoryId}')">⬆ Upload Pembayaran</button>`:'';
-    return `<div class="fin-row"><div class="fr-line"><span class="fr-nama">${escapeHtml(it.catNama)}</span><span class="fr-nums"><small>Sisa</small> <b>${formatRupiah(it.sisa)}</b> <span class="pill ${cls}">${escapeHtml(it.status)}</span></span></div>${btnUpload}</div>`;
+    return `<div class="fin-row"><span class="fr-nama">${escapeHtml(it.catNama)}</span><span class="fr-nums"><small>Sisa</small> <b>${formatRupiah(it.sisa)}</b> <span class="pill ${cls}">${escapeHtml(it.status)}</span></span></div>`;
   }).join('');
+  // Total bukti pembayaran (cicilan) yang sudah diunggah peserta tapi masih menunggu
+  // verifikasi admin — ditampilkan sebagai banner tunggal, bukan per kategori, karena
+  // satu bukti pembayaran bisa mencicil ke beberapa kategori sekaligus.
+  const totalMenunggu=FIN_PROOFS.reduce((s,p)=>s+Number(p.jumlah_klaim||0),0);
+  const banner=$('#finPendingBanner');
+  if(banner){
+    if(totalMenunggu>0){
+      banner.style.display='';
+      banner.innerHTML=`<span class="pill wait">Menunggu Verifikasi</span> ${FIN_PROOFS.length} bukti pembayaran senilai <b>${formatRupiah(totalMenunggu)}</b> sedang diperiksa admin.`;
+    }else{ banner.style.display='none'; banner.innerHTML=''; }
+  }
+  const btnUpload=$('#btnUploadPembayaran');
+  if(btnUpload)btnUpload.style.display=inv.totalSisa>0?'':'none';
 }
 function invoiceHtml(inv){
   const {items,totalTagihan,totalDibayar,totalSisa,lunas,invoiceNo,tglStr}=inv;
@@ -2980,10 +2986,9 @@ async function loadFinance(participantId=PART?.id,request=authEpoch){
   return true;
 }
 
-/* ============ UPLOAD BUKTI PEMBAYARAN (OCR nominal via Tesseract.js) ============ */
-let PMT_UPLOAD_CATEGORY_ID=null;
-function openUploadPaymentPicker(categoryId){
-  PMT_UPLOAD_CATEGORY_ID=categoryId;
+/* ============ UPLOAD BUKTI PEMBAYARAN — CICILAN TERHADAP TOTAL TAGIHAN
+   (OCR nominal via Tesseract.js) ============ */
+function openUploadPaymentPicker(){
   const fi=$('#paymentProofFileInput'); if(fi){ fi.value=''; fi.click(); }
 }
 // Ambil kandidat nominal (format ribuan ala Indonesia, mis. "1.500.000") dari teks
@@ -3001,11 +3006,11 @@ function extractAmountFromText(text){
   }).filter(n=>Number.isFinite(n)&&n>=1000);
   return nums.length?Math.max(...nums):null;
 }
-async function handlePaymentProofFile(file,categoryId){
+async function handlePaymentProofFile(file){
   if(file.size>5*1048576)return toast('File maksimal 5 MB','err');
   if(!/\.(pdf|jpe?g|png)$/i.test(file.name))return toast('Format harus PDF / JPG / PNG','err');
   const objectUrl=URL.createObjectURL(file);
-  PMT_CTX={categoryId,file,objectUrl,ocrAmount:null};
+  PMT_CTX={file,objectUrl,ocrAmount:null};
   openPaymentProofModal(true);
   let ocrAmount=null;
   if(/\.(jpe?g|png)$/i.test(file.name)&&window.Tesseract){
@@ -3017,26 +3022,23 @@ async function handlePaymentProofFile(file,categoryId){
   if(PMT_CTX)PMT_CTX.ocrAmount=ocrAmount;
   openPaymentProofModal(false);
 }
-function pmtCategoryName(categoryId){
-  const c=FIN_CATS.find(x=>x.id===categoryId);
-  return c?c.nama:'Kategori';
-}
 function openPaymentProofModal(loading){
   if(!PMT_CTX)return;
   const body=$('#pmtBody'); if(!body)return;
+  const inv=buildInvoiceData();
+  const sisaCtx=inv?`<div class="pmt-cat">Sisa tagihan Anda saat ini: <b>${formatRupiah(inv.totalSisa)}</b></div>`:'';
   const isImg=/\.(jpe?g|png)$/i.test(PMT_CTX.file.name);
   const thumbHtml=isImg
     ?`<img class="pmt-thumb" src="${PMT_CTX.objectUrl}" alt="Pratinjau bukti pembayaran">`
     :`<div class="pmt-file-generic">📄 ${escapeHtml(PMT_CTX.file.name)}</div>`;
   if(loading){
-    body.innerHTML=`${thumbHtml}<div class="pmt-cat">Kategori: ${escapeHtml(pmtCategoryName(PMT_CTX.categoryId))}</div>
-      <div class="pmt-ocr-loading"><span class="spin"></span> Membaca nominal dari foto…</div>`;
+    body.innerHTML=`${thumbHtml}${sisaCtx}<div class="pmt-ocr-loading"><span class="spin"></span> Membaca nominal dari foto…</div>`;
   }else{
     const detected=PMT_CTX.ocrAmount;
     const warn=detected?'':`<div class="pmt-warn">⚠️ Nominal tidak terbaca otomatis. Silakan isi manual sesuai bukti transfer.</div>`;
-    body.innerHTML=`${thumbHtml}<div class="pmt-cat">Kategori: ${escapeHtml(pmtCategoryName(PMT_CTX.categoryId))}</div>
+    body.innerHTML=`${thumbHtml}${sisaCtx}
       ${warn}
-      <div class="pmt-field"><label>Nominal Transfer</label><input type="number" id="pmtAmountInput" inputmode="numeric" min="0" step="1" placeholder="Contoh: 1500000" value="${detected||''}"></div>
+      <div class="pmt-field"><label>Nominal Transfer (boleh cicilan sebagian)</label><input type="number" id="pmtAmountInput" inputmode="numeric" min="0" step="1" placeholder="Contoh: 500000" value="${detected||''}"></div>
       <div class="pmt-actions">
         <button type="button" class="btn b-ghost" onclick="closePaymentProofModal()">Batal</button>
         <button type="button" class="btn b-pri" id="btnSubmitProof" onclick="submitPaymentProof()">Kirim Bukti</button>
@@ -3058,13 +3060,16 @@ async function submitPaymentProof(){
   if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> Mengirim…';}
   const db=CUR_DB||sb;
   try{
-    const {file,categoryId,ocrAmount}=PMT_CTX;
+    const {file,ocrAmount}=PMT_CTX;
     const pid=PART.id, ext=file.name.split('.').pop();
-    const path=`${pid}/${categoryId}_${Date.now()}.${ext}`;
+    const path=`${pid}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
     const {error:er1}=await db.storage.from('juara-v2-payment-proofs').upload(path,file,{upsert:true,contentType:file.type});
     if(er1){toast('Upload gagal: '+er1.message,'err');if(btn){btn.disabled=false;btn.textContent='Kirim Bukti';}return;}
+    // Bukti pembayaran ini adalah cicilan terhadap total tagihan, jadi tidak diikat
+    // ke satu category_id — alokasi ke kategori-kategori tagihan dilakukan otomatis
+    // oleh trigger database begitu admin menyetujui bukti ini.
     const {error:er2}=await db.from('payment_proofs_v2').insert({
-      participant_id:pid,category_id:categoryId,jumlah_klaim:amount,ocr_terbaca:ocrAmount,
+      participant_id:pid,jumlah_klaim:amount,ocr_terbaca:ocrAmount,
       file_name:file.name,size:file.size,storage_path:path
     });
     if(er2){toast('Gagal mencatat bukti pembayaran: '+er2.message,'err');if(btn){btn.disabled=false;btn.textContent='Kirim Bukti';}return;}
@@ -3999,7 +4004,7 @@ window.addEventListener('appinstalled',()=>{
 <div id="invoicePrintArea" style="position:fixed;left:-9999px;top:0;width:560px"></div>
 
 <!-- Input file tersembunyi untuk unggah bukti pembayaran per kategori tagihan -->
-<input type="file" id="paymentProofFileInput" accept="image/*,application/pdf" style="display:none" onchange="this.files[0]&&handlePaymentProofFile(this.files[0],PMT_UPLOAD_CATEGORY_ID)">
+<input type="file" id="paymentProofFileInput" accept="image/*,application/pdf" style="display:none" onchange="this.files[0]&&handlePaymentProofFile(this.files[0])">
 
 <!-- POPUP: konfirmasi bukti pembayaran — thumbnail, nominal hasil OCR (bisa diedit), submit. -->
 <div class="modal" id="paymentProofModal" onclick="if(event.target===this)closePaymentProofModal()">
