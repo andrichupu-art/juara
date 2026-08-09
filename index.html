@@ -801,6 +801,30 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .pfield-val{display:block;font:700 .87rem var(--body);color:var(--navy);line-height:1.35;word-break:break-word}
 @media(max-width:420px){.profile-grid{grid-template-columns:1fr}.pfield.full{grid-column:auto}}
 
+/* ============ PROFILE MODAL → LEFT SLIDE-IN DRAWER ============ */
+#profileModal{justify-items:start;align-items:stretch;padding:0}
+#profileModal .box.profile-drawer{
+  height:100vh;max-height:100vh;width:100%;max-width:420px;margin:0;
+  border-radius:0;padding:0;box-shadow:24px 0 60px rgba(8,21,39,.28);
+  animation:drawerSlideIn .38s cubic-bezier(.2,.8,.2,1);
+  display:flex;flex-direction:column;overflow:hidden
+}
+@keyframes drawerSlideIn{from{transform:translateX(-100%);opacity:.7}to{transform:translateX(0);opacity:1}}
+.profile-drawer-form{display:flex;flex-direction:column;height:100%;min-height:0}
+.profile-drawer-head{position:relative;flex:none;padding:26px 30px 18px;border-bottom:1px solid var(--line)}
+.profile-drawer-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:#fff;color:var(--navy);display:grid;place-items:center;cursor:pointer;transition:.2s}
+.profile-drawer-close:hover{background:var(--paper);border-color:var(--navy)}
+.profile-drawer-body{flex:1;min-height:0;overflow-y:auto;padding:20px 30px 24px}
+.profile-drawer-foot{flex:none;display:flex;gap:10px;padding:16px 30px;border-top:1px solid var(--line);box-shadow:0 -8px 20px rgba(8,21,39,.06);background:#fff}
+#profileModal .fld-card-grid,#profileModal .profile-grid{grid-template-columns:1fr}
+#profileModal .fld-card{padding:20px 18px;border-radius:14px}
+@media(max-width:480px){
+  #profileModal .box.profile-drawer{max-width:100%}
+  .profile-drawer-head{padding:22px 20px 16px}
+  .profile-drawer-body{padding:18px 20px 20px}
+  .profile-drawer-foot{padding:14px 20px}
+}
+
 /* ============ DOC PREVIEW MODAL ============ */
 .doc-preview-box{max-width:640px;width:100%}
 .doc-preview-headrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
@@ -3583,15 +3607,18 @@ window.addEventListener('appinstalled',()=>{
 
 <!-- POPUP: PROFIL SAYA — data pendaftaran peserta, bisa dilengkapi/diedit langsung -->
 <div class="modal" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
-  <div class="box profile-box" style="text-align:left">
-    <div style="text-align:center;margin-bottom:14px">
-      <div class="ava" id="profileAva" style="width:56px;height:56px;border-radius:50%;margin:0 auto 10px;font-size:1.3rem">P</div>
-      <h3 style="text-align:center;margin-bottom:2px">Profil Saya</h3>
-      <p style="text-align:center;margin-bottom:0;font-size:.82rem">Lengkapi atau perbarui data dirimu di bawah ini.</p>
-    </div>
-    <form id="frmProfileEdit">
-      <div id="profileModalBody" style="max-height:52vh;overflow-y:auto;margin-bottom:14px;padding-right:4px"></div>
-      <div style="display:flex;gap:10px">
+  <div class="box profile-box profile-drawer" style="text-align:left">
+    <form id="frmProfileEdit" class="profile-drawer-form">
+      <div class="profile-drawer-head">
+        <button type="button" class="profile-drawer-close" onclick="closeProfileModal()" aria-label="Tutup"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        <div style="text-align:center">
+          <div class="ava" id="profileAva" style="width:52px;height:52px;border-radius:50%;margin:0 auto 8px;font-size:1.2rem">P</div>
+          <h3 style="text-align:center;margin-bottom:2px">Profil Saya</h3>
+          <p style="text-align:center;margin-bottom:0;font-size:.8rem">Lengkapi atau perbarui data dirimu di bawah ini.</p>
+        </div>
+      </div>
+      <div id="profileModalBody" class="profile-drawer-body"></div>
+      <div class="profile-drawer-foot">
         <button type="button" class="btn b-ghost" style="flex:1;justify-content:center" onclick="closeProfileModal()">Batal</button>
         <button type="submit" class="btn b-pri" style="flex:1;justify-content:center" id="btnSaveProfile">Simpan Perubahan</button>
       </div>
