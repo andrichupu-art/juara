@@ -765,6 +765,14 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .consent-check-txt{font-size:.83rem;color:var(--navy);font-weight:600;line-height:1.5}
 @media(max-width:480px){.consent-head{padding:26px 22px 24px}.consent-body{padding:22px 20px 24px}}
 
+/* ============ PROFILE ALERT (notifikasi data belum lengkap) ============ */
+.profile-alert{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#FFF4E5;border:1.5px solid var(--gold);border-radius:14px;padding:14px 18px;margin-bottom:18px}
+.profile-alert .pa-ic{flex:none;width:34px;height:34px;border-radius:50%;background:var(--gold);color:#fff;display:grid;place-items:center;font-size:1.05rem}
+.profile-alert .pa-txt{flex:1;min-width:220px}
+.profile-alert .pa-txt b{display:block;color:var(--navy);font:800 .92rem var(--body)}
+.profile-alert .pa-txt span{display:block;color:var(--navy);opacity:.75;font:600 .78rem var(--body);margin-top:2px;line-height:1.4}
+.profile-alert .btn{flex:none}
+
 /* ============ PROFILE MODAL (grid ringkas) ============ */
 .profile-box{max-width:480px}
 .profile-sec{margin-bottom:16px}
@@ -1193,6 +1201,15 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         </div>
       </div>
 
+      <div class="profile-alert" id="profileAlert" style="display:none">
+        <div class="pa-ic">⚠</div>
+        <div class="pa-txt">
+          <b>Data diri kamu belum lengkap</b>
+          <span id="profileAlertMsg">Beberapa data belum diisi.</span>
+        </div>
+        <button type="button" class="btn b-navy sm" onclick="openProfileModal()">Lengkapi Sekarang</button>
+      </div>
+
       <div class="dash-grid">
         <div class="panel rv in">
           <h4>📄 Dokumen Persyaratan <span class="cnt" id="docCnt">0/7 terunggah</span></h4>
@@ -1470,6 +1487,7 @@ try{
 
 /* ================= UTIL ================= */
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+function escAttr(v){return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function toast(m,t=''){const d=document.createElement('div');d.className='tst '+t;d.innerHTML=m;$('#toast').appendChild(d);setTimeout(()=>{d.style.opacity=0;d.style.transition='.4s';setTimeout(()=>d.remove(),400)},3800);}
 function toastNear(m,t,sel){const a=$(sel);const d=document.createElement('div');d.className='tst '+t;d.innerHTML=m;d.style.position='fixed';d.style.zIndex=200;
   const hdr=$('#hdr');const top=(hdr?hdr.getBoundingClientRect().bottom:90)+16;
@@ -2149,17 +2167,23 @@ if(qrLoginFileInput){
 }
 
 const PROVINSI_LIST=['Aceh','Sumatera Utara','Sumatera Barat','Riau','Kepulauan Riau','Jambi','Sumatera Selatan','Bangka Belitung','Bengkulu','Lampung','DKI Jakarta','Jawa Barat','Jawa Tengah','DI Yogyakarta','Jawa Timur','Banten','Bali','Nusa Tenggara Barat','Nusa Tenggara Timur','Kalimantan Barat','Kalimantan Tengah','Kalimantan Selatan','Kalimantan Timur','Kalimantan Utara','Sulawesi Utara','Gorontalo','Sulawesi Tengah','Sulawesi Barat','Sulawesi Selatan','Sulawesi Tenggara','Maluku','Maluku Utara','Papua','Papua Barat','Papua Barat Daya','Papua Tengah','Papua Pegunungan','Papua Selatan'];
-(function fillProvinsi(){
-  const sel=$('#fProvinsi'); if(!sel)return;
-  PROVINSI_LIST.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;sel.appendChild(o);});
-})();
+// selected: kalau diisi, opsi itu langsung ke-set aktif (dipakai form edit profil yang sudah ada datanya)
+function fillProvinsiSelect(selId,selected){
+  const sel=$('#'+selId); if(!sel)return;
+  sel.innerHTML='';
+  const optDef=document.createElement('option');optDef.value='';optDef.disabled=true;optDef.textContent='Pilih provinsi';optDef.selected=!selected;sel.appendChild(optDef);
+  PROVINSI_LIST.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;if(p===selected)o.selected=true;sel.appendChild(o);});
+}
+fillProvinsiSelect('fProvinsi');
 
 // Daftar sekolah mitra diinput lewat aplikasi admin (tabel sekolah_mitra),
 // di sini cuma tampilkan yang aktif=true, urut abjad. Kalau gagal/kosong,
 // tetap kasih opsi "Lainnya" supaya peserta bisa isi manual.
 const ASAL_SEKOLAH_LAINNYA='__lainnya__';
-async function loadSekolahMitra(){
-  const sel=$('#fAsalSekolah'); if(!sel)return;
+// targetId: id <select>, selected: nilai asal_sekolah yang sudah tersimpan (dipakai form edit profil).
+// Return: daftar nama sekolah mitra yang berhasil dimuat, supaya pemanggil bisa cek apakah "selected" ada di daftar atau tidak (lulusan sekolah non-mitra -> masuk opsi "Lainnya").
+async function loadSekolahMitra(targetId='fAsalSekolah',selected=''){
+  const sel=$('#'+targetId); if(!sel)return[];
   sel.innerHTML='<option value="" disabled selected>Memuat daftar sekolah…</option>';
   let list=[];
   try{
@@ -2167,17 +2191,25 @@ async function loadSekolahMitra(){
     if(error)throw error;
     list=(data||[]).map(r=>r.nama).filter(Boolean);
   }catch(err){ console.error('Gagal memuat sekolah_mitra:',err); }
-  sel.innerHTML='<option value="" disabled selected>Pilih sekolah</option>';
-  list.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
-  const optLain=document.createElement('option');optLain.value=ASAL_SEKOLAH_LAINNYA;optLain.textContent='Sekolah lain (tidak ada di daftar)';sel.appendChild(optLain);
+  const adaDiDaftar=selected&&list.includes(selected);
+  sel.innerHTML='<option value="" disabled '+(selected?'':'selected')+'>Pilih sekolah</option>';
+  list.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;if(n===selected)o.selected=true;sel.appendChild(o);});
+  const optLain=document.createElement('option');optLain.value=ASAL_SEKOLAH_LAINNYA;optLain.textContent='Sekolah lain (tidak ada di daftar)';
+  if(selected&&!adaDiDaftar)optLain.selected=true;
+  sel.appendChild(optLain);
+  return list;
 }
 if(sb)loadSekolahMitra();
-$('#fAsalSekolah')?.addEventListener('change',e=>{
-  const wrap=$('#fAsalSekolahLainWrap'), input=$('#fAsalSekolahLain');
-  const isLain=e.target.value===ASAL_SEKOLAH_LAINNYA;
-  wrap.style.display=isLain?'':'none';
-  if(!isLain&&input)input.value='';
-});
+function attachAsalSekolahToggle(selId,wrapId,inputId){
+  const sel=$('#'+selId); if(!sel)return;
+  sel.addEventListener('change',e=>{
+    const wrap=$('#'+wrapId), input=$('#'+inputId);
+    const isLain=e.target.value===ASAL_SEKOLAH_LAINNYA;
+    if(wrap)wrap.style.display=isLain?'':'none';
+    if(!isLain&&input)input.value='';
+  });
+}
+attachAsalSekolahToggle('fAsalSekolah','fAsalSekolahLainWrap','fAsalSekolahLain');
 
 $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
   const nama=$('#fNama').value.trim(),nik=$('#fNik').value.trim(),wa=$('#fWa').value.trim(),kota=$('#fKota').value.trim();
@@ -2231,6 +2263,31 @@ $('#frmOnb').addEventListener('submit',async e=>{e.preventDefault();
 
 /* ================= DASHBOARD RENDER ================= */
 function participantCode(){return PART?.id?'JR-'+PART.id.slice(0,8).toUpperCase():'—';}
+// Field data diri yang wajib ada (sama seperti wajib diisi saat pendaftaran).
+// Kalau ada peserta yang datanya kosong (misal dibuat manual lewat admin), field-field
+// ini yang dicek untuk munculin notifikasi "lengkapi profil" di dashboard.
+const PROFILE_REQUIRED_FIELDS=[
+  ['nik','NIK'],['jenis_kelamin','Jenis Kelamin'],['status_nikah','Status Pernikahan'],
+  ['tempat_lahir','Tempat Lahir'],['tgl_lahir','Tanggal Lahir'],['pendidikan','Pendidikan Terakhir'],
+  ['agama','Agama'],['asal_sekolah','Asal Sekolah'],['telepon','No. WhatsApp'],['provinsi','Provinsi'],
+  ['kota','Kota/Kabupaten'],['alamat','Alamat Lengkap']
+];
+function getMissingProfileFields(p){
+  if(!p)return[];
+  return PROFILE_REQUIRED_FIELDS.filter(([k])=>!String(p[k]||'').trim()).map(([,label])=>label);
+}
+function renderProfileAlert(){
+  const box=$('#profileAlert'); if(!box)return;
+  const missing=getMissingProfileFields(PART);
+  if(!missing.length){ box.style.display='none'; return; }
+  box.style.display='';
+  const msg=$('#profileAlertMsg');
+  if(msg){
+    const preview=missing.slice(0,3).join(', ');
+    const sisa=missing.length>3?` +${missing.length-3} lainnya`:'';
+    msg.textContent=`Belum diisi: ${preview}${sisa}. Lengkapi di bagian Profil Saya ya.`;
+  }
+}
 function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.full_name||'Calon Peserta').split(' ')[0];setState('#stForm');return;}
   setState('#stDash');
   const nama=PART.nama||'-', kode=participantCode();
@@ -2239,6 +2296,7 @@ function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.
   $('#dMeta').textContent=`${PART.jenis_kelamin?PART.jenis_kelamin+' · ':''}${PART.kota||'-'}${PART.provinsi?', '+PART.provinsi:''} · WA ${PART.telepon||'-'}${PART.asal_sekolah?' · '+PART.asal_sekolah:''}`;
   $('#dAccount').textContent=USER?.is_anonymous?'Akses melalui QR peserta':'Akun aktif: '+(USER?.email||USER?.user_metadata?.email||'—');
   $('#dKode').textContent=kode;
+  renderProfileAlert();
   renderDocs(); renderTL(getStage()); renderQR(); }
 
 /* ===== Otomatis pakai berkas "Pas Foto 4x6" sebagai foto profil (avatar) =====
@@ -2290,37 +2348,129 @@ function pfield(label,value,full){
 function psection(title,fieldsHtml){
   return `<div class="profile-sec"><div class="profile-sec-lbl">${title}</div><div class="profile-grid">${fieldsHtml}</div></div>`;
 }
+/* ===== Modal PROFIL SAYA — form untuk melengkapi/mengedit data diri peserta.
+   Field NIK sengaja dibuat readonly (tidak bisa diubah mandiri oleh peserta),
+   sama seperti di aplikasi admin — kalau NIK salah/kosong, peserta perlu hubungi admin. */
 function openProfileModal(){
   if(!PART){toast('Data profil belum tersedia','err');return;}
   const body=$('#profileModalBody'); if(!body)return;
+  const p=PART;
   body.innerHTML=
-    psection('Data Pribadi',
-      pfield('Nama Lengkap',PART.nama,true)+
-      pfield('NIK',PART.nik)+
-      pfield('Jenis Kelamin',PART.jenis_kelamin)+
-      pfield('Status Pernikahan',PART.status_nikah)+
-      pfield('Tempat Lahir',PART.tempat_lahir)+
-      pfield('Tanggal Lahir',fmtTglLahir(PART.tgl_lahir))
-    )+
-    psection('Pendidikan',
-      pfield('Pendidikan Terakhir',PART.pendidikan)+
-      pfield('Agama',PART.agama)+
-      pfield('Asal Sekolah',PART.asal_sekolah,true)
-    )+
-    psection('Kontak &amp; Domisili',
-      pfield('No. WhatsApp',PART.telepon)+
-      pfield('Provinsi',PART.provinsi)+
-      pfield('Kota/Kabupaten',PART.kota)+
-      pfield('Alamat Lengkap',PART.alamat,true)
-    )+
+    `<div class="fld-card">
+      <div class="fld-sec">Data Pribadi</div>
+      <div class="fld-card-grid">
+        <div class="fld"><label>Nama Lengkap (sesuai KTP)</label><input id="peNama" required placeholder="Masukkan nama lengkap" value="${escAttr(p.nama)}"></div>
+        <div class="fld"><label>NIK (16 digit)</label><input id="peNik" disabled placeholder="—" value="${escAttr(p.nik)}"></div>
+        <div class="fld"><label>Jenis Kelamin</label>
+          <select id="peJk" required>
+            <option value="" disabled>Pilih jenis kelamin</option>
+            <option value="Laki-laki">Laki-laki</option>
+            <option value="Perempuan">Perempuan</option>
+          </select>
+        </div>
+        <div class="fld"><label>Status Pernikahan</label>
+          <select id="peStatus" required>
+            <option value="" disabled>Pilih status</option>
+            <option value="Belum Menikah">Belum Menikah</option>
+            <option value="Menikah">Menikah</option>
+            <option value="Cerai Hidup">Cerai Hidup</option>
+            <option value="Cerai Mati">Cerai Mati</option>
+          </select>
+        </div>
+        <div class="fld"><label>Tempat Lahir</label><input id="peTempatLahir" required placeholder="Masukkan tempat lahir" value="${escAttr(p.tempat_lahir)}"></div>
+        <div class="fld"><label>Tanggal Lahir</label><input id="peTglLahir" required type="date" value="${escAttr(p.tgl_lahir)}"></div>
+        <div class="fld"><label>Pendidikan Terakhir</label>
+          <select id="pePendidikan" required>
+            <option value="" disabled>Pilih pendidikan</option>
+            <option value="SD">SD</option><option value="SMP">SMP</option><option value="SMA/SMK">SMA/SMK</option>
+            <option value="D3">D3</option><option value="S1">S1</option><option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div class="fld"><label>Agama</label>
+          <select id="peAgama" required>
+            <option value="" disabled>Pilih agama</option>
+            <option value="Islam">Islam</option><option value="Kristen">Kristen</option><option value="Katolik">Katolik</option>
+            <option value="Hindu">Hindu</option><option value="Buddha">Buddha</option><option value="Konghucu">Konghucu</option><option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div class="fld"><label>Asal Sekolah (mitra PT. Juara)</label>
+          <select id="peAsalSekolah" required><option value="" disabled selected>Memuat daftar sekolah…</option></select>
+        </div>
+        <div class="fld full" id="peAsalSekolahLainWrap" style="display:none">
+          <label>Tulis Nama Sekolah</label>
+          <input id="peAsalSekolahLain" placeholder="Masukkan nama sekolah" value="${escAttr(p.asal_sekolah)}">
+        </div>
+      </div>
+    </div>
+    <div class="fld-card">
+      <div class="fld-sec">Kontak &amp; Domisili</div>
+      <div class="fld-card-grid">
+        <div class="fld"><label>No. WhatsApp Aktif</label><input id="peWa" required inputmode="tel" placeholder="Masukkan No. WhatsApp" value="${escAttr(p.telepon)}"></div>
+        <div class="fld"><label>Provinsi</label><select id="peProvinsi" required><option value="" disabled selected>Pilih provinsi</option></select></div>
+        <div class="fld"><label>Kota/Kabupaten Domisili</label><input id="peKota" required placeholder="Masukkan kota/kabupaten" value="${escAttr(p.kota)}"></div>
+        <div class="fld full"><label>Alamat Lengkap (sesuai KTP)</label><textarea id="peAlamat" required placeholder="Masukkan alamat lengkap">${escAttr(p.alamat)}</textarea></div>
+      </div>
+    </div>`+
     psection('Akun',
       pfield('Kode Peserta',participantCode())+
       pfield('Login via',USER?.is_anonymous?'Akses melalui QR peserta':(USER?.email||USER?.user_metadata?.email||'—'),true)
     );
+
+  // isi ulang select yang butuh opsi dinamis (provinsi & sekolah mitra), plus set value select statis
+  fillProvinsiSelect('peProvinsi',p.provinsi||'');
+  loadSekolahMitra('peAsalSekolah',p.asal_sekolah||'').then(list=>{
+    if(p.asal_sekolah&&list&&!list.includes(p.asal_sekolah)){
+      const wrap=$('#peAsalSekolahLainWrap'); if(wrap)wrap.style.display='';
+    }
+  });
+  attachAsalSekolahToggle('peAsalSekolah','peAsalSekolahLainWrap','peAsalSekolahLain');
+  if($('#peJk'))$('#peJk').value=p.jenis_kelamin||'';
+  if($('#peStatus'))$('#peStatus').value=p.status_nikah||'';
+  if($('#pePendidikan'))$('#pePendidikan').value=p.pendidikan||'';
+  if($('#peAgama'))$('#peAgama').value=p.agama||'';
+
   const m=$('#profileModal'); if(m)m.classList.add('on');
   applyProfilePhoto();
 }
 function closeProfileModal(){ const m=$('#profileModal'); if(m)m.classList.remove('on'); }
+
+$('#frmProfileEdit')?.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!PART)return;
+  const nama=$('#peNama').value.trim(), wa=$('#peWa').value.trim(), kota=$('#peKota').value.trim();
+  const jk=$('#peJk').value, status=$('#peStatus').value, tempatLahir=$('#peTempatLahir').value.trim(), tglLahir=$('#peTglLahir').value;
+  const pendidikan=$('#pePendidikan').value, agama=$('#peAgama').value, provinsi=$('#peProvinsi').value, alamat=$('#peAlamat').value.trim();
+  const asalSekolahSel=$('#peAsalSekolah').value;
+  const asalSekolah=asalSekolahSel===ASAL_SEKOLAH_LAINNYA?$('#peAsalSekolahLain').value.trim():asalSekolahSel;
+  if(!nama)return toast('Nama lengkap wajib diisi','err');
+  if(!jk)return toast('Pilih jenis kelamin dulu','err');
+  if(!status)return toast('Pilih status pernikahan dulu','err');
+  if(!tempatLahir||!tglLahir)return toast('Tempat & tanggal lahir wajib diisi','err');
+  if(!pendidikan)return toast('Pilih pendidikan terakhir dulu','err');
+  if(!agama)return toast('Pilih agama dulu','err');
+  if(!provinsi)return toast('Pilih provinsi dulu','err');
+  if(!kota)return toast('Kota/kabupaten wajib diisi','err');
+  if(!alamat)return toast('Alamat lengkap wajib diisi','err');
+  if(!asalSekolahSel)return toast('Pilih asal sekolah dulu','err');
+  if(!asalSekolah)return toast('Tulis nama sekolahmu dulu','err');
+  if(!wa)return toast('No. WhatsApp wajib diisi','err');
+  const btn=$('#btnSaveProfile'); const origHTML=btn?btn.innerHTML:null;
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> Menyimpan…';}
+  const payload={
+    nama,telepon:wa,kota,jenis_kelamin:jk,status_nikah:status,tempat_lahir:tempatLahir,tgl_lahir:tglLahir,
+    pendidikan,agama,provinsi,alamat,asal_sekolah:asalSekolah
+  };
+  try{
+    const db=CUR_DB||sb;
+    const {error}=await withTimeout(db.from('participants_v2').update(payload).eq('id',PART.id),15000,'simpan profil');
+    if(error){ console.error('update profil gagal:',error); toast('Gagal menyimpan: '+error.message,'err'); return; }
+    Object.assign(PART,payload);
+    renderDash();
+    toast('Profil berhasil disimpan ✓','ok');
+    closeProfileModal();
+  }catch(err){ console.error(err); toast(err.message||'Terjadi kesalahan tak dikenal','err'); }
+  finally{ if(btn){btn.disabled=false;btn.innerHTML=origHTML;} }
+});
 
 function getStage(){ return window._stage??0; }
 
@@ -3361,16 +3511,21 @@ window.addEventListener('appinstalled',()=>{
   </div>
 </div>
 
-<!-- POPUP: PROFIL SAYA — seluruh data yang diinput peserta saat pendaftaran -->
+<!-- POPUP: PROFIL SAYA — data pendaftaran peserta, bisa dilengkapi/diedit langsung -->
 <div class="modal" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
   <div class="box profile-box" style="text-align:left">
     <div style="text-align:center;margin-bottom:14px">
       <div class="ava" id="profileAva" style="width:56px;height:56px;border-radius:50%;margin:0 auto 10px;font-size:1.3rem">P</div>
       <h3 style="text-align:center;margin-bottom:2px">Profil Saya</h3>
-      <p style="text-align:center;margin-bottom:0;font-size:.82rem">Data yang kamu isi saat pendaftaran akun.</p>
+      <p style="text-align:center;margin-bottom:0;font-size:.82rem">Lengkapi atau perbarui data dirimu di bawah ini.</p>
     </div>
-    <div id="profileModalBody" style="max-height:52vh;overflow-y:auto;margin-bottom:14px;padding-right:4px"></div>
-    <button type="button" class="btn b-pri" style="width:100%;justify-content:center" onclick="closeProfileModal()">Tutup</button>
+    <form id="frmProfileEdit">
+      <div id="profileModalBody" style="max-height:52vh;overflow-y:auto;margin-bottom:14px;padding-right:4px"></div>
+      <div style="display:flex;gap:10px">
+        <button type="button" class="btn b-ghost" style="flex:1;justify-content:center" onclick="closeProfileModal()">Batal</button>
+        <button type="submit" class="btn b-pri" style="flex:1;justify-content:center" id="btnSaveProfile">Simpan Perubahan</button>
+      </div>
+    </form>
   </div>
 </div>
 
