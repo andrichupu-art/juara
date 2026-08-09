@@ -2249,7 +2249,8 @@ async function loadSekolahMitra(targetId='fAsalSekolah',selected=''){
   sel.innerHTML='<option value="" disabled selected>Memuat daftar sekolah…</option>';
   let list=[];
   try{
-    const {data,error}=await sb.from('sekolah_mitra').select('nama').eq('aktif',true).order('nama',{ascending:true});
+    const db=CUR_DB||sb;
+    const {data,error}=await db.from('sekolah_mitra').select('nama').eq('aktif',true).order('nama',{ascending:true});
     if(error)throw error;
     list=(data||[]).map(r=>r.nama).filter(Boolean);
   }catch(err){ console.error('Gagal memuat sekolah_mitra:',err); }
@@ -2536,8 +2537,17 @@ $('#frmProfileEdit')?.addEventListener('submit',async e=>{
   };
   try{
     const db=CUR_DB||sb;
-    const {error}=await withTimeout(db.from('participants_v2').update(payload).eq('id',PART.id),15000,'simpan profil');
+    // PENTING: pakai .select() supaya kita tahu berapa baris yang BENAR-BENAR ter-update.
+    // Tanpa ini, kalau RLS menolak UPDATE (mis. sesi anonim QR yang bukan pemilik baris),
+    // Supabase tidak melempar error sama sekali — dia cuma meng-update 0 baris dan tetap
+    // "sukses", sehingga UI salah menampilkan toast berhasil padahal data tidak berubah.
+    const {data:updated,error}=await withTimeout(db.from('participants_v2').update(payload).eq('id',PART.id).select('id'),15000,'simpan profil');
     if(error){ console.error('update profil gagal:',error); toast('Gagal menyimpan: '+error.message,'err'); return; }
+    if(!updated||!updated.length){
+      console.error('update profil: 0 baris ter-update (kemungkinan diblokir RLS untuk sesi ini)');
+      toast('Gagal menyimpan: sesi ini tidak punya izin memperbarui profil. Coba login ulang lewat email/Google, lalu simpan lagi.','err');
+      return;
+    }
     Object.assign(PART,payload);
     renderDash();
     toast('Profil berhasil disimpan ✓','ok');
