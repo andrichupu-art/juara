@@ -909,6 +909,9 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .pmt-field label{display:block;font:800 .68rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
 .pmt-field input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font:700 .95rem var(--body);color:var(--ink);font-family:var(--body)}
 .pmt-field input:focus{outline:none;border-color:var(--navy)}
+.pmt-rp-wrap{position:relative}
+.pmt-rp-wrap .pmt-rp-prefix{position:absolute;left:14px;top:50%;transform:translateY(-50%);font:700 .95rem var(--body);color:var(--mut);pointer-events:none}
+.pmt-rp-wrap input{padding-left:38px}
 .pmt-warn{font:600 .78rem var(--body);color:#a97800;background:rgba(245,179,1,.12);padding:10px 12px;border-radius:10px;margin-bottom:14px}
 .pmt-cat{font:700 .86rem var(--body);color:var(--navy);margin-bottom:14px}
 .pmt-actions{display:flex;gap:10px;margin-top:4px}
@@ -3038,7 +3041,9 @@ function openPaymentProofModal(loading){
     const warn=detected?'':`<div class="pmt-warn">⚠️ Nominal tidak terbaca otomatis. Silakan isi manual sesuai bukti transfer.</div>`;
     body.innerHTML=`${thumbHtml}${sisaCtx}
       ${warn}
-      <div class="pmt-field"><label>Nominal Transfer (boleh cicilan sebagian)</label><input type="number" id="pmtAmountInput" inputmode="numeric" min="0" step="1" placeholder="Contoh: 500000" value="${detected||''}"></div>
+      <div class="pmt-field"><label>Nominal Transfer (boleh cicilan sebagian)</label>
+        <div class="pmt-rp-wrap"><span class="pmt-rp-prefix">Rp</span><input type="text" id="pmtAmountInput" inputmode="numeric" placeholder="Contoh: 500.000" value="${detected?Number(detected).toLocaleString('id-ID'):''}" oninput="formatPmtAmountInput(this)"></div>
+      </div>
       <div class="pmt-actions">
         <button type="button" class="btn b-ghost" onclick="closePaymentProofModal()">Batal</button>
         <button type="button" class="btn b-pri" id="btnSubmitProof" onclick="submitPaymentProof()">Kirim Bukti</button>
@@ -3051,10 +3056,14 @@ function closePaymentProofModal(){
   if(PMT_CTX?.objectUrl)URL.revokeObjectURL(PMT_CTX.objectUrl);
   PMT_CTX=null;
 }
+function formatPmtAmountInput(el){
+  const digits=(el.value||'').replace(/\D/g,'');
+  el.value=digits?Number(digits).toLocaleString('id-ID'):'';
+}
 async function submitPaymentProof(){
   if(!PMT_CTX||!PART)return;
   const input=$('#pmtAmountInput');
-  const amount=Math.round(Number(input?.value||0));
+  const amount=Math.round(Number((input?.value||'').replace(/\D/g,'')||0));
   if(!amount||amount<=0)return toast('Isi nominal transfer dengan benar','err');
   const btn=$('#btnSubmitProof');
   if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> Mengirim…';}
