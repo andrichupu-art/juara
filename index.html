@@ -2638,7 +2638,7 @@ function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
     if(!locked&&!isKolektif){
       el.querySelector('[data-up]')?.addEventListener('click',()=>$('#fi-'+d.k).click());
       el.querySelector('[data-re]')?.addEventListener('click',()=>$('#fi-'+d.k).click());
-      const fi=el.querySelector('input'); fi.addEventListener('change',()=>fi.files[0]&&uploadDoc(d.k,fi.files[0],el));
+      const fi=el.querySelector('input[type="file"]'); fi.addEventListener('change',()=>fi.files[0]&&uploadDoc(d.k,fi.files[0],el));
       ['dragover','dragenter'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.add('drag');}));
       ['dragleave','drop'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.remove('drag');}));
       el.addEventListener('drop',e=>{const f=e.dataTransfer.files[0]; if(f)uploadDoc(d.k,f,el);});
