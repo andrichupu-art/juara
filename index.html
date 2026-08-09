@@ -443,7 +443,11 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:#fff;border-c
 .panel h4 .cnt{margin-left:auto;font:700 .74rem var(--body);color:var(--mut);background:var(--paper);padding:5px 12px;border-radius:100px;border:1px solid var(--line)}
 /* Badge tahap di panel Progres Penempatan teksnya lebih panjang (mis. "Tahap 2/6 —
    Verifikasi Dokumen"), jadi dikecilkan & dirapatkan supaya tak menumpuk 2 baris tebal. */
-#stageLbl{font-size:.66rem;line-height:1.35;padding:6px 13px;text-align:right;white-space:normal;max-width:220px}
+#stageLbl{font-size:.66rem;line-height:1.35;padding:6px 13px;text-align:right;white-space:normal;max-width:340px}
+@media(max-width:520px){
+  .panel h4{flex-wrap:wrap;row-gap:10px}
+  #stageLbl{margin-left:0;width:100%;max-width:100%;text-align:left}
+}
 .ov{margin-bottom:26px}
 .ov-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
 .ov-top span{font:800 .74rem var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
@@ -2515,7 +2519,7 @@ function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
     // atau catatan kalau berkas ini ditandai diproses kolektif oleh agensi.
     const infoHtml=isKolektif
       ?`<div class="kolektif-note">📋 Sedang diproses secara kolektif oleh agensi — kamu tak perlu mengunggah berkas ini sendiri.</div>`
-      :'';
+      :up?`<div class="fname" style="display:block">✓ ${up.file_name} · ${fmtSz(up.size||0)} · ${fmtT(up.uploaded_at||Date.now())}</div>`:'';
     // Tombol/aksi di kanan kartu, tergantung status berkas saat ini.
     let actHtml;
     if(up&&!isKolektif){
