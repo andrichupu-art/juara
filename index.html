@@ -1872,6 +1872,18 @@ async function loadParticipant(uid,request){
 }
 async function activateQrSession(anonymousUser,token){
   if(loadingUserId===anonymousUser.id)return;
+  // PENTING: kalau participant utk sesi anon INI sudah pernah berhasil dimuat
+  // sebelumnya, JANGAN panggil ulang RPC login_with_qr_v2. Guard loadingUserId di atas
+  // cuma menahan pemanggilan yang BERSAMAAN — begitu proses pertama selesai, ia
+  // di-reset ke null lagi, sehingga event auth susulan (mis. token refresh diam-diam
+  // yang lolos dari guard TOKEN_REFRESHED di listener onAuthStateChange, paling sering
+  // terpicu justru saat ada request lain berjalan seperti simpan Profil Saya) bisa
+  // memanggil activateQrSession() ULANG dengan QR_LOGIN_TOKEN yang SAMA. Kalau RPC
+  // ini di server bersifat sekali-pakai/merotasi token, panggilan ulang itu gagal →
+  // dianggap "QR tidak valid" → clearAuthState() → peserta ke-logout mendadak padahal
+  // sesinya sendiri masih sah. Selama USER & PART sudah cocok untuk sesi anon ini,
+  // tidak perlu verifikasi ulang ke server.
+  if(USER?.id===anonymousUser.id&&PART&&CUR_DB===sbQr)return;
   const request=++authEpoch;
   CUR_DB=sbQr; USER=anonymousUser; PART=null; DOCLIST={}; qrShown=false; docsAllComplete=false; loadingUserId=anonymousUser.id;
   setAuthUI(true); showTab('portal');
