@@ -893,6 +893,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .fin-sum-box b{font:800 1.15rem var(--disp);color:var(--navy)}
 .fin-sum-box.accent b{color:var(--orange)}
 .fin-list{margin-bottom:18px}
+.fin-hist-title{font:800 .72rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:6px;padding-top:6px;border-top:1.5px solid var(--line)}
 .fin-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font:600 .86rem var(--body)}
 .fin-row:last-child{border-bottom:none}
 .fin-row .fr-nama{color:var(--ink)}
@@ -1375,6 +1376,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <div class="fin-sum-box accent"><span>Sisa Tagihan</span><b id="finTotalSisa">Rp 0</b></div>
       </div>
       <div class="fin-list" id="finList"></div>
+      <div class="fin-list" id="finPaymentHistory" style="display:none"></div>
       <div id="finPendingBanner" class="pmt-warn" style="display:none"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button type="button" class="btn b-navy sm" id="btnUploadPembayaran" style="display:none" onclick="openUploadPaymentPicker()">⬆ Upload Pembayaran (Cicilan)</button>
@@ -2451,26 +2453,25 @@ function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;
 /* ============ TAGIHAN & INVOICE ============ */
 function buildInvoiceData(){
   if(!PART)return null;
+  // Kategori TIDAK dikurangi per baris — nominal yang tampil di tiap kategori selalu
+  // nominal tagihan penuh. Semua pembayaran (cicilan) hanya mengurangi TOTAL secara
+  // keseluruhan, ditampilkan terpisah di ringkasan atas + daftar riwayat cicilan.
   const items=FIN_BILLS.map(bill=>{
     const c=FIN_CATS.find(x=>x.id===bill.category_id);
     const catNama=c?c.nama:'(kategori dihapus)';
     const tagihan=c?Number(c.nominal_default||0):Number(bill?.nominal||0);
-    const dibayar=FIN_PAYMENTS.filter(pm=>pm.category_id===bill.category_id).reduce((s,pm)=>s+Number(pm.jumlah||0),0);
-    const sisa=Math.max(tagihan-dibayar,0);
-    let status;
-    if(tagihan<=0)status='Nominal Rp0';
-    else if(sisa<=0)status='Lunas';
-    else if(dibayar>0)status='Cicilan';
-    else status='Belum Bayar';
-    return {catNama,categoryId:bill.category_id,tagihan,dibayar,sisa,status};
+    return {catNama,categoryId:bill.category_id,tagihan};
   });
   const totalTagihan=items.reduce((s,it)=>s+it.tagihan,0);
-  const totalDibayar=items.reduce((s,it)=>s+it.dibayar,0);
-  const totalSisa=items.reduce((s,it)=>s+it.sisa,0);
+  // Riwayat cicilan diurutkan dari yang paling awal dibayar (Cicilan 1) ke yang terbaru.
+  const paymentsAsc=[...FIN_PAYMENTS].sort((a,b)=>new Date(a.created_at||a.tanggal)-new Date(b.created_at||b.tanggal));
+  const payments=paymentsAsc.map((pm,idx)=>({label:'Cicilan '+(idx+1),jumlah:Number(pm.jumlah||0),tanggal:pm.tanggal}));
+  const totalDibayar=payments.reduce((s,p)=>s+p.jumlah,0);
+  const totalSisa=Math.max(totalTagihan-totalDibayar,0);
   const lunas=totalTagihan>0&&totalSisa<=0;
   const invoiceNo='INV-'+(PART.id?PART.id.slice(0,8).toUpperCase():Date.now().toString(36).toUpperCase())+'-'+new Date().getFullYear();
   const tglStr=new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-  return {items,totalTagihan,totalDibayar,totalSisa,lunas,invoiceNo,tglStr};
+  return {items,payments,totalTagihan,totalDibayar,totalSisa,lunas,invoiceNo,tglStr};
 }
 function renderFinancePanel(){
   const panel=$('#finPanel'); if(!panel)return;
@@ -2482,9 +2483,21 @@ function renderFinancePanel(){
   $('#finTotalDibayar').textContent=formatRupiah(inv.totalDibayar);
   $('#finTotalSisa').textContent=formatRupiah(inv.totalSisa);
   $('#finList').innerHTML=inv.items.map(it=>{
-    const cls=it.status==='Lunas'?'ok':it.status==='Cicilan'?'up':it.status==='Belum Bayar'?'bad':'wait';
-    return `<div class="fin-row"><span class="fr-nama">${escapeHtml(it.catNama)}</span><span class="fr-nums"><small>Sisa</small> <b>${formatRupiah(it.sisa)}</b> <span class="pill ${cls}">${escapeHtml(it.status)}</span></span></div>`;
+    return `<div class="fin-row"><span class="fr-nama">${escapeHtml(it.catNama)}</span><span class="fr-nums"><small>Tagihan</small> <b>${formatRupiah(it.tagihan)}</b></span></div>`;
   }).join('');
+  // Riwayat cicilan (pembayaran yang SUDAH disetujui admin) ditampilkan sebagai daftar
+  // "Cicilan 1", "Cicilan 2", dst — terpisah dari kategori, karena pengurangan terhadap
+  // tagihan hanya dihitung di level TOTAL, bukan dipecah per kategori.
+  const histWrap=$('#finPaymentHistory');
+  if(histWrap){
+    if(inv.payments.length){
+      histWrap.style.display='';
+      histWrap.innerHTML=`<div class="fin-hist-title">Riwayat Pembayaran</div>`+inv.payments.map(p=>{
+        const tglStr=p.tanggal?new Date(p.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}):'-';
+        return `<div class="fin-row"><span class="fr-nama">${escapeHtml(p.label)}<small style="display:block;color:var(--mut);font-weight:600">${tglStr}</small></span><span class="fr-nums"><b>${formatRupiah(p.jumlah)}</b></span></div>`;
+      }).join('');
+    }else{ histWrap.style.display='none'; histWrap.innerHTML=''; }
+  }
   // Total bukti pembayaran (cicilan) yang sudah diunggah peserta tapi masih menunggu
   // verifikasi admin — ditampilkan sebagai banner tunggal, bukan per kategori, karena
   // satu bukti pembayaran bisa mencicil ke beberapa kategori sekaligus.
@@ -2500,13 +2513,20 @@ function renderFinancePanel(){
   if(btnUpload)btnUpload.style.display=inv.totalSisa>0?'':'none';
 }
 function invoiceHtml(inv){
-  const {items,totalTagihan,totalDibayar,totalSisa,lunas,invoiceNo,tglStr}=inv;
+  const {items,payments,totalTagihan,totalDibayar,totalSisa,lunas,invoiceNo,tglStr}=inv;
   const rows=items.length?items.map(it=>`<tr>
       <td>${escapeHtml(it.catNama)}</td>
       <td>${formatRupiah(it.tagihan)}</td>
-      <td>${formatRupiah(it.dibayar)}</td>
-      <td>${formatRupiah(it.sisa)}</td>
-    </tr>`).join(''):`<tr><td colspan="4" style="text-align:center;color:var(--mut)">Belum ada tagihan tercatat.</td></tr>`;
+    </tr>`).join(''):`<tr><td colspan="2" style="text-align:center;color:var(--mut)">Belum ada tagihan tercatat.</td></tr>`;
+  const histRows=payments.length?payments.map(p=>{
+    const t=p.tanggal?new Date(p.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}):'-';
+    return `<tr><td>${escapeHtml(p.label)}</td><td>${t}</td><td>${formatRupiah(p.jumlah)}</td></tr>`;
+  }).join(''):'';
+  const histBlock=payments.length?`
+      <table class="inv-table" style="margin-top:18px">
+        <thead><tr><th>Riwayat Pembayaran</th><th>Tanggal</th><th>Jumlah</th></tr></thead>
+        <tbody>${histRows}</tbody>
+      </table>`:'';
   return `
     <div class="inv-box">
       <div class="inv-head">
@@ -2520,11 +2540,14 @@ function invoiceHtml(inv){
         <div><b>Kota</b>${escapeHtml(PART?.kota||'-')}</div>
       </div>
       <table class="inv-table">
-        <thead><tr><th>Kategori</th><th>Tagihan</th><th>Dibayar</th><th>Sisa</th></tr></thead>
+        <thead><tr><th>Kategori</th><th>Tagihan</th></tr></thead>
         <tbody>${rows}</tbody>
-        <tr class="inv-total-row"><td></td><td colspan="3" style="text-align:right;padding-top:14px">Total Tagihan&nbsp;&nbsp;<b>${formatRupiah(totalTagihan)}</b></td></tr>
-        <tr class="inv-total-row"><td></td><td colspan="3" style="text-align:right">Total Dibayar&nbsp;&nbsp;<b>${formatRupiah(totalDibayar)}</b></td></tr>
-        <tr class="inv-total-row grand"><td></td><td colspan="3" style="text-align:right">Sisa Tagihan&nbsp;&nbsp;${formatRupiah(totalSisa)}</td></tr>
+      </table>
+      ${histBlock}
+      <table class="inv-table" style="margin-top:18px">
+        <tr class="inv-total-row"><td></td><td style="text-align:right;padding-top:14px">Total Tagihan&nbsp;&nbsp;<b>${formatRupiah(totalTagihan)}</b></td></tr>
+        <tr class="inv-total-row"><td></td><td style="text-align:right">Total Dibayar&nbsp;&nbsp;<b>${formatRupiah(totalDibayar)}</b></td></tr>
+        <tr class="inv-total-row grand"><td></td><td style="text-align:right">Sisa Tagihan&nbsp;&nbsp;${formatRupiah(totalSisa)}</td></tr>
       </table>
       <div class="inv-status"><span class="pill ${lunas?'ok':'bad'}">${lunas?'✓ LUNAS':'BELUM LUNAS'}</span></div>
       <div class="inv-foot">
