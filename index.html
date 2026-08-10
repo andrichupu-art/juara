@@ -922,11 +922,13 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 
 #invoiceModal .box{max-width:640px;text-align:left}
 .inv-box{background:#fff}
-.inv-head{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:3px solid var(--gold);padding-bottom:16px;margin-bottom:18px;gap:12px}
-.inv-head b{font:800 1.15rem var(--disp);color:var(--navy);display:block}
-.inv-head span{font:600 .8rem var(--body);color:var(--mut)}
-.inv-no{font:700 .82rem var(--mono);color:var(--navy);text-align:right}
-.inv-no small{display:block;font:600 .68rem var(--body);color:var(--mut);margin-top:2px}
+.inv-head{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--gold);background:var(--navy);border-radius:14px;padding:18px 22px;margin-bottom:18px;gap:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
+.inv-head-brand{display:flex;align-items:center;gap:12px;min-width:0}
+.inv-logo{height:42px;width:auto;flex-shrink:0}
+.inv-head b{font:800 1.15rem var(--disp);color:#fff;display:block}
+.inv-head span{font:600 .8rem var(--body);color:rgba(255,255,255,.72)}
+.inv-no{font:700 .82rem var(--mono);color:#fff;text-align:right}
+.inv-no small{display:block;font:600 .68rem var(--body);color:rgba(255,255,255,.72);margin-top:2px}
 .inv-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:20px}
 .inv-meta div{font:600 .82rem var(--body);color:var(--ink)}
 .inv-meta div b{display:block;font:800 .64rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:3px}
@@ -2530,7 +2532,10 @@ function invoiceHtml(inv){
   return `
     <div class="inv-box">
       <div class="inv-head">
-        <div><b>PT. JUARA</b><span>Pejuang Devisa Negara</span></div>
+        <div class="inv-head-brand">
+          <img src="loogojuara.svg" alt="PT. JUARA" class="inv-logo">
+          <div><b>PT. JUARA</b><span>Pejuang Devisa Negara</span></div>
+        </div>
         <div class="inv-no">INVOICE<br>${escapeHtml(invoiceNo)}<small>${tglStr}</small></div>
       </div>
       <div class="inv-meta">
