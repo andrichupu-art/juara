@@ -922,7 +922,24 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .pmt-actions{display:flex;gap:10px;margin-top:4px}
 .pmt-actions .btn{flex:1;justify-content:center}
 
-#invoiceModal .box{max-width:560px;text-align:left;padding:28px}
+/* ============ INVOICE MODAL → LEFT SLIDE-IN DRAWER (sama seperti Profil Saya) ============ */
+#invoiceModal{justify-items:start;align-items:stretch;padding:0}
+#invoiceModal .box{
+  max-width:560px;text-align:left;
+  height:100vh;max-height:100vh;width:100%;margin:0;
+  border-radius:0;padding:0;box-shadow:24px 0 60px rgba(8,21,39,.28);
+  animation:drawerSlideIn .38s cubic-bezier(.2,.8,.2,1);
+  display:flex;flex-direction:column;overflow:hidden
+}
+#invoiceModal .doc-preview-headrow{flex:none;padding:16px 46px 14px 22px;border-bottom:1px solid var(--line);margin-bottom:0}
+#invoiceModal #invoiceArea{flex:1;min-height:0;overflow-y:auto;padding:22px}
+#invoiceModal .inv-foot-actions{flex:none;display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--line);box-shadow:0 -8px 20px rgba(8,21,39,.06);background:#fff;margin-top:0!important}
+@media(max-width:480px){
+  #invoiceModal .box{max-width:100%}
+  #invoiceModal .doc-preview-headrow{padding:14px 44px 12px 18px}
+  #invoiceModal #invoiceArea{padding:16px}
+  #invoiceModal .inv-foot-actions{padding:12px 18px}
+}
 .inv-box{background:#fff;font-size:.94em}
 .inv-head{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--gold);background:var(--navy);border-radius:12px;padding:12px 18px;margin-bottom:16px;gap:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
 .inv-head-brand{display:flex;align-items:center;gap:10px;min-width:0}
@@ -4237,7 +4254,7 @@ window.addEventListener('appinstalled',()=>{
       </button>
     </div>
     <div id="invoiceArea"></div>
-    <div style="display:flex;gap:10px;margin-top:18px">
+    <div class="inv-foot-actions">
       <button type="button" class="btn b-navy" id="btnDownloadInvoice" style="flex:1;justify-content:center" onclick="downloadInvoice()">⬇️ Download PDF</button>
       <button type="button" class="btn b-ghost" id="btnPrintInvoice" style="flex:1;justify-content:center" onclick="printInvoice()">🖨️ Cetak</button>
     </div>
