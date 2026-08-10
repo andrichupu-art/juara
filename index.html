@@ -1823,6 +1823,12 @@ function clearAuthState(){
   pendingAuthReturn=false; if(pendingAuthTimer){clearTimeout(pendingAuthTimer);pendingAuthTimer=null;}
   unsubscribeFinanceRealtime();
   setAuthUI(false); setState('#stGuest');
+  // FIX: kalau peserta logout saat sedang berada di tab "Tagihan Saya" (auth-only),
+  // tab tersebut disembunyikan dari nav tapi kontennya tetap aktif kalau tidak
+  // dipindahkan secara eksplisit — tampilan jadi nyangkut di halaman tagihan
+  // meski tombol atas sudah berubah jadi "Login". Alihkan ke tab Portal (guest).
+  const activeTab=$('.tabpanel.active');
+  if(activeTab&&activeTab.id==='tagihan') showTab('portal');
 }
 async function loginGoogle(){
   if(loginInProgress)return;
