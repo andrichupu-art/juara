@@ -929,6 +929,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .inv-no small{display:block;font:600 .68rem var(--body);color:rgba(255,255,255,.72);margin-top:2px}
 .inv-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:20px}
 .inv-meta div{font:600 .82rem var(--body);color:var(--ink)}
+.inv-meta div:nth-child(2n){text-align:right}
 .inv-meta div b{display:block;font:800 .64rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:3px}
 .inv-table{width:100%;border-collapse:collapse;margin-bottom:18px}
 .inv-table th{text-align:left;font:800 .64rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:0 8px 8px;border-bottom:2px solid var(--line)}
@@ -942,7 +943,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 .inv-foot>div{flex:1;text-align:center}
 .inv-foot p{font:600 .82rem var(--body);color:var(--mut);margin-bottom:50px}
 .inv-line{border-top:1.5px solid var(--ink);width:80%;margin:0 auto}
-@media(max-width:520px){.inv-meta{grid-template-columns:1fr}}
+@media(max-width:520px){.inv-meta{grid-template-columns:1fr}.inv-meta div:nth-child(2n){text-align:left}}
 @media print{
   body *{visibility:hidden}
   #invoicePrintArea,#invoicePrintArea *{visibility:visible}
