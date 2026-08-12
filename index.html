@@ -2388,8 +2388,8 @@ $$('.rv,.stat,.board').forEach(el=>obs.observe(el));
   const h=location.hash.replace('#','').split('&')[0];
   // Samakan dengan pengecekan di activateSession(): kalau ini baru kembali dari
   // login Google (fresh_login / access_token / code di URL), langsung buka tab
-  // Portal dari awal — supaya tidak sempat kelihatan tab Beranda dulu baru pindah ke Portal.
-  if(isIncomingAuthReturn()){ showTab('portal'); return; }
+  // Beranda dari awal — supaya tidak sempat kelihatan tab lain dulu baru pindah ke Beranda.
+  if(isIncomingAuthReturn()){ showTab('home'); return; }
   showTab(TAB_IDS.includes(h)?h:'home');
 })();
 function runCount(el){const t=+el.dataset.count,s=performance.now();(function f(n){const p=Math.min(1,(n-s)/1600),e=1-Math.pow(1-p,3);el.textContent=Math.round(t*e).toLocaleString('id-ID');if(p<1)requestAnimationFrame(f);})(s);}
@@ -2473,7 +2473,7 @@ async function logout(){
 function updateHeroCtas(loggedIn){
   const p=$('#heroCtaPrimary');
   if(p){
-    p.innerHTML=loggedIn?'📄 &nbsp; UPLOAD DOKUMEN':'✈ &nbsp; DAFTAR SEKARANG';
+    p.innerHTML=loggedIn?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:6px"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>UPLOAD DOKUMEN':'✈ &nbsp; DAFTAR SEKARANG';
     p.onclick=loggedIn?()=>showTab('portal'):()=>showGuestMode('register');
   }
   const s=$('#heroCtaSecondary');
@@ -2560,9 +2560,9 @@ async function activateSession(u){
   const isFreshLogin=new URLSearchParams(location.search).get('fresh_login')==='1';
   const curTab=location.hash.replace('#','').split('&')[0];
   if(isFreshLogin||location.hash.includes('access_token')){
-    history.replaceState(null,'',location.pathname+(isFreshLogin?'#portal':(TAB_IDS.includes(curTab)?location.hash:'#home')));
+    history.replaceState(null,'',location.pathname+(isFreshLogin?'#home':(TAB_IDS.includes(curTab)?location.hash:'#home')));
   }
-  if(isFreshLogin||!TAB_IDS.includes(curTab)){ showTab('portal'); }
+  if(isFreshLogin||!TAB_IDS.includes(curTab)){ showTab('home'); }
   const {data:{user:verifiedUser},error}=await sb.auth.getUser();
   if(request!==authEpoch)return;
   if(error||!verifiedUser||verifiedUser.id!==u.id){
@@ -2649,7 +2649,7 @@ async function activateQrSession(anonymousUser,token){
   if(USER?.id===anonymousUser.id&&PART&&CUR_DB===sbQr)return;
   const request=++authEpoch;
   CUR_DB=sbQr; USER=anonymousUser; PART=null; DOCLIST={}; qrShown=false; docsAllComplete=false; loadingUserId=anonymousUser.id;
-  setAuthUI(true); showTab('portal');
+  setAuthUI(true); showTab('home');
   const {data,error}=await sbQr.rpc('login_with_qr_v2',{p_qr_token:token});
   if(request!==authEpoch)return;
   const participant=Array.isArray(data)?data[0]:data;
@@ -2690,7 +2690,7 @@ async function recoverByNikWa(){
     if(!session?.user)throw new Error('Gagal membuat sesi sementara');
     const request=++authEpoch;
     CUR_DB=sbQr; USER=session.user; PART=null; DOCLIST={}; qrShown=false; docsAllComplete=false; loadingUserId=session.user.id;
-    setAuthUI(true); showTab('portal');
+    setAuthUI(true); showTab('home');
     const {data,error}=await sbQr.rpc('login_recover_v2',{p_nik:nik,p_telepon:wa});
     if(request!==authEpoch)return;
     const participant=Array.isArray(data)?data[0]:data;
