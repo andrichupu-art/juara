@@ -488,6 +488,25 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:var(--gold);b
 .ov-bar{height:14px;border-radius:99px;background:var(--paper);border:1.5px solid var(--line);overflow:hidden}
 .ov-bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(45deg,var(--orange) 0 10px,var(--gold) 10px 20px);transition:width 1s cubic-bezier(.2,.8,.2,1)}
 
+/* Tombol panah untuk sembunyikan/tampilkan daftar 7 kartu dokumen di mobile —
+   cuma muncul di layar sempit, di desktop grid dokumen selalu terbuka. */
+.doc-toggle{display:none}
+@media(max-width:900px){
+  .doc-toggle{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;margin-top:14px;padding:9px 0;
+    border:1.5px dashed var(--line);border-radius:99px;background:var(--paper);
+    font:800 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mut);
+    transition:.2s
+  }
+  .doc-toggle:active{background:var(--line)}
+  .doc-toggle svg{width:14px;height:14px;stroke:var(--mut);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+  .doc-toggle.open svg{transform:rotate(180deg)}
+  .doc-grid-wrap{overflow:hidden;transition:grid-template-rows .32s cubic-bezier(.2,.8,.2,1);display:grid;grid-template-rows:1fr}
+  .doc-grid-wrap>div{overflow:hidden;min-height:0}
+  .doc-grid-wrap.collapsed{grid-template-rows:0fr}
+}
+
 /* Bar progres di atas Progres Penempatan — nunjukin sedang berjalan/diproses,
    bukan cuma statis, jadi ada kilau bergerak terus-menerus di dalam isi bar. */
 .tl-progress{margin-bottom:26px}
@@ -2003,9 +2022,15 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           <div class="ov">
             <div class="ov-top"><span>Kelengkapan Berkas Wajib</span><b id="ovPct">0%</b></div>
             <div class="ov-bar"><i id="ovBar"></i></div>
+            <button type="button" class="doc-toggle open" id="docToggleBtn" onclick="toggleDocGrid()" aria-expanded="true" aria-controls="docGridWrap">
+              <span id="docToggleLbl">Sembunyikan 7 dokumen</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
           </div>
-          <div id="docGrid"></div>
-          <p style="font-size:.76rem;color:var(--mut);margin-top:6px">Format: PDF / JPG / PNG · Maks. 5 MB per berkas. Seret &amp; letakkan file ke kartu dokumen, atau klik tombol unggah.</p>
+          <div id="docGridWrap" class="doc-grid-wrap"><div>
+            <div id="docGrid"></div>
+            <p style="font-size:.76rem;color:var(--mut);margin-top:6px">Format: PDF / JPG / PNG · Maks. 5 MB per berkas. Seret &amp; letakkan file ke kartu dokumen, atau klik tombol unggah.</p>
+          </div></div>
         </div>
 
         <div class="panel extra-panel rv in">
@@ -3530,6 +3555,15 @@ document.addEventListener('submit',async e=>{
 });
 
 function getStage(){ return window._stage??0; }
+
+// Toggle tampil/sembunyi 7 kartu dokumen di mobile (panah di bawah bar 100%).
+function toggleDocGrid(){
+  const wrap=$('#docGridWrap'),btn=$('#docToggleBtn'),lbl=$('#docToggleLbl');
+  const collapsed=wrap.classList.toggle('collapsed');
+  btn.classList.toggle('open',!collapsed);
+  btn.setAttribute('aria-expanded',String(!collapsed));
+  lbl.textContent=collapsed?'Tampilkan 7 dokumen':'Sembunyikan 7 dokumen';
+}
 
 function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
   // Pass 1: hitung dulu berapa berkas WAJIB yang sudah terunggah, supaya kita tahu
