@@ -439,6 +439,21 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:var(--gold);b
 .dash-top .kode-mark img{height:100%;width:100%;display:block;object-fit:contain}
 .dash-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:26px;margin-top:26px;align-items:start}
 .dash-grid.one-col{grid-template-columns:1fr;max-width:720px}
+.extra-panel{position:sticky;top:100px}
+.extra-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.extra-item{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;background:#fff;transition:.2s}
+.extra-item:hover{border-color:var(--orange)}
+.extra-item .ic{width:36px;height:36px;border-radius:9px;background:var(--paper);display:grid;place-items:center;font-size:1.05rem;border:1px solid var(--line);flex:none}
+.extra-item .info{min-width:0;flex:1}
+.extra-item .fname{font:700 .82rem var(--body);color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.extra-item .meta2{font-size:.68rem;color:var(--mut);margin-top:2px}
+.extra-item .act{display:flex;gap:6px;flex:none}
+.extra-empty{border:1.5px dashed var(--line);border-radius:12px;padding:26px 16px;text-align:center;color:var(--mut);font-size:.82rem}
+.extra-drop{border:1.5px dashed var(--line);border-radius:13px;padding:18px;text-align:center;cursor:pointer;transition:.2s;background:var(--paper)}
+.extra-drop:hover,.extra-drop.drag{border-color:var(--orange);background:rgba(245,182,43,.08)}
+.extra-drop b{color:var(--navy);display:block;font-size:.86rem;margin-bottom:2px}
+.extra-drop span{font-size:.72rem;color:var(--mut)}
+@media(max-width:960px){.extra-panel{position:static}}
 .panel{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:30px}
 .panel h4{font:800 1.1rem var(--disp);color:var(--navy);display:flex;align-items:center;gap:10px;margin-bottom:20px}
 .panel h4 .cnt{margin-left:auto;font:700 .74rem var(--body);color:var(--mut);background:var(--paper);padding:5px 12px;border-radius:100px;border:1px solid var(--line)}
@@ -474,7 +489,9 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:var(--gold);b
 .tl-bar i.done{background:var(--green)}
 .tl-bar i.done::after{display:none}
 
-.doc{border:1.5px solid var(--line);border-radius:13px;padding:18px;margin-bottom:14px;display:grid;grid-template-columns:46px 1fr auto;gap:16px;align-items:center;transition:.25s;background:#fff}
+#docGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.doc{border:1.5px solid var(--line);border-radius:13px;padding:18px;margin-bottom:0;display:grid;grid-template-columns:46px 1fr auto;gap:16px;align-items:center;transition:.25s;background:#fff}
+@media(max-width:640px){#docGrid{grid-template-columns:1fr}}
 .doc:hover{border-color:var(--sky)}
 .doc.ok{border-color:var(--green);background:linear-gradient(0deg,rgba(23,178,106,.04),rgba(23,178,106,.04))}
 /* Terkunci: semua berkas WAJIB sudah lengkap, kartu ini jadi read-only —
@@ -1487,21 +1504,21 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
   <div class="wrap nav">
     <a class="logo" href="#home"><span class="logo-shine" style="--shine-mask:url('loogojuara.svg')"><img class="brand-logo" src="loogojuara.svg" alt="PT. JUARA"></span></a>
     <nav class="nav-l">
-      <a href="#home" class="tab-link active">Beranda</a><a href="#destinasi" class="tab-link">Destinasi</a><a href="#alur" class="tab-link">Alur</a>
-      <a href="#portal" class="tab-link auth-only">Portal Pekerja</a><a href="#progres" class="tab-link auth-only">Progres Saya</a><a href="#tagihan" class="tab-link auth-only">Tagihan Saya</a><a href="#testi" class="tab-link">Testimoni</a><a href="#faq" class="tab-link">FAQ</a>
+      <a href="#home" class="tab-link active">Beranda</a><a href="#destinasi" class="tab-link guest-only">Destinasi</a><a href="#alur" class="tab-link guest-only">Alur</a>
+      <a href="#portal" class="tab-link auth-only">Portal Pekerja</a><a href="#progres" class="tab-link auth-only">Progres Saya</a><a href="#tagihan" class="tab-link auth-only">Tagihan Saya</a><a href="#testi" class="tab-link guest-only">Testimoni</a><a href="#faq" class="tab-link guest-only">FAQ</a>
     </nav>
     <div style="display:flex;gap:10px;align-items:center" id="navActions">
       <button class="btn b-ghost sm" id="installBtn" onclick="installPWA()" style="display:none;border-color:#fff;color:#fff">⬇ Pasang App</button>
       <button class="btn b-pri sm" id="daftarWrap" onclick="showGuestMode('register')">Daftar Sekarang <span class="pl">✈</span></button>
       <button class="btn b-ghost sm" id="loginBtn" onclick="showGuestMode('login')" style="border-color:#fff;color:#fff">Login</button>
-      <button class="btn b-pri sm" id="authBtn" style="display:none;background:var(--gold);border-color:var(--gold);color:#fff" onclick="openProfileModal()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.4-5.6 7.5-5.6s6.1 2 7.5 5.6"/></svg> Profil Saya</button>
+      <button class="btn b-pri sm" id="authBtn" style="display:none;background:var(--gold);border-color:var(--gold);color:#000" onclick="openProfileModal()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.4-5.6 7.5-5.6s6.1 2 7.5 5.6"/></svg> Profil Saya</button>
       <button class="btn b-ghost sm" id="logoutBtn" onclick="logout()" style="display:none;border-color:#fff;color:#fff">Keluar ⏻</button>
       <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
     </div>
   </div>
 </header>
 <nav class="mnav" id="mnav">
-  <a href="#home" class="tab-link active" title="Beranda"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 5l8 7"/><path d="M6 10.5V19a1 1 0 0 0 1 1h4v-5h2v5h4a1 1 0 0 0 1-1v-8.5"/></svg></span><span class="lbl">Beranda</span></a><a href="#destinasi" class="tab-link" title="Destinasi"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-7.4 7-12.5A7 7 0 0 0 5 8.5C5 13.6 12 21 12 21Z"/><circle cx="12" cy="8.5" r="2.4"/></svg></span><span class="lbl">Destinasi</span></a><a href="#alur" class="tab-link" title="Alur"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15 9l-1.8 5.2L8 16l1.8-5.2Z"/></svg></span><span class="lbl">Alur</span></a>
+  <a href="#home" class="tab-link active" title="Beranda"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 5l8 7"/><path d="M6 10.5V19a1 1 0 0 0 1 1h4v-5h2v5h4a1 1 0 0 0 1-1v-8.5"/></svg></span><span class="lbl">Beranda</span></a><a href="#destinasi" class="tab-link guest-only" title="Destinasi"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-7.4 7-12.5A7 7 0 0 0 5 8.5C5 13.6 12 21 12 21Z"/><circle cx="12" cy="8.5" r="2.4"/></svg></span><span class="lbl">Destinasi</span></a><a href="#alur" class="tab-link guest-only" title="Alur"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15 9l-1.8 5.2L8 16l1.8-5.2Z"/></svg></span><span class="lbl">Alur</span></a>
   <a href="#portal" class="tab-link auth-only" title="Portal Pekerja"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="8" width="17.6" height="11" rx="2"/><path d="M8.5 8V6.3a1.8 1.8 0 0 1 1.8-1.8h3.4a1.8 1.8 0 0 1 1.8 1.8V8"/><path d="M3.2 13h17.6"/></svg></span><span class="lbl">Portal Pekerja</span></a><a href="#progres" class="tab-link auth-only" title="Progres Saya"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg></span><span class="lbl">Progres Saya</span></a><a href="#tagihan" class="tab-link auth-only" title="Tagihan Saya"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-2.5-1.6L13 20.5l-2.5-1.6L8 20.5l-2-1.5z"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4"/></svg></span><span class="lbl">Tagihan Saya</span></a><a href="#testi" class="tab-link guest-only" title="Testimoni"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.7a8 8 0 0 1-8 8 8 8 0 0 1-3.6-.85L4 20l1.15-4.9A8 8 0 1 1 20.5 11.7Z"/></svg></span><span class="lbl">Testimoni</span></a><a href="#faq" class="tab-link guest-only" title="FAQ"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.4 2.4 0 1 1 3.5 2.1c-.9.55-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r="0.9" fill="currentColor" stroke="none"/></svg></span><span class="lbl">FAQ</span></a>
 </nav>
 
@@ -1517,8 +1534,8 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <h1>WUJUDKAN KARIER <span>DI LUAR NEGERI</span></h1>
         <p class="gk-hero-desc">Kami membantu Anda meraih peluang kerja terbaik di luar negeri secara legal, aman, dan terpercaya.</p>
         <div class="gk-hero-actions">
-          <button class="gk-btn gk-btn-primary" type="button" onclick="showGuestMode('register')">✈ &nbsp; DAFTAR SEKARANG</button>
-          <button class="gk-btn gk-btn-outline" type="button" onclick="showTab('alur')">▶ &nbsp; LIHAT PROSES</button>
+          <button class="gk-btn gk-btn-primary" type="button" id="heroCtaPrimary" onclick="showGuestMode('register')">✈ &nbsp; DAFTAR SEKARANG</button>
+          <button class="gk-btn gk-btn-outline" type="button" id="heroCtaSecondary" onclick="showTab('alur')">▶ &nbsp; LIHAT PROSES</button>
         </div>
         <div class="gk-trust-row">
           <div class="gk-trust"><span class="gk-trust-icon">✓</span><div><strong>Resmi &amp; Terpercaya</strong><small>Proses penempatan yang jelas dan profesional.</small></div></div>
@@ -1582,7 +1599,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <div class="gk-wrap">
       <div class="gk-cta-box">
         <div class="gk-cta-copy"><div class="gk-cta-icon">◉</div><div><h2>Siap Memulai Perjalanan Karier Anda?</h2><p>Tim kami siap membantu Anda dari awal hingga keberangkatan.</p></div></div>
-        <button class="gk-btn gk-btn-primary" type="button" onclick="showGuestMode('register')">DAFTAR SEKARANG</button>
+        <button class="gk-btn gk-btn-primary" type="button" id="heroCtaBottom" onclick="showGuestMode('register')">DAFTAR SEKARANG</button>
       </div>
     </div>
   </section>
@@ -1962,7 +1979,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <button type="button" class="btn b-navy sm" onclick="openProfileModal()">Lengkapi Sekarang</button>
       </div>
 
-      <div class="dash-grid one-col">
+      <div class="dash-grid">
         <div class="panel rv in">
           <h4>📄 Dokumen Persyaratan <span class="cnt" id="docCnt">0/7 terunggah</span></h4>
           <div class="ov">
@@ -1971,6 +1988,17 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           </div>
           <div id="docGrid"></div>
           <p style="font-size:.76rem;color:var(--mut);margin-top:6px">Format: PDF / JPG / PNG · Maks. 5 MB per berkas. Seret &amp; letakkan file ke kartu dokumen, atau klik tombol unggah.</p>
+        </div>
+
+        <div class="panel extra-panel rv in">
+          <h4>📎 Data Tambahan <span class="cnt" id="extraCnt">0 berkas</span></h4>
+          <p style="font-size:.78rem;color:var(--mut);margin-top:-10px;margin-bottom:16px">Unggah dokumen pendukung lain di luar 7 berkas wajib — misalnya SKCK, buku nikah, atau surat keterangan tambahan.</p>
+          <div id="extraGrid"></div>
+          <div class="extra-drop" id="extraDrop">
+            <b>⬆ Tambah Berkas</b>
+            <span>Klik atau seret file ke sini · PDF/JPG/PNG · Maks. 5 MB</span>
+          </div>
+          <input type="file" id="extraFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
         </div>
       </div>
 
@@ -2406,11 +2434,34 @@ async function logout(){
   toast('Sampai jumpa! Kamu telah keluar. 👋');
 }
 
+/* CTA hero di Beranda ("DAFTAR SEKARANG"/"LIHAT PROSES") sengaja ikut berubah
+   mengikuti status login: peserta yang sudah login tidak relevan lagi diajak
+   "mendaftar", jadi CTA-nya diarahkan ke aksi lanjutan (upload dokumen / cek
+   progres) begitu setAuthUI dipanggil — baik saat login/logout maupun saat
+   modal "SELAMAT DATA TELAH DIISI SEMUA" ditutup dan user kembali ke Beranda. */
+function updateHeroCtas(loggedIn){
+  const p=$('#heroCtaPrimary');
+  if(p){
+    p.innerHTML=loggedIn?'📄 &nbsp; UPLOAD DOKUMEN':'✈ &nbsp; DAFTAR SEKARANG';
+    p.onclick=loggedIn?()=>showTab('portal'):()=>showGuestMode('register');
+  }
+  const s=$('#heroCtaSecondary');
+  if(s){
+    s.innerHTML=loggedIn?'▶ &nbsp; LIHAT PROGRES':'▶ &nbsp; LIHAT PROSES';
+    s.onclick=loggedIn?()=>showTab('progres'):()=>showTab('alur');
+  }
+  const b=$('#heroCtaBottom');
+  if(b){
+    b.textContent=loggedIn?'UPLOAD DOKUMEN':'DAFTAR SEKARANG';
+    b.onclick=loggedIn?()=>showTab('portal'):()=>showGuestMode('register');
+  }
+}
 function setAuthUI(loggedIn){
   $('#authBtn').style.display=loggedIn?'inline-flex':'none';
   $('#logoutBtn').style.display=loggedIn?'inline-flex':'none';
   $('#daftarWrap').style.display=loggedIn?'none':'';
   $('#loginBtn').style.display=loggedIn?'none':'';
+  updateHeroCtas(loggedIn);
   $$('.auth-only').forEach(a=>{
     // .mnav butuh display:flex supaya ikon tetap center (align-items/justify-content
     // pada .mnav a). Kalau dipaksa inline-block di sini, flex-nya rusak dan ikon
@@ -3240,7 +3291,7 @@ function renderDash(){ if(!PART){$('#obNama').textContent=(USER?.user_metadata?.
   $('#dAccount').textContent=USER?.is_anonymous?'Akses melalui QR peserta':'Akun aktif: '+(USER?.email||USER?.user_metadata?.email||'—');
   $('#dKode').textContent=kode;
   renderProfileAlert();
-  renderDocs(); renderTL(getStage()); renderQR(); renderFinancePanel();
+  renderDocs(); renderExtraDocs(); renderTL(getStage()); renderQR(); renderFinancePanel();
   subscribeFinanceRealtime(PART.id); }
 
 /* ===== Otomatis pakai berkas "Pas Foto 4x6" sebagai foto profil (avatar) =====
@@ -3559,6 +3610,78 @@ async function toggleKolektif(k,checked){
     openDataConsentModal();}
 }
 
+/* ===== DATA TAMBAHAN — unggah dokumen pendukung bebas di luar 7 berkas wajib.
+   Memakai tabel & bucket yang sama dengan dokumen wajib (documents_v2 /
+   juara-v2-documents), hanya saja "jenis"-nya diberi awalan "extra_" + kode unik
+   supaya tidak bentrok dengan kunci DOCS dan tidak ikut dihitung ke progres
+   kelengkapan berkas wajib (renderDocs() cuma memproses DOCS.forEach). */
+function renderExtraDocs(){
+  const grid=$('#extraGrid'); if(!grid)return; grid.innerHTML='';
+  const keys=Object.keys(DOCLIST).filter(k=>k.startsWith('extra_')).sort((a,b)=>new Date(DOCLIST[b].uploaded_at)-new Date(DOCLIST[a].uploaded_at));
+  $('#extraCnt').textContent=`${keys.length} berkas`;
+  if(!keys.length){
+    grid.innerHTML='<div class="extra-empty">Belum ada berkas tambahan yang diunggah.</div>';
+    return;
+  }
+  keys.forEach(k=>{
+    const d=DOCLIST[k];
+    const el=document.createElement('div');
+    el.className='extra-item rv in';
+    const uploadedDate=d.uploaded_at?new Date(d.uploaded_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'';
+    el.innerHTML=`<div class="ic">📎</div>
+      <div class="info"><div class="fname">${d.file_name||'Berkas'}</div><div class="meta2">${uploadedDate}</div></div>
+      <div class="act"><button class="mini" data-view-extra="${k}">Lihat</button><button class="mini or" data-del-extra="${k}">Hapus</button></div>`;
+    grid.appendChild(el);
+    el.querySelector('[data-view-extra]').addEventListener('click',()=>viewDoc(k));
+    el.querySelector('[data-del-extra]').addEventListener('click',()=>deleteExtraDoc(k));
+  });
+}
+async function uploadExtraDoc(file){
+  if(!PART)return;
+  if(file.size>5*1048576)return toast('File maksimal 5 MB','err');
+  if(!/\.(pdf|jpe?g|png)$/i.test(file.name))return toast('Format harus PDF / JPG / PNG','err');
+  const drop=$('#extraDrop'); const origHTML=drop?drop.innerHTML:null;
+  if(drop){drop.style.pointerEvents='none';drop.innerHTML='<span class="spin" style="border-color:rgba(19,49,77,.3);border-top-color:var(--orange)"></span> <b style="margin-left:8px">Mengunggah…</b>';}
+  const db=CUR_DB||sb;
+  try{
+    const pid=PART.id, ext=file.name.split('.').pop();
+    const k=`extra_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    const path=`${pid}/${k}.${ext}`;
+    const {error:er1}=await db.storage.from('juara-v2-documents').upload(path,file,{upsert:true,contentType:file.type});
+    if(er1){toast('Upload gagal: '+er1.message,'err');return;}
+    const uploadedAt=new Date().toISOString();
+    const {error:er2}=await db.from('documents_v2').upsert({participant_id:pid,jenis:k,file_name:file.name,size:file.size,storage_path:path,status:'menunggu',uploaded_at:uploadedAt},{onConflict:'participant_id,jenis'});
+    if(er2){toast('Gagal mencatat berkas: '+er2.message,'err');return;}
+    DOCLIST[k]={file_name:file.name,size:file.size,uploaded_at:uploadedAt,storage_path:path};
+    renderExtraDocs();
+    toast(`📎 <b>${file.name}</b> berhasil diunggah!`,'ok');
+  }catch(err){ console.error('uploadExtraDoc error:',err); toast('Ups, gagal mengunggah berkas. Coba lagi.','err'); }
+  finally{ if(drop){drop.style.pointerEvents='';drop.innerHTML=origHTML;} }
+}
+async function deleteExtraDoc(k){
+  if(!PART)return;
+  const d=DOCLIST[k]; if(!d)return;
+  if(!confirm(`Hapus berkas "${d.file_name}"?`))return;
+  const db=CUR_DB||sb; const pid=PART.id;
+  try{
+    const {error}=await db.from('documents_v2').delete().eq('participant_id',pid).eq('jenis',k);
+    if(error){toast('Gagal menghapus berkas: '+error.message,'err');return;}
+    if(d.storage_path)await db.storage.from('juara-v2-documents').remove([d.storage_path]);
+    delete DOCLIST[k];
+    renderExtraDocs();
+    toast('Berkas tambahan dihapus','ok');
+  }catch(err){ console.error('deleteExtraDoc error:',err); toast('Gagal menghapus berkas.','err'); }
+}
+(function initExtraDropZone(){
+  const drop=document.getElementById('extraDrop'), fi=document.getElementById('extraFile');
+  if(!drop||!fi)return;
+  drop.addEventListener('click',()=>fi.click());
+  fi.addEventListener('change',()=>{ if(fi.files[0])uploadExtraDoc(fi.files[0]); fi.value=''; });
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');}));
+  drop.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f)uploadExtraDoc(f); });
+})();
+
 /* ===== Pratinjau dokumen — dibuka sebagai MODAL DI DALAM HALAMAN, bukan tab
    baru/window.open. Ini sengaja dipilih supaya tidak ada risiko sama sekali
    browser menavigasi tab utama (masalah yang sempat terjadi dengan pendekatan
@@ -3573,7 +3696,7 @@ function docFileKind(name){
 async function viewDoc(k){
   const d=DOCLIST[k]; if(!d)return;
   const docMeta=DOCS.find(x=>x.k===k);
-  const title=docMeta?docMeta.t:'Dokumen';
+  const title=docMeta?docMeta.t:(d.file_name||'Dokumen');
   openDocPreviewModal(title);
   let url=d.data||memURL[k]||null;
   if(!url&&d.storage_path){
@@ -4209,7 +4332,9 @@ function openDocsCompleteModal(){
 }
 function closeDocsCompleteModal(){
   const m=$('#docsCompleteModal'); if(m)m.classList.remove('on');
-  window.scrollTo({top:0,behavior:'smooth'});
+  // Setelah semua dokumen wajib selesai, arahkan otomatis ke Beranda —
+  // showTab() sendiri sudah scroll ke atas, jadi tidak perlu scrollTo manual lagi.
+  showTab('home');
 }
 /* ================= CEK STATUS PUBLIK ================= */
 async function lacakKode(kode){
