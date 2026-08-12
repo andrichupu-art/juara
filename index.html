@@ -438,6 +438,7 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:var(--gold);b
 .dash-top .kode-mark{height:38px;width:auto;display:block;object-fit:contain}
 .dash-top .kode-mark img{height:100%;width:100%;display:block;object-fit:contain}
 .dash-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:26px;margin-top:26px;align-items:start}
+.dash-grid.one-col{grid-template-columns:1fr;max-width:720px}
 .panel{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:30px}
 .panel h4{font:800 1.1rem var(--disp);color:var(--navy);display:flex;align-items:center;gap:10px;margin-bottom:20px}
 .panel h4 .cnt{margin-left:auto;font:700 .74rem var(--body);color:var(--mut);background:var(--paper);padding:5px 12px;border-radius:100px;border:1px solid var(--line)}
@@ -1487,7 +1488,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <a class="logo" href="#home"><span class="logo-shine" style="--shine-mask:url('loogojuara.svg')"><img class="brand-logo" src="loogojuara.svg" alt="PT. JUARA"></span></a>
     <nav class="nav-l">
       <a href="#home" class="tab-link active">Beranda</a><a href="#destinasi" class="tab-link">Destinasi</a><a href="#alur" class="tab-link">Alur</a>
-      <a href="#portal" class="tab-link auth-only">Portal Pekerja</a><a href="#tagihan" class="tab-link auth-only">Tagihan Saya</a><a href="#testi" class="tab-link">Testimoni</a><a href="#faq" class="tab-link">FAQ</a>
+      <a href="#portal" class="tab-link auth-only">Portal Pekerja</a><a href="#progres" class="tab-link auth-only">Progres Saya</a><a href="#tagihan" class="tab-link auth-only">Tagihan Saya</a><a href="#testi" class="tab-link">Testimoni</a><a href="#faq" class="tab-link">FAQ</a>
     </nav>
     <div style="display:flex;gap:10px;align-items:center" id="navActions">
       <button class="btn b-ghost sm" id="installBtn" onclick="installPWA()" style="display:none;border-color:#fff;color:#fff">⬇ Pasang App</button>
@@ -1501,7 +1502,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 </header>
 <nav class="mnav" id="mnav">
   <a href="#home" class="tab-link active" title="Beranda"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 5l8 7"/><path d="M6 10.5V19a1 1 0 0 0 1 1h4v-5h2v5h4a1 1 0 0 0 1-1v-8.5"/></svg></span><span class="lbl">Beranda</span></a><a href="#destinasi" class="tab-link" title="Destinasi"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-7.4 7-12.5A7 7 0 0 0 5 8.5C5 13.6 12 21 12 21Z"/><circle cx="12" cy="8.5" r="2.4"/></svg></span><span class="lbl">Destinasi</span></a><a href="#alur" class="tab-link" title="Alur"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15 9l-1.8 5.2L8 16l1.8-5.2Z"/></svg></span><span class="lbl">Alur</span></a>
-  <a href="#portal" class="tab-link auth-only" title="Portal Pekerja"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="8" width="17.6" height="11" rx="2"/><path d="M8.5 8V6.3a1.8 1.8 0 0 1 1.8-1.8h3.4a1.8 1.8 0 0 1 1.8 1.8V8"/><path d="M3.2 13h17.6"/></svg></span><span class="lbl">Portal Pekerja</span></a><a href="#tagihan" class="tab-link auth-only" title="Tagihan Saya"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-2.5-1.6L13 20.5l-2.5-1.6L8 20.5l-2-1.5z"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4"/></svg></span><span class="lbl">Tagihan Saya</span></a><a href="#testi" class="tab-link guest-only" title="Testimoni"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.7a8 8 0 0 1-8 8 8 8 0 0 1-3.6-.85L4 20l1.15-4.9A8 8 0 1 1 20.5 11.7Z"/></svg></span><span class="lbl">Testimoni</span></a><a href="#faq" class="tab-link guest-only" title="FAQ"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.4 2.4 0 1 1 3.5 2.1c-.9.55-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r="0.9" fill="currentColor" stroke="none"/></svg></span><span class="lbl">FAQ</span></a>
+  <a href="#portal" class="tab-link auth-only" title="Portal Pekerja"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="8" width="17.6" height="11" rx="2"/><path d="M8.5 8V6.3a1.8 1.8 0 0 1 1.8-1.8h3.4a1.8 1.8 0 0 1 1.8 1.8V8"/><path d="M3.2 13h17.6"/></svg></span><span class="lbl">Portal Pekerja</span></a><a href="#progres" class="tab-link auth-only" title="Progres Saya"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg></span><span class="lbl">Progres Saya</span></a><a href="#tagihan" class="tab-link auth-only" title="Tagihan Saya"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-2.5-1.6L13 20.5l-2.5-1.6L8 20.5l-2-1.5z"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4"/></svg></span><span class="lbl">Tagihan Saya</span></a><a href="#testi" class="tab-link guest-only" title="Testimoni"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.7a8 8 0 0 1-8 8 8 8 0 0 1-3.6-.85L4 20l1.15-4.9A8 8 0 1 1 20.5 11.7Z"/></svg></span><span class="lbl">Testimoni</span></a><a href="#faq" class="tab-link guest-only" title="FAQ"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.4 2.4 0 1 1 3.5 2.1c-.9.55-1.3 1-1.3 2"/><circle cx="12" cy="16.6" r="0.9" fill="currentColor" stroke="none"/></svg></span><span class="lbl">FAQ</span></a>
 </nav>
 
 <!-- ===== TAB: BERANDA ===== -->
@@ -1961,7 +1962,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
         <button type="button" class="btn b-navy sm" onclick="openProfileModal()">Lengkapi Sekarang</button>
       </div>
 
-      <div class="dash-grid">
+      <div class="dash-grid one-col">
         <div class="panel rv in">
           <h4>📄 Dokumen Persyaratan <span class="cnt" id="docCnt">0/7 terunggah</span></h4>
           <div class="ov">
@@ -1971,17 +1972,27 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
           <div id="docGrid"></div>
           <p style="font-size:.76rem;color:var(--mut);margin-top:6px">Format: PDF / JPG / PNG · Maks. 5 MB per berkas. Seret &amp; letakkan file ke kartu dokumen, atau klik tombol unggah.</p>
         </div>
-
-        <div class="panel rv in">
-          <h4 class="h4-stack">🛰️ Progres Penempatan <span class="cnt" id="stageLbl">Tahap 1/6</span></h4>
-          <div class="tl-progress">
-            <div class="tl-progress-top"><span id="tlProgLbl">⏳ Sedang diproses</span><b id="tlPct">0%</b></div>
-            <div class="tl-bar"><i id="tlBar"></i></div>
-          </div>
-          <div id="tlWrap"></div>
-        </div>
       </div>
 
+    </div>
+  </div>
+</section>
+
+<!-- ===== PROGRES PENEMPATAN ===== -->
+<section class="tabpanel sec-pad" id="progres">
+  <div class="wrap">
+    <div class="eyebrow rv">Portal Pekerja</div>
+    <h2 class="sec rv">Progres <span style="background:linear-gradient(135deg,#ffc33c,#f5b62b);-webkit-background-clip:text;background-clip:text;color:transparent">Penempatan</span> kamu</h2>
+
+    <div class="dash-grid one-col" style="margin-top:26px">
+      <div class="panel rv in">
+        <h4 class="h4-stack">🛰️ Progres Penempatan <span class="cnt" id="stageLbl">Tahap 1/6</span></h4>
+        <div class="tl-progress">
+          <div class="tl-progress-top"><span id="tlProgLbl">⏳ Sedang diproses</span><b id="tlPct">0%</b></div>
+          <div class="tl-bar"><i id="tlBar"></i></div>
+        </div>
+        <div id="tlWrap"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -2237,7 +2248,7 @@ $('#burger').onclick=()=>$('#mnav').classList.toggle('open');
 $$('.mnav a').forEach(a=>a.onclick=()=>$('#mnav').classList.remove('open'));
 $('#flagIn').innerHTML+=$('#flagIn').innerHTML;
 
-const TAB_IDS=['home','destinasi','alur','cek','portal','tagihan','testi','faq'];
+const TAB_IDS=['home','destinasi','alur','cek','portal','progres','tagihan','testi','faq'];
 function resetElig(){
   unlockElig();
   const umurEl=$('#cUmur'), fld=$('#fldUmur');
@@ -2276,7 +2287,7 @@ function showTab(id){
 // (itu yang sebelumnya bikin scroll terkunci di sebagian browser mobile).
 // Caranya: ukur posisi .cta secara nyata (px), lalu kalau ternyata halaman lebih
 // pendek dari layar, kasih min-height ke .cta SAJA supaya dia yang melar.
-const CTA_FILL_TABS=['home','destinasi','alur','testi','portal','tagihan'];
+const CTA_FILL_TABS=['home','destinasi','alur','testi','portal','progres','tagihan'];
 function adjustCtaFill(){
   const cta=$('.cta'); if(!cta)return;
   cta.style.minHeight='';
@@ -2306,7 +2317,7 @@ document.addEventListener('click',e=>{
   e.preventDefault();
   $('#mnav').classList.remove('open');
   if(id==='cek'&&!USER){toastNear('Login atau daftar dulu untuk cek status berkas','err','.tabpanel.active .faq-list, .tabpanel.active .wrap');return;}
-  if((id==='portal'||id==='tagihan')&&!USER){showTab('portal');return;}
+  if((id==='portal'||id==='progres'||id==='tagihan')&&!USER){showTab('portal');return;}
   showTab(id);
 });
 
@@ -2371,7 +2382,7 @@ function clearAuthState(){
   // dipindahkan secara eksplisit — tampilan jadi nyangkut di halaman tagihan
   // meski tombol atas sudah berubah jadi "Login". Alihkan ke tab Portal (guest).
   const activeTab=$('.tabpanel.active');
-  if(activeTab&&activeTab.id==='tagihan') showTab('portal');
+  if(activeTab&&(activeTab.id==='tagihan'||activeTab.id==='progres')) showTab('portal');
 }
 async function loginGoogle(){
   if(loginInProgress)return;
