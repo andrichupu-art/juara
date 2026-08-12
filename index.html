@@ -824,7 +824,10 @@ body.tk-open .mnav{display:none!important}
 #home.active ~ .cta,#destinasi.active ~ .cta,#alur.active ~ .cta,#faq.active ~ .cta,#testi.active ~ .cta,#portal.active ~ .cta{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center}
 @keyframes drift{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-18px) rotate(-2deg)}}
 footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
-#portal.active ~ footer{display:none}
+/* Footer aplikasi (LAYANAN, KONTAK & LEGALITAS, dll) disembunyikan di semua tab —
+   KECUALI tab FAQ, di mana footer tetap ditampilkan (dipakai FAQ soal nomor izin). */
+#siteFooter{display:none!important}
+#faq.active ~ #siteFooter{display:block!important}
 .f-grid{display:grid;grid-template-columns:1.4fr 1fr 1.2fr;gap:40px;padding-bottom:50px}
 .f-grid h5{font:800 .8rem var(--body);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:18px}
 .f-grid a{display:block;padding:5px 0;font-size:.9rem;transition:.2s}
