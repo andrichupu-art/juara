@@ -61,6 +61,11 @@ html{scroll-behavior:auto;scroll-padding-top:var(--hdr-h,96px);scrollbar-width:n
   background-image:radial-gradient(rgba(11,31,58,.16) 1.4px,transparent 1.4px);background-size:26px 26px}
 html::-webkit-scrollbar{display:none}
 body{font-family:var(--body);color:var(--ink);background:transparent;overflow-x:hidden;line-height:1.6;min-height:100vh;display:flex;flex-direction:column;padding-top:var(--hdr-h,100px)}
+/* Cegah teks UI ter-"select" saat tersentuh/tap-tahan di HP, yang bikin Android
+   otomatis munculin popup pencarian Google buat teks terpilih. Input/textarea
+   dikecualikan supaya user tetap bisa ketik, pilih & copy-paste isinya. */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 img{max-width:100%} a{color:inherit;text-decoration:none} button{font-family:inherit;cursor:pointer;appearance:none;-webkit-appearance:none;-moz-appearance:none;outline:none}
 ::selection{background:var(--orange);color:#fff}
 .wrap{width:min(1180px,92%);margin:0 auto}
@@ -4193,6 +4198,7 @@ function openDocsCompleteModal(){
 }
 function closeDocsCompleteModal(){
   const m=$('#docsCompleteModal'); if(m)m.classList.remove('on');
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 /* ================= CEK STATUS PUBLIK ================= */
 async function lacakKode(kode){
