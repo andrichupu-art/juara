@@ -464,10 +464,10 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:var(--gold);b
 .extra-item .meta2{font-size:.68rem;color:var(--mut);margin-top:2px}
 .extra-item .act{display:flex;gap:6px;flex:none}
 .extra-empty{border:1.5px dashed var(--line);border-radius:12px;padding:26px 16px;text-align:center;color:var(--mut);font-size:.82rem}
-.extra-drop{border:1.5px dashed var(--line);border-radius:13px;padding:18px;text-align:center;cursor:pointer;transition:.2s;background:var(--paper)}
-.extra-drop:hover,.extra-drop.drag{border-color:var(--orange);background:rgba(245,182,43,.08)}
-.extra-drop b{color:var(--navy);display:block;font-size:.86rem;margin-bottom:2px}
-.extra-drop span{font-size:.72rem;color:var(--mut)}
+.extra-drop{border:1.5px dashed rgba(255,255,255,.3);border-radius:13px;padding:18px;text-align:center;cursor:pointer;transition:.2s;background:var(--navy);margin-top:14px}
+.extra-drop:hover,.extra-drop.drag{border-color:var(--gold);background:var(--navy3)}
+.extra-drop b{color:#fff;display:block;font-size:.86rem;margin-bottom:2px}
+.extra-drop span{font-size:.72rem;color:rgba(255,255,255,.68)}
 @media(max-width:960px){.extra-panel{position:static}}
 .panel{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:30px}
 .panel h4{font:800 1.1rem var(--disp);color:var(--navy);display:flex;align-items:center;gap:10px;margin-bottom:20px}
@@ -532,9 +532,38 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:var(--gold);b
 .doc.ok{border-color:var(--green);background:linear-gradient(0deg,rgba(23,178,106,.04),rgba(23,178,106,.04))}
 /* Terkunci: semua berkas WAJIB sudah lengkap, kartu ini jadi read-only —
    warnanya diredupkan & tak ada tombol ubah, cuma bisa "Lihat". */
-.doc.locked{background:var(--paper);opacity:.72}
-.doc.locked:hover{border-color:var(--line)}
-.doc.locked .ic{filter:grayscale(.15)}
+.doc.locked{background:var(--navy);opacity:1}
+.doc.locked:hover{border-color:var(--navy3)}
+.doc.locked .ic{filter:none;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2)}
+.doc.locked .ic svg{stroke:#fff}
+.doc.locked h5{color:#fff}
+.doc.locked .sub{color:rgba(255,255,255,.68)}
+.doc.locked .act{border-top-color:rgba(255,255,255,.16)}
+.doc.locked .lockbadge{background:rgba(255,255,255,.16);color:#fff}
+.doc.locked .req{background:rgba(229,72,77,.28);color:#ffb3b5}
+.doc.locked .opt{background:rgba(255,255,255,.16);color:rgba(255,255,255,.8)}
+.doc.locked .pill.wait{background:rgba(255,255,255,.16);color:#fff}
+.doc.locked .pill.up{background:rgba(46,155,214,.24);color:#8fd2f5}
+.doc.locked .pill.ok{background:rgba(23,178,106,.24);color:#7ee6b8}
+
+/* Kartu wajib yang sudah terunggah & terkunci: netralkan aksen kuning/hijau
+   supaya kartu ini tampil monokrom putih di atas navy, bukan hijau/emas. */
+.doc.locked.ok{border-color:rgba(255,255,255,.22);background:var(--navy)}
+.doc.locked.ok .ic{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22)}
+.doc.locked.ok .ic svg{stroke:#fff}
+.doc.locked.ok .pill.ok{background:rgba(255,255,255,.16);color:#fff}
+
+/* Kartu yang statusnya "diproses agensi" (kolektif) tetap pakai background terang,
+   jadi teks & ikonnya harus dikembalikan ke warna gelap semula, bukan putih. */
+.doc.locked.kolektif{background:linear-gradient(0deg,rgba(7,31,59,.05),rgba(7,31,59,.05))}
+.doc.locked.kolektif .ic{background:rgba(7,31,59,.1);border-color:rgba(7,31,59,.28)}
+.doc.locked.kolektif .ic svg{stroke:var(--navy)}
+.doc.locked.kolektif h5{color:var(--navy)}
+.doc.locked.kolektif .sub{color:var(--mut)}
+.doc.locked.kolektif .act{border-top-color:var(--line)}
+.doc.locked.kolektif .lockbadge{background:rgba(90,107,130,.12);color:var(--mut)}
+.doc.locked.kolektif .req{background:rgba(229,72,77,.12);color:var(--red)}
+.doc.locked.kolektif .opt{background:rgba(90,107,130,.12);color:var(--mut)}
 /* Ditolak admin: satu-satunya kartu yang tetap "menyala"/aktif meski yang lain
    sudah terkunci, supaya jelas kartu mana yang perlu diunggah ulang. */
 .doc.rejected{border-color:var(--red);background:linear-gradient(0deg,rgba(229,72,77,.05),rgba(229,72,77,.05));animation:docRejGlow 2s ease-in-out infinite}
@@ -559,16 +588,16 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:var(--gold);b
 .pill.up{background:rgba(46,155,214,.14);color:var(--sky)}
 .pill.ok{background:rgba(23,178,106,.14);color:var(--green)}
 .pill.bad{background:rgba(229,72,77,.14);color:var(--red)}
-.pill.kolektif{background:rgba(46,155,214,.14);color:var(--sky)}
+.pill.kolektif{background:rgba(7,31,59,.12);color:var(--navy)}
 /* Kartu berkas yang ditandai "diproses kolektif oleh agensi" (khusus Paspor &
    MCU) — dibedakan dari kartu terisi biasa (hijau) supaya jelas ini bukan
    berkas yang diunggah sendiri oleh peserta. */
-.doc.kolektif{border-color:var(--sky);background:linear-gradient(0deg,rgba(46,155,214,.04),rgba(46,155,214,.04))}
-.doc.kolektif .ic{background:rgba(46,155,214,.12);border-color:rgba(46,155,214,.3)}
-.doc.kolektif .ic svg{stroke:var(--sky)}
-.kolektif-note{font:600 .72rem var(--body);color:var(--sky);margin-top:4px}
+.doc.kolektif{border-color:var(--navy);background:linear-gradient(0deg,rgba(7,31,59,.05),rgba(7,31,59,.05))}
+.doc.kolektif .ic{background:rgba(7,31,59,.1);border-color:rgba(7,31,59,.28)}
+.doc.kolektif .ic svg{stroke:var(--navy)}
+.kolektif-note{font:600 .72rem var(--body);color:var(--navy);margin-top:4px}
 .kolektif-opt{display:flex;align-items:center;gap:7px;margin-top:8px;font:600 .72rem var(--body);color:var(--mut);cursor:pointer}
-.kolektif-opt input{width:15px;height:15px;accent-color:var(--sky);cursor:pointer;flex:none}
+.kolektif-opt input{width:15px;height:15px;accent-color:var(--navy);cursor:pointer;flex:none}
 .mini{font:700 .76rem var(--body);padding:7px 14px;border-radius:8px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);transition:.2s}
 .mini:hover{background:var(--navy);color:#fff}
 .mini.or{border-color:var(--orange);color:var(--orange)} .mini.or:hover{background:var(--orange);color:#fff}
@@ -2260,8 +2289,8 @@ const STAGES_D=['Semua berkas masuk sistem & kode peserta terbit.','Tim legalita
 const DOCS=[
  {k:'ktp',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.4"/><circle cx="7.7" cy="11.3" r="2.1"/><path d="M4.8 16.4c.5-1.5 1.7-2.4 2.9-2.4s2.4.9 2.9 2.4"/><path d="M13 9.4h6.2M13 12.4h6.2M13 15.4h3.6"/></svg>',t:'KTP',d:'e-KTP warna, 2 sisi, jelas.',req:true},
  {k:'kk',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="2.6"/><path d="M4 19c.6-2.8 2.5-4.4 5-4.4s4.4 1.6 5 4.4"/><circle cx="17.2" cy="7.4" r="2"/><path d="M15 12.4c2.1.1 3.6 1.5 4.1 3.7"/></svg>',t:'Kartu Keluarga',d:'Scan halaman penuh KK.',req:true},
- {k:'paspor',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.6" width="14" height="18.8" rx="2.2"/><circle cx="12" cy="9.4" r="3"/><path d="M9.4 9.4h5.2M12 6.4v6"/><path d="M8.4 16.4h7.2M9.4 19h5.2"/></svg>',t:'Paspor',d:'Halaman biodata paspor.',req:true,collectible:true},
  {k:'ijazah',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.6 12 5.2l9.5 4.4L12 14 2.5 9.6Z"/><path d="M6.4 11.6v4.2c0 1.4 2.5 2.6 5.6 2.6s5.6-1.2 5.6-2.6v-4.2"/><path d="M21.5 9.6v5.4"/></svg>',t:'Ijazah Terakhir',d:'Min. SMA/SMK, legalisir bila ada.',req:true},
+ {k:'paspor',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.6" width="14" height="18.8" rx="2.2"/><circle cx="12" cy="9.4" r="3"/><path d="M9.4 9.4h5.2M12 6.4v6"/><path d="M8.4 16.4h7.2M9.4 19h5.2"/></svg>',t:'Paspor',d:'Halaman biodata paspor.',req:true,collectible:true},
  {k:'sertifikat',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14.5" height="12.4" rx="1.8"/><path d="M5.6 6.4h9.3M5.6 9h9.3M5.6 11.6h5.6"/><circle cx="17.6" cy="16.2" r="3.1"/><path d="M16 18.9 15 22l2.6-1.5L20.2 22l-1-3.1"/></svg>',t:'Sertifikat Kompetensi',d:'Pelatihan/bahasa (opsional).',req:false},
  {k:'medis',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v5.4a4.4 4.4 0 0 0 8.8 0V3"/><path d="M9.4 12.8v2.7c0 3 2.3 5.4 5.1 5.4s5.1-2.4 5.1-5.4v-2"/><circle cx="19.6" cy="9.6" r="2.1"/></svg>',t:'Medical Check-Up',d:'Klinik panel resmi, ≤3 bulan.',req:true,collectible:true},
  {k:'foto',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.4a1.8 1.8 0 0 1 1.8-1.8h2l1.3-2h5.8l1.3 2h2A1.8 1.8 0 0 1 20 8.4v9.4A1.8 1.8 0 0 1 18.2 19.6H5.8A1.8 1.8 0 0 1 4 17.8Z"/><circle cx="12" cy="13" r="3.4"/></svg>',t:'Pas Foto 4×6',d:'Latar merah, formal, tanpa kacamata.',req:true}
