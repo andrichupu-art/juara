@@ -253,6 +253,8 @@ header .btn.b-pri:hover,header .btn.b-pri:focus-visible{background:var(--gold);b
 #cek.sec-pad{padding-top:28px}
 #testi.sec-pad{padding-top:28px}
 #portal.sec-pad{padding-top:28px}
+#progres.sec-pad{padding-top:28px}
+#tagihan.sec-pad{padding-top:28px}
 #faq.sec-pad{padding-top:28px}
 .dest-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:34px 0 26px}
 .fchip{border:1.5px solid var(--line);background:#fff;border-radius:100px;padding:9px 20px;font:700 .84rem var(--body);color:var(--mut);transition:.2s}
@@ -1771,7 +1773,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
     <div class="portal-head-row">
       <div>
         <div class="eyebrow rv">Portal Pekerja</div>
-        <h2 class="sec rv">Unggah <span style="background:linear-gradient(135deg,#ffc33c,#f5b62b);-webkit-background-clip:text;background-clip:text;color:transparent">Dokumen</span> <span class="doc-hd-full">lengkapmu </span>disini</h2>
+        <h2 class="sec rv" id="portalHeadTitle">Login <span style="background:linear-gradient(135deg,#ffc33c,#f5b62b);-webkit-background-clip:text;background-clip:text;color:transparent">Menggunakan</span> QR</h2>
       </div>
 
       <!-- QR TICKET (hanya tampil setelah login & masuk state Dashboard) -->
@@ -2419,6 +2421,12 @@ $$('.faq-q').forEach(b=>b.onclick=()=>{const f=b.parentElement,a=f.querySelector
 function setState(s){$$('.pstate').forEach(p=>p.classList.remove('on'));$(s).classList.add('on');
   const qtt=document.getElementById('qrTicketTrigger'); if(qtt) qtt.style.display=(s==='#stDash')?'':'none';
   if(s!=='#stDash') closeTicket();
+  const pht=$('#portalHeadTitle');
+  if(pht){
+    pht.innerHTML=(s==='#stGuest')
+      ?'Login <span style="background:linear-gradient(135deg,#ffc33c,#f5b62b);-webkit-background-clip:text;background-clip:text;color:transparent">Menggunakan</span> QR'
+      :'Unggah <span style="background:linear-gradient(135deg,#ffc33c,#f5b62b);-webkit-background-clip:text;background-clip:text;color:transparent">Dokumen</span> <span class="doc-hd-full">lengkapmu </span>disini';
+  }
   adjustCtaFill();}
 let guestMode='register';
 function showGuestMode(mode){
