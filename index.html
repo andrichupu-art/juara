@@ -1567,7 +1567,7 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 <div class="tabpanel active gk-home" id="home" data-tab="home">
   <!-- HERO -->
   <section class="gk-hero" aria-label="Beranda Global Karya">
-    <img class="gk-hero-img" id="heroImg" src="hero.jpg" fetchpriority="high" alt="Pekerja Indonesia bersiap bekerja ke luar negeri">
+    <img class="gk-hero-img" src="hero.jpg" fetchpriority="high" alt="Pekerja Indonesia bersiap bekerja ke luar negeri">
     <div class="gk-hero-fade" aria-hidden="true"></div>
     <div class="gk-wrap gk-hero-content">
       <div class="gk-hero-copy">
@@ -2521,10 +2521,6 @@ function updateHeroCtas(loggedIn){
     b.textContent=loggedIn?'UPLOAD DOKUMEN':'DAFTAR SEKARANG';
     b.onclick=loggedIn?()=>showTab('portal'):()=>showGuestMode('register');
   }
-  // Foto hero Beranda diganti begitu peserta login — berlaku sama di mobile & desktop
-  // karena .gk-hero-img cuma satu elemen <img> yang dipakai ulang lewat CSS responsif.
-  const heroImg=$('#heroImg');
-  if(heroImg) heroImg.src=loggedIn?'hero-loggedin.png':'hero.jpg';
 }
 function setAuthUI(loggedIn){
   $('#authBtn').style.display=loggedIn?'inline-flex':'none';
