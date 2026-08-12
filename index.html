@@ -3557,9 +3557,19 @@ document.addEventListener('submit',async e=>{
 function getStage(){ return window._stage??0; }
 
 // Toggle tampil/sembunyi 7 kartu dokumen di mobile (panah di bawah bar 100%).
+// docGridUserToggled: begitu peserta klik toggle ini SENDIRI, kita hormati pilihan dia
+// dan berhenti mengubah collapsed/expanded secara otomatis lewat setDocGridCollapsed().
+let docGridUserToggled=false;
 function toggleDocGrid(){
+  docGridUserToggled=true;
+  const wrap=$('#docGridWrap');
+  setDocGridCollapsed(!wrap.classList.contains('collapsed'));
+}
+// Set status collapsed/terbuka tanpa menandai sebagai aksi manual peserta — dipakai
+// oleh renderDocs() untuk auto-hide/auto-show berdasarkan kelengkapan berkas.
+function setDocGridCollapsed(collapsed){
   const wrap=$('#docGridWrap'),btn=$('#docToggleBtn'),lbl=$('#docToggleLbl');
-  const collapsed=wrap.classList.toggle('collapsed');
+  wrap.classList.toggle('collapsed',collapsed);
   btn.classList.toggle('open',!collapsed);
   btn.setAttribute('aria-expanded',String(!collapsed));
   lbl.textContent=collapsed?'Tampilkan 7 dokumen':'Sembunyikan 7 dokumen';
@@ -3628,6 +3638,12 @@ function renderDocs(){ const grid=$('#docGrid');grid.innerHTML='';
   // halaman setelah sesi lalu sudah 100%), tetap buka gerbang tombol "Pasang App" —
   // TANPA memicu ulang modal konsen/WA (itu cuma sekali, dijaga oleh flag qrShown di uploadDoc).
   if(totReq>0&&upReq===totReq){ docsAllComplete=true; revealInstallBtnIfReady(); }
+  // Auto-hide/auto-show kartu 7 dokumen: begitu semua berkas WAJIB sudah terunggah,
+  // defaultnya langsung disembunyikan (rapi, tak makan tempat). Kalau masih ada yang
+  // kosong, JANGAN disembunyikan otomatis — biarkan tetap terbuka supaya peserta
+  // langsung lihat apa yang masih kurang. Ini tidak berlaku kalau peserta sudah
+  // pernah klik toggle secara manual — pilihan peserta lebih diprioritaskan.
+  if(!docGridUserToggled) setDocGridCollapsed(allComplete);
   return {pct,upReq,totReq}; }
 
 async function uploadDoc(k,file,card){
