@@ -2396,7 +2396,12 @@ function showTab(id){
   const foot=$('#siteFooter'); if(foot)foot.style.display=(id==='home'||id==='destinasi'||id==='alur'||id==='testi')?'none':'';
   history.replaceState(null,'','#'+id);
   window.scrollTo({top:0,behavior:'smooth'});
-  $$('.tabpanel.active .rv:not(.in)').forEach(el=>{obs.observe(el);});
+  // FIX: dulu elemen .rv di tab yang baru aktif cuma di-observe(), lalu nunggu
+  // IntersectionObserver mendeteksi & menambahkan class "in" di frame berikutnya
+  // (plus delay dari scrollTo smooth) -> muncul jeda "blank" sepersekian detik
+  // sebelum form Login/Scan QR kelihatan. Untuk perpindahan tab via klik tombol,
+  // konten harus langsung tampil tanpa nunggu animasi reveal-on-scroll itu.
+  $$('.tabpanel.active .rv:not(.in)').forEach(el=>{el.classList.add('in');obs.unobserve(el);});
   adjustCtaFill();
 }
 // Membuat section .cta (gelombang biru) selalu menempel di bawah layar kalau konten
