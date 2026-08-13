@@ -2807,7 +2807,7 @@ function decodeQrFromFile(file){
     reader.onerror=()=>reject(new Error('Gagal membaca file gambar'));
     reader.onload=()=>{
       img.onerror=()=>reject(new Error('File bukan gambar yang valid'));
-      img.onload=()=>{
+      img.onload=async()=>{
         if(!window.jsQR){reject(new Error('Komponen pembaca QR belum siap, coba muat ulang halaman.'));return;}
         // Coba beberapa ukuran render. Beberapa browser (terutama Safari) menghaluskan
         // (smoothing) gambar saat drawImage() memperkecil ukuran, sehingga tepi kotak
@@ -2817,6 +2817,11 @@ function decodeQrFromFile(file){
         const natMax=Math.max(img.width,img.height);
         const sizesToTry=Array.from(new Set([natMax,2000,1600,1000,700].filter(s=>s<=natMax||s===natMax)));
         let result=null;
+        // Kasih browser jatah 1 frame dulu sebelum mulai loop berat di bawah, supaya
+        // preview foto & animasi garis scan yang barusan ditampilkan sempat ke-paint dulu.
+        // Tanpa ini, decode (apalagi di ukuran native resolusi kamera HP yang besar) langsung
+        // memblokir main thread berturut-turut, sehingga animasinya kelihatan "diam" sesaat.
+        await new Promise(r=>requestAnimationFrame(r));
         for(const maxSide of sizesToTry){
           const scale=Math.min(1,maxSide/natMax);
           const w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
@@ -2828,6 +2833,9 @@ function decodeQrFromFile(file){
           const imgData=ctx.getImageData(0,0,w,h);
           const res=jsQR(imgData.data,w,h,{inversionAttempts:'attemptBoth'});
           if(res&&res.data){result=res.data;break;}
+          // beri jeda 1 frame lagi di antara tiap percobaan ukuran, supaya browser tetap
+          // sempat repaint (animasi garis scan dkk) di sela-sela proses yang berat ini.
+          await new Promise(r=>requestAnimationFrame(r));
         }
         if(!result){reject(new Error('QR tidak terbaca dari gambar itu. Pastikan foto jelas & tidak buram.'));return;}
         resolve(result);
@@ -4638,9 +4646,12 @@ function initSelectEnterOpen(){
     if(sel.multiple) return; // lewati select multi-pilih, perilakunya beda
     if(sel.dataset.selEnhanced) return; // sudah pernah di-enhance, jangan pasang listener dobel
     sel.dataset.selEnhanced='1';
-    let overlay=null, searchEl=null, listEl=null, items=[], hlIndex=-1, query='';
+    let overlay=null, searchEl=null, listEl=null, items=[], hlIndex=-1, query='', openedAt=0;
 
-    const onScroll=()=>closeOverlay();
+    // catatan: saat overlay baru dibuka, fokus ke searchEl memicu keyboard virtual di HP, dan
+    // browser HP otomatis men-scroll halaman supaya input tsb terlihat di atas keyboard — scroll
+    // otomatis ini TIDAK boleh dianggap "user menutup dropdown", makanya diberi jeda (grace period).
+    const onScroll=()=>{ if(Date.now()-openedAt<450) return; closeOverlay(); };
     const onResize=()=>positionOverlay();
 
     function closeOverlay(){
@@ -4727,6 +4738,7 @@ function initSelectEnterOpen(){
       });
       document.body.appendChild(overlay);
       positionOverlay();
+      openedAt=Date.now();
       hlIndex=Math.max(0,items.findIndex(it=>it.classList.contains('current')));
       items[hlIndex]?.classList.add('hl');
       items[hlIndex]?.scrollIntoView({block:'nearest'});
@@ -4734,6 +4746,10 @@ function initSelectEnterOpen(){
       document.addEventListener('scroll',onScroll,true);
       window.addEventListener('resize',onResize);
       searchEl.focus(); // penting: fokus ke <input> asli supaya browser HP memunculkan keyboard virtual
+      // browser HP butuh sesaat untuk menggeser layout saat keyboard muncul (dan bisa memicu 1-2
+      // event scroll/resize susulan) — reposisikan overlay setelah itu supaya tetap menempel ke select
+      setTimeout(positionOverlay,120);
+      setTimeout(positionOverlay,400);
     }
 
     // listener milik kotak pencarian sendiri (dipasang tiap kali overlay/input baru dibuat di openOverlay)
