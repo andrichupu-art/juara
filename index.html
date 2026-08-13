@@ -3021,7 +3021,11 @@ async function showSampleQrPreview(){
   if(btnQrLogin)btnQrLogin.classList.remove('qr-btn-loading');
   if(!qrScanPreviewWrap||!qrScanImg)return;
   try{
-    if(!qrSampleDataUrl)qrSampleDataUrl=await buildSampleCardDataURL();
+    if(!qrSampleDataUrl){
+      qrScanPreviewWrap.style.display='block';
+      if(qrScanCaption)qrScanCaption.textContent='Menyiapkan contoh tampilan…';
+      qrSampleDataUrl=await buildSampleCardDataURL();
+    }
     if(qrRealFileUploaded||!isMobileQrViewport())return; // bisa saja berubah selagi kartu contoh digambar
     qrScanImg.src=qrSampleDataUrl;
     qrScanPreviewWrap.style.display='block';
@@ -3034,6 +3038,15 @@ mqMobileQr.addEventListener('change',()=>{
   const lp=$('#guestLoginPanel');
   if(lp&&lp.style.display!=='none')showSampleQrPreview();
 });
+// FIX: generate kartu contoh QR itu berat (nunggu font, logo, gambar canvas) — kalau baru
+// dikerjakan SAAT tombol Login diklik, panel sempat kelihatan "kosong" (mirip versi desktop)
+// sepersekian detik sebelum kartu contohnya muncul. Siapkan cache-nya di background begitu
+// halaman idle, supaya begitu user klik Login, gambarnya sudah siap & langsung tampil.
+(function prefetchSampleQrCard(){
+  const run=()=>{ if(!qrSampleDataUrl&&!qrRealFileUploaded) buildSampleCardDataURL().then(url=>{qrSampleDataUrl=url;}).catch(()=>{}); };
+  if('requestIdleCallback' in window) requestIdleCallback(run,{timeout:2500});
+  else setTimeout(run,300);
+})();
 if(qrLoginFileInput){
   qrLoginFileInput.addEventListener('change',async e=>{
     const file=e.target.files&&e.target.files[0];
