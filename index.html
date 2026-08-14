@@ -5062,6 +5062,8 @@ async function sendAiChatMessage(){
 
     if(res.status===429){
       renderAiMsg('bot','Lagi banyak yang chat nih 🙏 Coba tunggu beberapa detik lagi ya, atau langsung hubungi WhatsApp kami: https://wa.me/6281290001234');
+    }else if(res.status===503 || data?.error==='model_overloaded'){
+      renderAiMsg('bot','Asisten AI-nya lagi sibuk sebentar 🙏 Coba kirim ulang pertanyaannya, atau langsung hubungi WhatsApp kami: https://wa.me/6281290001234');
     }else if(!res.ok || !data.reply){
       renderAiMsg('bot','Maaf, sistem sedang gangguan. Silakan hubungi tim kami via WhatsApp: https://wa.me/6281290001234');
     }else{
