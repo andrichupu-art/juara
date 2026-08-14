@@ -1481,8 +1481,8 @@ footer{background:var(--navy2);color:#9db4d0;padding:70px 0 0;flex:1 0 auto}
 
 #aiChatHead{background:var(--navy);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;
   border-bottom:3px solid var(--gold);flex:none}
-#aiChatHead .aiChatAvatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:#0b1f3a;
-  display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex:none}
+#aiChatHead .aiChatAvatar{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.14);color:#0b1f3a;
+  display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex:none;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.22)}
 #aiChatHead .aiChatTitle{flex:1;min-width:0}
 #aiChatHead .aiChatTitle b{display:block;font-size:.92rem;line-height:1.2}
 #aiChatHead .aiChatTitle span{display:block;font-size:.7rem;opacity:.75;line-height:1.2;margin-top:2px}
@@ -5231,14 +5231,71 @@ async function sendAiChatMessage(){
 
 <!-- ===== Floating Call Center (AI chat) ===== -->
 <button type="button" id="aiFab" onclick="toggleAiChat()" aria-label="Buka Call Center AI" title="Call Center AI">
-  <svg id="aiFabIconChat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+  <svg id="aiFabIconChat" viewBox="0 0 64 64" width="34" height="34">
+    <defs>
+      <radialGradient id="botBody1" cx="35%" cy="26%" r="80%">
+        <stop offset="0%" stop-color="#fff6da"/>
+        <stop offset="45%" stop-color="#f4cd57"/>
+        <stop offset="100%" stop-color="#c98f1c"/>
+      </radialGradient>
+      <linearGradient id="botFace1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#233457"/>
+        <stop offset="100%" stop-color="#0b1120"/>
+      </linearGradient>
+      <radialGradient id="botEye1" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#e8fbff"/>
+        <stop offset="55%" stop-color="#79d8ff"/>
+        <stop offset="100%" stop-color="#2ba9e0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="32" cy="55" rx="17" ry="4" fill="#5a3d09" opacity=".25"/>
+    <rect x="29.5" y="9" width="5" height="9" rx="2.5" fill="#c98f1c"/>
+    <circle cx="32" cy="8" r="4.2" fill="url(#botBody1)" stroke="#a9720f" stroke-width=".6"/>
+    <rect x="9" y="16" width="46" height="38" rx="17" fill="url(#botBody1)" stroke="#a9720f" stroke-width="1"/>
+    <rect x="1.5" y="30" width="6" height="12" rx="3" fill="url(#botBody1)" stroke="#a9720f" stroke-width=".6"/>
+    <rect x="56.5" y="30" width="6" height="12" rx="3" fill="url(#botBody1)" stroke="#a9720f" stroke-width=".6"/>
+    <rect x="14" y="23" width="36" height="24" rx="11" fill="url(#botFace1)"/>
+    <circle cx="25" cy="35" r="4.6" fill="url(#botEye1)"/>
+    <circle cx="39" cy="35" r="4.6" fill="url(#botEye1)"/>
+    <path d="M25 43c3 2.4 8 2.4 11 0" stroke="#79d8ff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity=".85"/>
+    <ellipse cx="22" cy="23" rx="12" ry="6" fill="#fff" opacity=".3"/>
+  </svg>
   <svg id="aiFabIconClose" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" style="display:none"><path d="M5 5l14 14M19 5 5 19"/></svg>
   <span class="aiFabDot"></span>
 </button>
 
 <div id="aiChatPanel">
   <div id="aiChatHead">
-    <div class="aiChatAvatar">🤖</div>
+    <div class="aiChatAvatar">
+      <svg viewBox="0 0 64 64" width="24" height="24">
+        <defs>
+          <radialGradient id="botBody2" cx="35%" cy="26%" r="80%">
+            <stop offset="0%" stop-color="#fff6da"/>
+            <stop offset="45%" stop-color="#f4cd57"/>
+            <stop offset="100%" stop-color="#c98f1c"/>
+          </radialGradient>
+          <linearGradient id="botFace2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#233457"/>
+            <stop offset="100%" stop-color="#0b1120"/>
+          </linearGradient>
+          <radialGradient id="botEye2" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#e8fbff"/>
+            <stop offset="55%" stop-color="#79d8ff"/>
+            <stop offset="100%" stop-color="#2ba9e0"/>
+          </radialGradient>
+        </defs>
+        <rect x="29.5" y="9" width="5" height="9" rx="2.5" fill="#c98f1c"/>
+        <circle cx="32" cy="8" r="4.2" fill="url(#botBody2)" stroke="#a9720f" stroke-width=".6"/>
+        <rect x="9" y="16" width="46" height="38" rx="17" fill="url(#botBody2)" stroke="#a9720f" stroke-width="1"/>
+        <rect x="1.5" y="30" width="6" height="12" rx="3" fill="url(#botBody2)" stroke="#a9720f" stroke-width=".6"/>
+        <rect x="56.5" y="30" width="6" height="12" rx="3" fill="url(#botBody2)" stroke="#a9720f" stroke-width=".6"/>
+        <rect x="14" y="23" width="36" height="24" rx="11" fill="url(#botFace2)"/>
+        <circle cx="25" cy="35" r="4.6" fill="url(#botEye2)"/>
+        <circle cx="39" cy="35" r="4.6" fill="url(#botEye2)"/>
+        <path d="M25 43c3 2.4 8 2.4 11 0" stroke="#79d8ff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity=".85"/>
+        <ellipse cx="22" cy="23" rx="12" ry="6" fill="#fff" opacity=".3"/>
+      </svg>
+    </div>
     <div class="aiChatTitle">
       <b>Juara AI — Call Center</b>
       <span id="aiChatSubtitle">Siap bantu pertanyaan seputar pendaftaran</span>
